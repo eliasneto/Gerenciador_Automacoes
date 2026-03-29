@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+
+{% block title %}Administrador | Speed AutoControllers{% endblock %}
+
+{% block content %}
+<section class="mb-8">
+    <div class="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#111111] via-[#161616] to-[#222222] p-8 md:p-10 shadow-[0_30px_80px_rgba(15,15,15,0.28)]">
+        <div class="absolute -right-16 -top-16 h-56 w-56 rounded-full bg-ageis-yellow/10 blur-3xl"></div>
+        <div class="absolute bottom-0 right-0 h-40 w-40 rounded-full bg-white/5 blur-3xl"></div>
+
+        <div class="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div class="max-w-3xl">
+                <span class="inline-flex items-center gap-2 rounded-full border border-ageis-yellow/20 bg-white/5 px-4 py-2 text-[10px] font-black uppercase tracking-[0.25em] text-ageis-yellow">
+                    <i data-lucide="shield-plus" class="h-3.5 w-3.5"></i>
+                    Painel Administrativo
+                </span>
+                <h1 class="mt-5 text-3xl font-black italic uppercase leading-none text-white md:text-5xl">
+                    Governe o catálogo de automações
+                </h1>
+                <p class="mt-4 max-w-2xl text-sm leading-7 text-gray-300 md:text-base">
+                    Use esta área para cadastrar novas automações e publicar a mesma rotina em um ou vários setores sem perder a independência dos módulos.
+                </p>
+            </div>
+
+            <div class="flex flex-col gap-3 sm:flex-row">
+                <a href="{% url 'administrador:monitoring' %}" class="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-6 py-4 text-[10px] font-black uppercase tracking-[0.24em] text-white transition hover:bg-white/10">
+                    <i data-lucide="activity" class="h-4 w-4"></i>
+                    Monitoramento
+                </a>
+                <a href="{% url 'administrador:execution-list' %}" class="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-6 py-4 text-[10px] font-black uppercase tracking-[0.24em] text-white transition hover:bg-white/10">
+                    <i data-lucide="history" class="h-4 w-4"></i>
+                    Ver execuções
+                </a>
+                <a href="{% url 'administrador:automation-create' %}" class="inline-flex items-center justify-center gap-2 rounded-2xl bg-ageis-yellow px-6 py-4 text-[10px] font-black uppercase tracking-[0.24em] text-black shadow-[0_18px_35px_rgba(255,193,7,0.28)] transition hover:brightness-95">
+                    <i data-lucide="plus" class="h-4 w-4"></i>
+                    Criar automação
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+    {% for card in sector_cards %}
+        <article class="rounded-[2rem] border border-gray-100 bg-white p-6 shadow-[0_18px_50px_rgba(15,23,42,0.08)]">
+            <div class="flex items-center justify-between gap-4">
+                <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-ageis-black text-ageis-yellow shadow-lg">
+                    <i data-lucide="{{ card.icon }}" class="h-5 w-5"></i>
+                </div>
+                <span class="rounded-full bg-black/5 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-gray-600">
+                    {{ card.count }} automações
+                </span>
+            </div>
+            <h2 class="mt-5 text-2xl font-black text-gray-900">{{ card.label }}</h2>
+            <p class="mt-2 text-sm text-gray-500">Cadastros ativos neste setor.</p>
+
+            <div class="mt-6 rounded-[1.5rem] border border-gray-100 bg-[#FAFBFC] p-4">
+                <p class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Últimas automações</p>
+                <div class="mt-4 space-y-3">
+                    {% for automacao in card.recent %}
+                        <div class="rounded-2xl bg-white px-4 py-3 shadow-sm">
+                            <p class="text-sm font-black text-gray-900">{{ automacao.nome }}</p>
+                            <p class="mt-1 text-xs text-gray-500">{{ automacao.identificador }}</p>
+                        </div>
+                    {% empty %}
+                        <p class="text-sm text-gray-400">Nenhuma automação cadastrada ainda.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </article>
+    {% endfor %}
+</section>
+{% endblock %}

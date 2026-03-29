@@ -1,0 +1,210 @@
+<div class="space-y-2" data-automation-picker-root>
+    <label for="{{ form.automation_link.id_for_label }}" class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">
+        Vínculo com automação
+    </label>
+
+    <select
+        name="{{ form.automation_link.name }}"
+        id="{{ form.automation_link.id_for_label }}"
+        class="hidden"
+        data-automation-picker-select
+    >
+        {% for value, label in form.fields.automation_link.choices %}
+            <option value="{{ value }}" {% if form.automation_link.value == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+    </select>
+
+    <button
+        type="button"
+        data-automation-picker-open
+        class="flex w-full items-center justify-between rounded-[1.25rem] border border-gray-200 bg-[#FAFBFC] px-5 py-4 text-left text-sm text-gray-800 outline-none transition-all hover:border-yellow-300 hover:ring-4 hover:ring-yellow-100"
+    >
+        <span class="truncate" data-automation-picker-current>Sem vínculo com automação</span>
+        <span class="inline-flex items-center gap-2 text-gray-500">
+            <i data-lucide="search" class="h-4 w-4"></i>
+            <i data-lucide="chevron-down" class="h-4 w-4"></i>
+        </span>
+    </button>
+
+    <p class="text-xs leading-6 text-gray-500">
+        {{ automation_picker_help|default:'Use este campo para vincular o documento a uma automação específica ou manter ele como documento geral sem vínculo.' }}
+    </p>
+
+    <div class="fixed inset-0 z-[140] hidden items-center justify-center bg-black/60 p-4 backdrop-blur-sm" data-automation-picker-modal>
+        <div class="absolute inset-0" data-automation-picker-close></div>
+        <div class="relative z-10 flex max-h-[85vh] w-full max-w-4xl flex-col overflow-hidden rounded-[2rem] border border-gray-200 bg-white shadow-[0_30px_80px_rgba(15,23,42,0.24)]">
+            <div class="border-b border-gray-100 px-6 py-5">
+                <div class="flex items-start justify-between gap-4">
+                    <div>
+                        <p class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Selecionar automação</p>
+                        <h3 class="mt-2 text-2xl font-black text-gray-900">Vincular documento</h3>
+                        <p class="mt-2 text-sm text-gray-500">Pesquise pelo nome e escolha uma automação cadastrada no sistema.</p>
+                    </div>
+                    <button type="button" class="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-gray-200 bg-white text-gray-600 transition hover:bg-gray-50" data-automation-picker-close>
+                        <i data-lucide="x" class="h-4 w-4"></i>
+                    </button>
+                </div>
+
+                <div class="mt-5 grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_170px]">
+                    <div class="relative">
+                        <i data-lucide="search" class="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"></i>
+                        <input
+                            type="text"
+                            placeholder="Filtrar por nome da automação"
+                            class="w-full rounded-[1.25rem] border border-gray-200 bg-[#FAFBFC] py-4 pl-11 pr-4 text-sm text-gray-800 outline-none transition-all focus:border-yellow-300 focus:ring-4 focus:ring-yellow-100"
+                            data-automation-picker-filter
+                        >
+                    </div>
+                    <button
+                        type="button"
+                        data-automation-picker-clear
+                        class="inline-flex items-center justify-center gap-2 rounded-[1.25rem] border border-gray-200 bg-white px-4 py-4 text-[10px] font-black uppercase tracking-[0.18em] text-gray-700 transition hover:bg-gray-50"
+                    >
+                        <i data-lucide="unlink-2" class="h-4 w-4"></i>
+                        Sem vínculo
+                    </button>
+                </div>
+            </div>
+
+            <div class="hidden border-b border-gray-100 bg-[#FCFCFD] px-6 py-4 md:grid md:grid-cols-[minmax(0,1fr)_180px_120px] md:gap-4">
+                <div class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Automação</div>
+                <div class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Setor</div>
+                <div class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 text-right">Ação</div>
+            </div>
+
+            <div class="max-h-[52vh] overflow-y-auto px-6 py-4" data-automation-picker-list>
+                {% for value, label in form.fields.automation_link.choices %}
+                    {% if value %}
+                        <button
+                            type="button"
+                            class="automation-picker-row grid w-full grid-cols-1 gap-3 rounded-[1.25rem] border border-gray-100 bg-white px-4 py-4 text-left transition hover:border-yellow-200 hover:bg-yellow-50/40 md:grid-cols-[minmax(0,1fr)_180px_120px] md:items-center"
+                            data-automation-picker-option
+                            data-value="{{ value }}"
+                            data-label="{{ label }}"
+                            data-search="{{ label|lower }}"
+                        >
+                            <div class="min-w-0">
+                                <p class="truncate text-sm font-black text-gray-900">
+                                    {% if ' / ' in label %}{{ label|cut:'Comercial / '|cut:'Financeiro / '|cut:'TI / ' }}{% else %}{{ label }}{% endif %}
+                                </p>
+                                <p class="mt-1 text-xs text-gray-500">{{ value }}</p>
+                            </div>
+                            <div class="inline-flex items-center gap-2 text-xs font-semibold text-gray-600">
+                                {% if 'comercial:' in value %}
+                                    Comercial
+                                {% elif 'financeiro:' in value %}
+                                    Financeiro
+                                {% elif 'ti:' in value %}
+                                    TI
+                                {% else %}
+                                    Setor não identificado
+                                {% endif %}
+                            </div>
+                            <div class="flex justify-start md:justify-end">
+                                <span class="inline-flex items-center gap-2 rounded-full border border-sky-100 bg-sky-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-sky-700">
+                                    Selecionar
+                                </span>
+                            </div>
+                        </button>
+                    {% endif %}
+                {% endfor %}
+                <div class="hidden rounded-[1.5rem] border border-dashed border-gray-200 bg-[#FAFBFC] px-5 py-8 text-center text-sm text-gray-400" data-automation-picker-empty>
+                    Nenhuma automação encontrada para o filtro informado.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('[data-automation-picker-root]').forEach(function (root) {
+        if (root.dataset.automationPickerInitialized === 'true') {
+            return;
+        }
+        root.dataset.automationPickerInitialized = 'true';
+
+        const select = root.querySelector('[data-automation-picker-select]');
+        const currentLabel = root.querySelector('[data-automation-picker-current]');
+        const openButton = root.querySelector('[data-automation-picker-open]');
+        const modal = root.querySelector('[data-automation-picker-modal]');
+        const filterInput = root.querySelector('[data-automation-picker-filter]');
+        const optionButtons = root.querySelectorAll('[data-automation-picker-option]');
+        const emptyState = root.querySelector('[data-automation-picker-empty]');
+
+        function syncCurrentLabel() {
+            const selectedOption = select.options[select.selectedIndex];
+            currentLabel.textContent = selectedOption ? selectedOption.textContent : 'Sem vínculo com automação';
+        }
+
+        function openModal() {
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            if (filterInput) {
+                filterInput.value = '';
+                applyFilter('');
+                setTimeout(function () { filterInput.focus(); }, 30);
+            }
+        }
+
+        function closeModal() {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function applyFilter(term) {
+            let visibleCount = 0;
+            optionButtons.forEach(function (button) {
+                const haystack = button.dataset.search || '';
+                const matches = !term || haystack.includes(term);
+                button.classList.toggle('hidden', !matches);
+                if (matches) visibleCount += 1;
+            });
+            if (emptyState) {
+                emptyState.classList.toggle('hidden', visibleCount !== 0);
+            }
+        }
+
+        openButton?.addEventListener('click', openModal);
+        root.querySelectorAll('[data-automation-picker-close]').forEach(function (button) {
+            button.addEventListener('click', closeModal);
+        });
+
+        root.querySelector('[data-automation-picker-clear]')?.addEventListener('click', function () {
+            select.value = '';
+            syncCurrentLabel();
+            closeModal();
+        });
+
+        optionButtons.forEach(function (button) {
+            button.addEventListener('click', function () {
+                select.value = button.dataset.value;
+                syncCurrentLabel();
+                closeModal();
+            });
+        });
+
+        filterInput?.addEventListener('input', function () {
+            applyFilter((this.value || '').trim().toLowerCase());
+        });
+
+        modal?.addEventListener('click', function (event) {
+            if (event.target === modal) {
+                closeModal();
+            }
+        });
+
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape' && modal && !modal.classList.contains('hidden')) {
+                closeModal();
+            }
+        });
+
+        syncCurrentLabel();
+    });
+
+    if (window.lucide) {
+        window.lucide.createIcons();
+    }
+});
+</script>

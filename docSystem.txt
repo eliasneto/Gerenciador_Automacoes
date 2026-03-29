@@ -1,0 +1,461 @@
+Bem-vindo ao AutoControllers
+
+O AutoControllers é a plataforma interna usada para centralizar, executar, acompanhar e documentar automações da empresa.
+
+O sistema foi organizado por módulos para separar as operações por área, facilitar a gestão das automações e manter o controle de acessos, execuções e documentação em um único lugar.
+
+Objetivo do sistema
+
+O objetivo principal do AutoControllers é permitir que cada setor tenha suas próprias automações, com controle de acesso, histórico de execução, documentação e rastreabilidade operacional.
+
+Com o sistema, é possível:
+
+- acessar automações por setor
+- executar automações manualmente
+- acompanhar status e logs das execuções
+- baixar arquivos gerados pelas automações
+- consultar documentação operacional
+- administrar automações e documentos
+- controlar quem pode acessar cada área
+
+Estrutura do sistema
+
+O sistema está dividido em módulos.
+
+Os módulos principais são:
+
+- Comercial
+- Financeiro
+- TI
+
+Cada módulo possui automações independentes e pode evoluir separadamente.
+
+Além dos módulos, o sistema também possui áreas complementares:
+
+- Dashboard
+- Documentação Sistema
+- Documentação
+- Administrador
+
+Dashboard
+
+O Dashboard é o painel principal do sistema.
+
+Nele, o usuário visualiza indicadores consolidados das áreas liberadas para o seu perfil.
+
+O dashboard pode mostrar:
+
+- quantidade de automações ativas
+- quantidade de automações por setor
+- quantidade de execuções registradas
+- gráfico de execuções diárias
+- filtros por área
+- filtros por automação
+
+A visualização do dashboard pode ser controlada por grupos específicos de dashboard.
+
+Módulos
+
+Cada módulo representa uma área operacional da empresa.
+
+Comercial
+
+O módulo Comercial concentra automações ligadas a:
+
+- prospecção
+- leads
+- atendimento
+- processos comerciais
+- rotinas de apoio ao time de vendas
+
+Financeiro
+
+O módulo Financeiro concentra automações ligadas a:
+
+- conciliações
+- controles financeiros
+- cobrança
+- faturamento
+- relatórios e auditorias
+
+TI
+
+O módulo TI concentra automações ligadas a:
+
+- suporte
+- inventário
+- infraestrutura
+- acessos
+- monitoramento
+- rotinas operacionais técnicas
+
+Como acessar um módulo
+
+O acesso aos módulos depende de grupo.
+
+Se o usuário não estiver no grupo do módulo:
+
+- o módulo não aparece no menu
+- o acesso direto pela URL é bloqueado
+
+Se o usuário estiver no grupo do módulo:
+
+- o módulo aparece no menu lateral
+- o usuário pode abrir a página da área
+- o usuário pode executar automações daquele setor
+
+Tela do módulo
+
+Dentro de cada módulo, o usuário encontra:
+
+- lista de automações da área
+- botão para abrir o modal da automação
+- botão para executar
+- botão para parar, se a automação estiver em execução
+- histórico de execuções
+- status das execuções
+- logs da automação
+- arquivos de saída gerados
+
+Execução de automações
+
+As automações podem ser executadas manualmente pela interface.
+
+Fluxo padrão de execução:
+
+- abrir o módulo desejado
+- localizar a automação
+- clicar no ícone de arquivos
+- anexar os arquivos necessários
+- preencher observações, quando necessário
+- clicar em executar automação
+
+Dependendo da automação, o sistema pode solicitar:
+
+- arquivos principais
+- arquivos auxiliares
+- observações da execução
+
+Arquivos principais
+
+Os arquivos principais são os arquivos centrais usados pela automação.
+
+Exemplos:
+
+- planilha principal
+- arquivo de entrada
+- arquivo texto com tema
+- relatório base
+
+Arquivos auxiliares
+
+Os arquivos auxiliares são arquivos complementares usados como apoio pela automação.
+
+Exemplos:
+
+- anexos adicionais
+- planilhas auxiliares
+- PDFs de apoio
+- arquivos de conferência
+- documentos complementares
+
+Observações da execução
+
+Algumas automações permitem informar observações antes da execução.
+
+Esse campo pode ser usado para:
+
+- dar contexto ao processamento
+- informar instruções adicionais
+- registrar finalidade da execução
+- documentar uma particularidade do arquivo enviado
+
+Status de execução
+
+Cada execução pode assumir um status.
+
+Pendente
+
+A automação foi registrada e está aguardando vaga na fila de execução.
+
+Executando
+
+A automação está em processamento naquele momento.
+
+Sucesso
+
+A automação terminou corretamente.
+
+Erro
+
+A automação terminou com falha.
+
+Interrompida
+
+A automação foi parada manualmente ou interrompida antes do término.
+
+Fila de automações
+
+O sistema possui controle de fila.
+
+Isso significa que existe um limite de automações rodando ao mesmo tempo.
+
+Quando o limite é atingido:
+
+- novas execuções não são perdidas
+- elas entram como pendentes
+- aguardam vaga na fila
+- começam automaticamente quando outra execução termina
+
+Esse comportamento protege o sistema contra excesso de processamento simultâneo.
+
+Parar uma automação
+
+Se uma automação estiver em execução, o usuário pode solicitar a parada.
+
+Ao clicar em parar:
+
+- o sistema registra a solicitação
+- a automação é interrompida quando o processo aceitar a parada
+- o status passa para interrompida
+
+Em execuções pendentes, a remoção da fila também pode ser tratada como interrupção.
+
+Logs da automação
+
+Cada execução possui uma tela de logs.
+
+Essa tela funciona como um monitor de execução, semelhante a um terminal.
+
+Nela, o usuário pode acompanhar:
+
+- mensagens do processamento
+- prints gerados pela automação
+- erros
+- resumo da execução
+- andamento da rotina
+
+Os logs ajudam a entender:
+
+- se a automação iniciou corretamente
+- em qual etapa ela está
+- se houve erro
+- qual foi o resultado final
+
+Arquivos de saída
+
+Quando a automação gera arquivos, eles ficam disponíveis para download pela interface.
+
+Exemplos de saída:
+
+- CSV
+- Excel
+- relatórios
+- arquivos texto
+- retornos de processamento
+
+O usuário não precisa acessar o código ou a pasta do servidor.
+
+Se houver saída gerada, o sistema mostra essa saída diretamente no frontend.
+
+Documentação Sistema
+
+A opção Documentação Sistema fica disponível no menu principal.
+
+Essa área serve para consulta de documentos publicados.
+
+Ela pode mostrar:
+
+- documentações gerais do sistema
+- documentações publicadas das automações
+- documentos organizados por setor
+- documentos gerais na seção Sistema
+
+Sistema
+
+A seção Sistema concentra documentos gerais que não estão vinculados a uma automação específica.
+
+Exemplos:
+
+- manual geral do sistema
+- política de uso
+- orientações internas
+- padrões operacionais
+- documentação institucional
+
+Setores
+
+As seções por setor mostram as automações documentadas de cada área.
+
+Ao clicar em uma automação documentada, o usuário abre a página da documentação em uma nova aba.
+
+Publicação de documentos
+
+Nem todo documento fica visível imediatamente.
+
+Um documento vinculado a automação ou criado no sistema só fica disponível para os usuários quando estiver com status Publicado.
+
+Status possíveis dos documentos:
+
+- Rascunho
+- Publicado
+- Arquivado
+
+Somente documentos publicados devem ser considerados oficiais para consulta do usuário final.
+
+Administrador
+
+A área Administrador é usada para gestão do sistema.
+
+Ela pode ser liberada somente para usuários autorizados.
+
+Nessa área é possível:
+
+- criar automações
+- vincular automações a setores
+- configurar a fila de automações
+- acompanhar cadastros administrativos
+
+Documentação
+
+A área Documentação administrativa é usada para criar e manter documentos dentro do sistema.
+
+Nela é possível:
+
+- criar documentos
+- vincular documentos a automações
+- editar documentos
+- alterar status
+- publicar documentos
+- manter documentação geral do sistema
+
+Controle de acesso
+
+O sistema possui controle de acesso por grupos.
+
+Existem grupos para módulos e grupos para dashboard.
+
+Grupos de módulo
+
+Os grupos de módulo controlam o acesso às áreas operacionais.
+
+Exemplos:
+
+- Modulo Comercial
+- Modulo Financeiro
+- Modulo TI
+- Modulo Documentacao
+- Modulo Administracao
+
+Se o usuário não estiver no grupo do módulo:
+
+- o módulo não aparece no menu
+- o acesso é bloqueado
+
+Grupos de dashboard
+
+Os grupos de dashboard controlam o que o usuário enxerga no painel principal.
+
+Exemplos:
+
+- Dashboard Comercial
+- Dashboard Financeiro
+- Dashboard TI
+
+Exemplo de comportamento:
+
+- se o usuário estiver em Dashboard Comercial, verá apenas os dados do Comercial no dashboard
+- se estiver em Dashboard Financeiro, verá apenas o Financeiro
+- se estiver em mais de um grupo, verá os dados combinados
+- superusuários podem visualizar tudo
+
+Superusuário
+
+O superusuário possui acesso total ao sistema, mesmo sem estar vinculado a grupos específicos.
+
+Esse perfil deve ser usado com controle e responsabilidade.
+
+Auditoria e rastreabilidade
+
+O sistema mantém rastreabilidade de diversas operações.
+
+Entre elas:
+
+- histórico de execução das automações
+- logs das execuções
+- auditoria de criação e alteração de documentos
+- auditoria de visualização de documentos
+- controle de status dos documentos
+
+Isso ajuda a garantir:
+
+- segurança
+- controle operacional
+- histórico das mudanças
+- transparência nas consultas e alterações
+
+Boas práticas para o usuário final
+
+Para utilizar bem o sistema, siga estas orientações:
+
+- confirme se está no módulo correto antes de executar uma automação
+- revise os arquivos antes de anexar
+- use observações quando a execução exigir contexto
+- acompanhe os logs em caso de dúvida
+- baixe e valide os arquivos de saída
+- consulte a documentação publicada antes de abrir chamado
+- não tente repetir várias execuções simultâneas sem necessidade
+
+Boas práticas para administradores
+
+Administradores devem:
+
+- manter as automações organizadas por setor
+- revisar status de documentos antes de publicar
+- controlar o limite de execuções simultâneas
+- manter grupos de acesso atualizados
+- revisar auditorias quando necessário
+- garantir que a documentação publicada esteja clara e atualizada
+
+Fluxo resumido de uso
+
+Consulta de documentação
+
+- entrar no sistema
+- abrir Documentação Sistema
+- escolher Sistema ou um setor
+- localizar o documento
+- abrir para leitura
+
+Execução de automação
+
+- entrar no módulo liberado
+- localizar a automação
+- anexar arquivos
+- informar observações, se necessário
+- executar
+- acompanhar status e logs
+- baixar o resultado, se houver
+
+Gestão administrativa
+
+- acessar área de administração
+- criar ou ajustar automações
+- revisar grupos e acessos
+- manter configurações operacionais
+
+Gestão de documentação
+
+- acessar a área de documentação administrativa
+- criar ou editar um documento
+- revisar o conteúdo
+- salvar
+- publicar quando estiver pronto
+
+Conclusão
+
+O AutoControllers foi criado para centralizar automações, documentação, controle operacional e governança de acesso em um único ambiente.
+
+O sistema permite que cada setor trabalhe com autonomia, mas com organização, segurança e rastreabilidade.
+
+Em caso de dúvida sobre uma automação, consulte primeiro a documentação publicada no sistema ou o responsável interno pela operação.

@@ -1,0 +1,617 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>Documentacao Oficial da API - AutoControllers</title>
+<style>
+body { font-family: Arial, sans-serif; margin: 32px; color: #1f2937; line-height: 1.65; }
+h1, h2, h3, h4 { color: #111827; }
+h1 { border-bottom: 2px solid #e5e7eb; padding-bottom: 10px; }
+h2 { margin-top: 34px; }
+h3 { margin-top: 24px; }
+h4 { margin-top: 18px; }
+p, li, td, th { font-size: 14px; }
+pre { background: #f3f4f6; padding: 14px; border: 1px solid #e5e7eb; white-space: pre-wrap; border-radius: 8px; overflow-x: auto; }
+code { font-family: Consolas, monospace; }
+ul, ol { margin-top: 8px; }
+li { margin-bottom: 6px; }
+.note { background: #fffbeb; border: 1px solid #fde68a; padding: 14px; border-radius: 8px; }
+.ok { background: #ecfdf5; border: 1px solid #a7f3d0; padding: 14px; border-radius: 8px; }
+.warn { background: #fef2f2; border: 1px solid #fecaca; padding: 14px; border-radius: 8px; }
+.table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+.table th, .table td { border: 1px solid #e5e7eb; padding: 10px; text-align: left; vertical-align: top; }
+.table th { background: #f9fafb; }
+.small { color: #6b7280; font-size: 13px; }
+.endpoint { background: #111827; color: #fff; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-family: Consolas, monospace; display: inline-block; margin-right: 8px; }
+.method { background: #fbbf24; color: #111827; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: bold; display: inline-block; margin-right: 8px; }
+</style>
+</head>
+<body>
+<h1>Documentacao Oficial da API - AutoControllers</h1>
+
+<p>Este documento descreve a camada de API separada do AutoControllers, criada para integracoes externas sem alterar o fluxo web atual do sistema.</p>
+
+<div class="ok">
+<strong>Resumo rapido:</strong><br>
+A API do AutoControllers usa autenticacao por token do tipo <code>Bearer</code>, respeita os grupos e permissoes ja existentes no sistema e expõe endpoints para autenticação, consulta de modulos, automacoes, execucoes e documentacoes publicadas.
+</div>
+
+<h2>1. Informacoes gerais</h2>
+<table class="table">
+<tr><th>Item</th><th>Valor</th></tr>
+<tr><td>Base URL local</td><td><code>http://127.0.0.1:8190/api/</code></td></tr>
+<tr><td>Formato principal</td><td><code>application/json</code></td></tr>
+<tr><td>Autenticacao</td><td>Token Bearer</td></tr>
+<tr><td>Seguranca</td><td>Permissoes alinhadas com os grupos do sistema</td></tr>
+<tr><td>Login web atual</td><td>Permanece funcionando em paralelo</td></tr>
+</table>
+
+<div class="note">
+<strong>Importante:</strong> esta API nao substitui as telas HTML. Ela foi criada em uma camada separada, no app <code>api</code>, para evitar impacto no sistema web ja existente.
+</div>
+
+<h2>2. Autenticacao</h2>
+<p>O fluxo esperado e:</p>
+<ol>
+<li>enviar <code>username</code> e <code>password</code> para obter um token</li>
+<li>receber o token no campo <code>access_token</code></li>
+<li>usar este token no header <code>Authorization: Bearer TOKEN</code></li>
+</ol>
+
+<h3>Header padrao</h3>
+<pre>Authorization: Bearer SEU_TOKEN_AQUI</pre>
+
+<p>Tambem e aceito:</p>
+<pre>X-API-Token: SEU_TOKEN_AQUI</pre>
+
+<h2>3. Padrao de resposta</h2>
+<p>Em geral, a API responde com JSON no formato:</p>
+<pre>{
+  "ok": true,
+  "results": []
+}</pre>
+
+<p>Ou, em caso de erro:</p>
+<pre>{
+  "ok": false,
+  "error": "Mensagem do erro"
+}</pre>
+
+<h2>4. Codigos de status mais usados</h2>
+<table class="table">
+<tr><th>Codigo</th><th>Uso</th></tr>
+<tr><td><code>200</code></td><td>Operacao concluida com sucesso</td></tr>
+<tr><td><code>201</code></td><td>Recurso ou execucao criada com sucesso</td></tr>
+<tr><td><code>400</code></td><td>Payload invalido, dados faltando ou regra de negocio violada</td></tr>
+<tr><td><code>401</code></td><td>Credenciais invalidas ou token ausente/invalido</td></tr>
+<tr><td><code>403</code></td><td>Usuario autenticado, mas sem permissao para o recurso</td></tr>
+<tr><td><code>404</code></td><td>Recurso nao encontrado</td></tr>
+</table>
+
+<h2>5. Paginacao</h2>
+<p>Os endpoints de lista agora aceitam paginação por query string.</p>
+
+<table class="table">
+<tr><th>Parametro</th><th>Descricao</th><th>Padrao</th></tr>
+<tr><td><code>page</code></td><td>Numero da pagina desejada</td><td><code>1</code></td></tr>
+<tr><td><code>per_page</code></td><td>Quantidade de itens por pagina</td><td><code>20</code></td></tr>
+</table>
+
+<p>Limite atual:</p>
+<pre>per_page maximo = 100</pre>
+
+<p>Exemplo:</p>
+<pre>GET /api/automacoes/?module=comercial&amp;page=2&amp;per_page=10</pre>
+
+<p>Formato de retorno paginado:</p>
+<pre>{
+  "ok": true,
+  "count": 57,
+  "page": 2,
+  "per_page": 10,
+  "total_pages": 6,
+  "has_previous": true,
+  "has_next": true,
+  "previous_page": "/api/automacoes/?module=comercial&amp;page=1&amp;per_page=10",
+  "next_page": "/api/automacoes/?module=comercial&amp;page=3&amp;per_page=10",
+  "results": []
+}</pre>
+
+<h2>6. Endpoints</h2>
+
+<h3><span class="method">GET</span><span class="endpoint">/api/health/</span></h3>
+<p>Endpoint simples para validar se a camada de API esta respondendo.</p>
+
+<h4>Resposta de sucesso</h4>
+<pre>{
+  "ok": true,
+  "service": "autocontrollers-api",
+  "timestamp": "2026-03-29T10:15:00-03:00"
+}</pre>
+
+<h3><span class="method">POST</span><span class="endpoint">/api/auth/token/</span></h3>
+<p>Realiza autenticacao com usuario e senha e devolve o token de acesso.</p>
+
+<h4>Exemplo de requisicao</h4>
+<pre>POST /api/auth/token/
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "admin123"
+}</pre>
+
+<h4>Resposta de sucesso</h4>
+<pre>{
+  "ok": true,
+  "token_type": "Bearer",
+  "access_token": "TOKEN_GERADO_PELO_SISTEMA",
+  "user": {
+    "id": 1,
+    "username": "admin",
+    "is_superuser": true
+  }
+}</pre>
+
+<h4>Erros possiveis</h4>
+<table class="table">
+<tr><th>Status</th><th>Quando acontece</th><th>Exemplo</th></tr>
+<tr><td><code>400</code></td><td>Username ou password nao enviados</td><td><code>{"ok": false, "error": "Informe username e password."}</code></td></tr>
+<tr><td><code>400</code></td><td>JSON invalido</td><td><code>{"ok": false, "error": "Payload JSON inválido."}</code></td></tr>
+<tr><td><code>401</code></td><td>Credenciais incorretas</td><td><code>{"ok": false, "error": "Credenciais inválidas."}</code></td></tr>
+</table>
+
+<h3><span class="method">POST</span><span class="endpoint">/api/auth/token/revoke/</span></h3>
+<p>Revoga o token atual.</p>
+
+<h4>Exemplo de requisicao</h4>
+<pre>POST /api/auth/token/revoke/
+Authorization: Bearer TOKEN_GERADO_PELO_SISTEMA</pre>
+
+<h4>Resposta de sucesso</h4>
+<pre>{
+  "ok": true,
+  "message": "Token revogado com sucesso."
+}</pre>
+
+<h4>Erros possiveis</h4>
+<table class="table">
+<tr><th>Status</th><th>Quando acontece</th><th>Exemplo</th></tr>
+<tr><td><code>401</code></td><td>Token ausente, inativo, expirado ou invalido</td><td><code>{"ok": false, "error": "Token de API inválido ou ausente."}</code></td></tr>
+</table>
+
+<h3><span class="method">GET</span><span class="endpoint">/api/me/</span></h3>
+<p>Retorna os dados do usuario autenticado e as permissoes principais de acesso.</p>
+
+<h4>Exemplo de requisicao</h4>
+<pre>GET /api/me/
+Authorization: Bearer TOKEN_GERADO_PELO_SISTEMA</pre>
+
+<h4>Resposta de sucesso</h4>
+<pre>{
+  "ok": true,
+  "user": {
+    "id": 1,
+    "username": "admin",
+    "email": "admin@local.test",
+    "is_superuser": true,
+    "visible_modules": ["comercial", "financeiro", "ti"],
+    "visible_dashboards": ["comercial", "financeiro", "ti"],
+    "can_access_documentacao": true,
+    "can_access_administrador": true
+  }
+}</pre>
+
+<h4>Erros possiveis</h4>
+<pre>{
+  "ok": false,
+  "error": "Token de API inválido ou ausente."
+}</pre>
+
+<h3><span class="method">GET</span><span class="endpoint">/api/modules/</span></h3>
+<p>Lista os modulos conhecidos pela API e informa se o usuario possui acesso ao modulo e ao dashboard de cada um.</p>
+
+<h4>Parametros de paginação</h4>
+<pre>?page=1&amp;per_page=20</pre>
+
+<h4>Resposta de sucesso</h4>
+<pre>{
+  "ok": true,
+  "count": 3,
+  "page": 1,
+  "per_page": 20,
+  "total_pages": 1,
+  "has_previous": false,
+  "has_next": false,
+  "previous_page": null,
+  "next_page": null,
+  "results": [
+    {
+      "key": "comercial",
+      "label": "Comercial",
+      "has_module_access": true,
+      "has_dashboard_access": true
+    },
+    {
+      "key": "financeiro",
+      "label": "Financeiro",
+      "has_module_access": false,
+      "has_dashboard_access": false
+    }
+  ]
+}</pre>
+
+<h3><span class="method">GET</span><span class="endpoint">/api/automacoes/</span></h3>
+<p>Lista as automacoes que o usuario autenticado pode enxergar.</p>
+
+<h4>Filtros aceitos</h4>
+<ul>
+<li><code>?module=comercial</code></li>
+<li><code>?module=financeiro</code></li>
+<li><code>?module=ti</code></li>
+<li><code>?page=1</code></li>
+<li><code>?per_page=20</code></li>
+</ul>
+
+<h4>Exemplo de requisicao</h4>
+<pre>GET /api/automacoes/?module=comercial
+Authorization: Bearer TOKEN_GERADO_PELO_SISTEMA</pre>
+
+<h4>Resposta de sucesso</h4>
+<pre>{
+  "ok": true,
+  "count": 1,
+  "page": 1,
+  "per_page": 20,
+  "total_pages": 1,
+  "has_previous": false,
+  "has_next": false,
+  "previous_page": null,
+  "next_page": null,
+  "results": [
+    {
+      "module": "comercial",
+      "module_label": "Comercial",
+      "id": 5,
+      "nome": "Pesquisar YouTube",
+      "identificador": "pesquisar-youtube",
+      "descricao": "Pesquisa videos e devolve CSV.",
+      "executor_path": "comercial.automacoes.pesquisar_youtube.executar",
+      "ativa": true,
+      "aceita_arquivo_entrada": true,
+      "aceita_anexos": true,
+      "em_execucao": false,
+      "criado_em": "2026-03-29T09:10:00-03:00",
+      "atualizado_em": "2026-03-29T09:10:00-03:00"
+    }
+  ]
+}</pre>
+
+<h4>Erros possiveis</h4>
+<table class="table">
+<tr><th>Status</th><th>Quando acontece</th></tr>
+<tr><td><code>401</code></td><td>Token ausente ou invalido</td></tr>
+</table>
+
+<h3><span class="method">POST</span><span class="endpoint">/api/automacoes/&lt;module&gt;/&lt;identificador&gt;/executar/</span></h3>
+<p>Cria uma execucao de automacao e tenta iniciar imediatamente ou colocar na fila.</p>
+
+<h4>Exemplo de requisicao sem arquivo</h4>
+<pre>POST /api/automacoes/comercial/pesquisar-youtube/executar/
+Authorization: Bearer TOKEN_GERADO_PELO_SISTEMA
+Content-Type: multipart/form-data
+
+parametros_texto=Rodar pesquisa do dia</pre>
+
+<h4>Campos aceitos</h4>
+<table class="table">
+<tr><th>Campo</th><th>Tipo</th><th>Descricao</th></tr>
+<tr><td><code>arquivo_entrada</code></td><td>arquivo multiplo</td><td>Arquivos principais da automacao</td></tr>
+<tr><td><code>anexos</code></td><td>arquivo multiplo</td><td>Arquivos complementares</td></tr>
+<tr><td><code>parametros_texto</code></td><td>texto</td><td>Observacoes ou parametros livres</td></tr>
+</table>
+
+<h4>Resposta de sucesso</h4>
+<pre>{
+  "ok": true,
+  "message": "Automação iniciada.",
+  "execution": {
+    "id": 23,
+    "modulo": "comercial",
+    "automacao_nome": "Pesquisar YouTube",
+    "automacao_identificador": "pesquisar-youtube",
+    "status": "running",
+    "status_label": "Executando",
+    "mensagem_resumo": "",
+    "log_saida": "",
+    "parametros_texto": "Rodar pesquisa do dia",
+    "interromper_solicitado": false,
+    "queue_position": null,
+    "criado_em": "2026-03-29T10:30:00-03:00",
+    "iniciado_em": "2026-03-29T10:30:01-03:00",
+    "finalizado_em": null,
+    "output_files": []
+  }
+}</pre>
+
+<h4>Resposta quando entra na fila</h4>
+<pre>{
+  "ok": true,
+  "message": "Automação adicionada na fila.",
+  "execution": {
+    "id": 24,
+    "status": "pending",
+    "status_label": "Pendente",
+    "queue_position": 2
+  }
+}</pre>
+
+<h4>Erros possiveis</h4>
+<table class="table">
+<tr><th>Status</th><th>Quando acontece</th><th>Exemplo</th></tr>
+<tr><td><code>400</code></td><td>Automacao desativada</td><td><code>{"ok": false, "error": "Esta automação está desativada no momento."}</code></td></tr>
+<tr><td><code>400</code></td><td>Arquivo principal enviado para automacao que nao aceita</td><td><code>{"ok": false, "error": "Esta automação não aceita arquivo de entrada."}</code></td></tr>
+<tr><td><code>400</code></td><td>Anexos enviados para automacao que nao aceita</td><td><code>{"ok": false, "error": "Esta automação não aceita anexos."}</code></td></tr>
+<tr><td><code>403</code></td><td>Usuario sem acesso ao modulo</td><td><code>{"ok": false, "error": "Você não possui acesso a este módulo."}</code></td></tr>
+<tr><td><code>404</code></td><td>Modulo ou automacao nao encontrados</td><td><code>{"ok": false, "error": "Automação não encontrada."}</code></td></tr>
+</table>
+
+<h3><span class="method">GET</span><span class="endpoint">/api/execucoes/</span></h3>
+<p>Lista execucoes visiveis para o usuario.</p>
+
+<h4>Filtros aceitos</h4>
+<ul>
+<li><code>?module=comercial</code></li>
+<li><code>?module=financeiro</code></li>
+<li><code>?module=ti</code></li>
+<li><code>?status=pending</code></li>
+<li><code>?status=running</code></li>
+<li><code>?status=success</code></li>
+<li><code>?status=error</code></li>
+<li><code>?status=stopped</code></li>
+<li><code>?page=1</code></li>
+<li><code>?per_page=20</code></li>
+</ul>
+
+<h4>Resposta de sucesso</h4>
+<pre>{
+  "ok": true,
+  "count": 2,
+  "page": 1,
+  "per_page": 20,
+  "total_pages": 1,
+  "has_previous": false,
+  "has_next": false,
+  "previous_page": null,
+  "next_page": null,
+  "results": [
+    {
+      "id": 23,
+      "modulo": "comercial",
+      "automacao_nome": "Pesquisar YouTube",
+      "automacao_identificador": "pesquisar-youtube",
+      "status": "running",
+      "status_label": "Executando",
+      "mensagem_resumo": "",
+      "log_saida": "Iniciando automacao...",
+      "parametros_texto": "Rodar pesquisa do dia",
+      "interromper_solicitado": false,
+      "queue_position": null,
+      "criado_em": "2026-03-29T10:30:00-03:00",
+      "iniciado_em": "2026-03-29T10:30:01-03:00",
+      "finalizado_em": null,
+      "output_files": []
+    }
+  ]
+}</pre>
+
+<h4>Erros possiveis</h4>
+<pre>{
+  "ok": false,
+  "error": "Token de API inválido ou ausente."
+}</pre>
+
+<h3><span class="method">GET</span><span class="endpoint">/api/execucoes/&lt;id&gt;/</span></h3>
+<p>Retorna os detalhes de uma execucao especifica.</p>
+
+<h4>Exemplo de sucesso</h4>
+<pre>{
+  "ok": true,
+  "execution": {
+    "id": 23,
+    "modulo": "comercial",
+    "automacao_nome": "Pesquisar YouTube",
+    "status": "success",
+    "status_label": "Sucesso",
+    "mensagem_resumo": "Automacao concluida com sucesso.",
+    "output_files": [
+      {
+        "id": 9,
+        "nome_original": "resultado_youtube.csv",
+        "url": "/media/automacoes/resultado_youtube.csv"
+      }
+    ]
+  }
+}</pre>
+
+<h4>Erros possiveis</h4>
+<table class="table">
+<tr><th>Status</th><th>Quando acontece</th></tr>
+<tr><td><code>403</code></td><td>Usuario sem permissao para ver a execucao</td></tr>
+<tr><td><code>404</code></td><td>Execucao nao encontrada</td></tr>
+</table>
+
+<h3><span class="method">POST</span><span class="endpoint">/api/execucoes/&lt;id&gt;/parar/</span></h3>
+<p>Solicita a parada de uma execucao em andamento ou remove uma execucao pendente da fila.</p>
+
+<h4>Resposta de sucesso</h4>
+<pre>{
+  "ok": true,
+  "execution": {
+    "id": 23,
+    "status": "stopped",
+    "status_label": "Interrompida",
+    "mensagem_resumo": "Execucao removida da fila pelo usuario."
+  }
+}</pre>
+
+<h4>Erros possiveis</h4>
+<table class="table">
+<tr><th>Status</th><th>Quando acontece</th></tr>
+<tr><td><code>403</code></td><td>Usuario sem permissao para parar a execucao</td></tr>
+<tr><td><code>404</code></td><td>Execucao nao encontrada</td></tr>
+</table>
+
+<h3><span class="method">GET</span><span class="endpoint">/api/documentacoes/</span></h3>
+<p>Lista documentacoes publicadas que o usuario autenticado pode enxergar.</p>
+
+<h4>Comportamento de permissao</h4>
+<ul>
+<li>Documentacao vinculada a automacao respeita o grupo do modulo</li>
+<li>Documentacao de <code>Administracao</code> so aparece para administradores</li>
+<li>Documentacao de setor sem vinculo respeita o grupo do setor</li>
+<li>Documentacao de <code>Sistema</code> segue a visibilidade geral do sistema autenticado</li>
+<li>Os resultados tambem respeitam <code>page</code> e <code>per_page</code></li>
+</ul>
+
+<h4>Resposta de sucesso</h4>
+<pre>{
+  "ok": true,
+  "count": 2,
+  "page": 1,
+  "per_page": 20,
+  "total_pages": 1,
+  "has_previous": false,
+  "has_next": false,
+  "previous_page": null,
+  "next_page": null,
+  "results": [
+    {
+      "id": 8,
+      "titulo": "Documentacao tecnica sistema",
+      "status": "published",
+      "status_label": "Publicado",
+      "versao": 2,
+      "publication_section": "financeiro",
+      "publication_section_label": "Financeiro",
+      "linked_automation": {
+        "nome": null,
+        "identificador": null
+      },
+      "updated_at": "2026-03-29T08:10:00-03:00"
+    },
+    {
+      "id": 9,
+      "titulo": "Documentacao - Pesquisar YouTube",
+      "status": "published",
+      "status_label": "Publicado",
+      "versao": 1,
+      "publication_section": "system",
+      "publication_section_label": "Sistema",
+      "linked_automation": {
+        "nome": "Pesquisar YouTube",
+        "identificador": "pesquisar-youtube"
+      },
+      "updated_at": "2026-03-29T08:30:00-03:00"
+    }
+  ]
+}</pre>
+
+<h4>Erros possiveis</h4>
+<pre>{
+  "ok": false,
+  "error": "Token de API inválido ou ausente."
+}</pre>
+
+<h2>7. Erros padrao da autenticacao por token</h2>
+<p>Quase todos os endpoints protegidos podem retornar este erro quando o token nao for enviado corretamente:</p>
+<pre>{
+  "ok": false,
+  "error": "Token de API inválido ou ausente."
+}</pre>
+
+<h2>8. Erros padrao de permissao</h2>
+<p>Quando o usuario esta autenticado, mas nao tem acesso ao recurso, a API retorna <code>403</code>.</p>
+
+<h4>Exemplo</h4>
+<pre>{
+  "ok": false,
+  "error": "Você não possui acesso a este módulo."
+}</pre>
+
+<h2>9. Erros padrao de recurso nao encontrado</h2>
+<p>Quando modulo, automacao ou execucao nao forem encontrados, a API retorna <code>404</code>.</p>
+
+<h4>Exemplos</h4>
+<pre>{
+  "ok": false,
+  "error": "Módulo não encontrado."
+}</pre>
+
+<pre>{
+  "ok": false,
+  "error": "Automação não encontrada."
+}</pre>
+
+<pre>{
+  "ok": false,
+  "error": "Execução não encontrada."
+}</pre>
+
+<h2>10. Exemplo completo de uso</h2>
+<p>Fluxo simples de integracao:</p>
+<ol>
+<li>fazer login por token</li>
+<li>listar automacoes</li>
+<li>executar uma automacao</li>
+<li>consultar a execucao ate finalizar</li>
+</ol>
+
+<h4>Passo 1 - obter token</h4>
+<pre>POST /api/auth/token/
+{
+  "username": "admin",
+  "password": "admin123"
+}</pre>
+
+<h4>Passo 2 - listar automacoes</h4>
+<pre>GET /api/automacoes/
+Authorization: Bearer TOKEN_GERADO_PELO_SISTEMA</pre>
+
+<h4>Passo 3 - executar</h4>
+<pre>POST /api/automacoes/comercial/pesquisar-youtube/executar/
+Authorization: Bearer TOKEN_GERADO_PELO_SISTEMA</pre>
+
+<h4>Passo 4 - acompanhar</h4>
+<pre>GET /api/execucoes/23/
+Authorization: Bearer TOKEN_GERADO_PELO_SISTEMA</pre>
+
+<h2>11. Observacoes importantes</h2>
+<ul>
+<li>esta primeira versao da API e um MVP funcional</li>
+<li>ela nao substitui as telas existentes</li>
+<li>ela reaproveita as regras de grupos e permissao do sistema</li>
+<li>ela ainda pode evoluir com paginacao, criacao de multiplos tokens e documentacao automatizada</li>
+</ul>
+
+<div class="warn">
+<strong>Atencao:</strong> como a API utiliza os grupos atuais do sistema, um problema de permissao na interface web normalmente se refletira tambem na API. Isso e bom para manter coerencia, mas precisa ser lembrado durante testes de integracao.
+</div>
+
+<h2>12. Checklist antes de usar em integracoes</h2>
+<ul>
+<li>rodar <code>manage.py migrate</code> para criar a tabela de token</li>
+<li>validar se o usuario de integracao esta ativo</li>
+<li>confirmar os grupos do usuario</li>
+<li>testar o endpoint <code>/api/health/</code></li>
+<li>testar o login em <code>/api/auth/token/</code></li>
+<li>testar consulta basica com <code>/api/me/</code></li>
+</ul>
+
+<div class="ok">
+<strong>Regra final para nao errar:</strong><br>
+Primeiro obtenha o token, depois valide as permissoes do usuario com <code>/api/me/</code>, e so entao comece a consumir automacoes, execucoes e documentacoes. Isso reduz muito erro de integracao e acelera o diagnostico quando algo falhar.
+</div>
+
+<p class="small">Documento tecnico interno do AutoControllers. Esta versao descreve a primeira camada oficial de API separada do sistema web.</p>
+</body>
+</html>

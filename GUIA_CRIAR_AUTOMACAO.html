@@ -1,0 +1,419 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>Guia Oficial - Como Criar uma Automacao no AutoControllers</title>
+<style>
+body { font-family: Arial, sans-serif; margin: 32px; color: #1f2937; line-height: 1.65; }
+h1, h2, h3 { color: #111827; }
+h1 { border-bottom: 2px solid #e5e7eb; padding-bottom: 10px; }
+h2 { margin-top: 32px; }
+h3 { margin-top: 20px; }
+p, li { font-size: 14px; }
+pre { background: #f3f4f6; padding: 14px; border: 1px solid #e5e7eb; white-space: pre-wrap; border-radius: 8px; overflow-x: auto; }
+code { font-family: Consolas, monospace; }
+ul, ol { margin-top: 8px; }
+li { margin-bottom: 6px; }
+.note { background: #fffbeb; border: 1px solid #fde68a; padding: 14px; border-radius: 8px; }
+.ok { background: #ecfdf5; border: 1px solid #a7f3d0; padding: 14px; border-radius: 8px; }
+.warn { background: #fef2f2; border: 1px solid #fecaca; padding: 14px; border-radius: 8px; }
+.table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+.table th, .table td { border: 1px solid #e5e7eb; padding: 10px; text-align: left; vertical-align: top; }
+.table th { background: #f9fafb; }
+.small { color: #6b7280; font-size: 13px; }
+</style>
+</head>
+<body>
+<h1>Guia Oficial - Como Criar uma Automacao no AutoControllers</h1>
+
+<p>Este documento explica, do inicio ao fim, como criar uma automacao compativel com o AutoControllers na arquitetura atual do sistema.</p>
+
+<div class="ok">
+<strong>Resumo rapido:</strong><br>
+Hoje o AutoControllers roda com <code>web + worker + MySQL</code> em Docker. A interface registra a execucao, a fila controla a concorrencia e o worker executa as automacoes em segundo plano. Para uma automacao funcionar bem, ela precisa respeitar o contrato da funcao <code>executar(...)</code>, gravar os resultados em <code>output_dir</code> e ser compativel com container quando for publicada em producao.
+</div>
+
+<h2>1. Visao geral da arquitetura atual</h2>
+<p>O sistema foi organizado para separar interface, fila e execucao.</p>
+
+<table class="table">
+<tr><th>Componente</th><th>Responsabilidade</th></tr>
+<tr><td><code>web</code></td><td>Recebe o clique do usuario, registra a execucao, aplica regras do sistema, mostra logs, status e arquivos.</td></tr>
+<tr><td><code>worker</code></td><td>Consome a fila e executa as automacoes em background.</td></tr>
+<tr><td><code>MySQL</code></td><td>Armazena usuarios, automacoes, execucoes, fila, documentacao e auditorias.</td></tr>
+</table>
+
+<p>No ambiente Docker, o sistema sobe na porta <code>8190</code>.</p>
+<pre>http://127.0.0.1:8190</pre>
+
+<div class="note">
+<strong>Importante:</strong> o clique no frontend nao executa diretamente a automacao dentro da pagina. O sistema registra a execucao no banco e o <code>worker</code> e quem pega essa execucao para processar.
+</div>
+
+<div class="note">
+<strong>Acesso inicial em Docker:</strong> o container <code>web</code> pode criar ou atualizar automaticamente o superusuario inicial com base nas variaveis <code>DJANGO_SUPERUSER_USERNAME</code>, <code>DJANGO_SUPERUSER_EMAIL</code> e <code>DJANGO_SUPERUSER_PASSWORD</code>. Isso ajuda a liberar rapidamente a area administrativa para cadastrar automacoes em ambientes novos.
+</div>
+
+<h2>2. Onde salvar o arquivo da automacao</h2>
+<p>Toda automacao deve ser salva dentro da pasta <code>automacoes</code> do setor correspondente.</p>
+
+<table class="table">
+<tr><th>Setor</th><th>Pasta correta</th></tr>
+<tr><td>Comercial</td><td><code>comercial/automacoes/</code></td></tr>
+<tr><td>Financeiro</td><td><code>financeiro/automacoes/</code></td></tr>
+<tr><td>TI</td><td><code>ti/automacoes/</code></td></tr>
+</table>
+
+<p>Exemplos de arquivos validos:</p>
+<pre>comercial/automacoes/pesquisar_youtube.py
+financeiro/automacoes/conciliar_pagamentos.py
+ti/automacoes/processar_inventario.py</pre>
+
+<div class="warn">
+<strong>Regra pratica:</strong> o nome do arquivo faz parte do <code>executor_path</code>. Se o arquivo estiver na pasta errada, ou se o caminho informado no cadastro estiver incorreto, a automacao nao sera importada pelo sistema.
+</div>
+
+<h2>3. Estrutura obrigatoria da automacao</h2>
+<p>Cada arquivo de automacao precisa expor uma funcao chamada <code>executar</code>.</p>
+
+<pre>def executar(
+    input_path=None,
+    input_paths=None,
+    attachments=None,
+    output_dir=None,
+    should_stop=None,
+    log=None,
+    parametros=None,
+    parametros_json=None,
+):
+    ...
+</pre>
+
+<h3>Significado de cada parametro</h3>
+<ul>
+<li><code>input_path</code>: primeiro arquivo principal</li>
+<li><code>input_paths</code>: lista com os arquivos principais enviados</li>
+<li><code>attachments</code>: lista com os arquivos secundarios</li>
+<li><code>output_dir</code>: pasta onde a automacao deve salvar os arquivos de saida</li>
+<li><code>should_stop()</code>: funcao para verificar se o usuario pediu parada</li>
+<li><code>log('mensagem')</code>: envia mensagens para o log exibido no sistema</li>
+<li><code>parametros</code>: observacao textual informada pelo usuario na execucao</li>
+<li><code>parametros_json</code>: observacao convertida para JSON, quando aplicavel</li>
+</ul>
+
+<h2>4. Como o sistema entrega os arquivos para a automacao</h2>
+<p>Os arquivos fisicamente ficam em <code>media/</code>, mas a automacao nao deve sair procurando arquivos em uma pasta fixa do projeto.</p>
+
+<p>O jeito correto de trabalhar e usar os parametros recebidos na funcao:</p>
+<ul>
+<li><code>input_paths</code> para arquivos principais</li>
+<li><code>attachments</code> para arquivos secundarios</li>
+<li><code>output_dir</code> para os arquivos gerados</li>
+</ul>
+
+<p>Exemplo:</p>
+<pre>input_paths = input_paths or ([] if input_path is None else [input_path])
+attachments = attachments or []
+
+arquivo_principal_1 = input_paths[0] if input_paths else None
+arquivo_principal_2 = input_paths[1] if len(input_paths) &gt; 1 else None</pre>
+
+<div class="ok">
+<strong>Regra do sistema:</strong> o caminho exato do arquivo ja chega pronto na sua automacao. Voce nao precisa montar manualmente caminhos dentro de <code>media/</code> para abrir os arquivos recebidos.
+</div>
+
+<h2>5. Como salvar o resultado corretamente</h2>
+<p>Todo arquivo final que o usuario devera baixar precisa ser salvo dentro de <code>output_dir</code>.</p>
+
+<p>Exemplo:</p>
+<pre>from pathlib import Path
+
+saida = Path(output_dir) / 'resultado.csv'
+saida.write_text('ok', encoding='utf-8')</pre>
+
+<p>Se o resultado nao for salvo em <code>output_dir</code>, o sistema nao consegue exibir esse arquivo no frontend.</p>
+
+<h2>6. Como a fila funciona</h2>
+<p>O sistema possui controle de concorrencia. Isso significa que nem toda execucao comeca imediatamente.</p>
+
+<ol>
+<li>O usuario clica em executar uma automacao</li>
+<li>O sistema cria o registro da execucao</li>
+<li>Se houver vaga, a execucao pode comecar na hora</li>
+<li>Se o limite estiver ocupado, a execucao fica em <code>Pendente</code></li>
+<li>O <code>worker</code> monitora a fila e inicia novas execucoes quando houver espaco</li>
+</ol>
+
+<p>Status possiveis da execucao:</p>
+<ul>
+<li><code>Pendente</code></li>
+<li><code>Executando</code></li>
+<li><code>Sucesso</code></li>
+<li><code>Erro</code></li>
+<li><code>Interrompida</code></li>
+</ul>
+
+<div class="note">
+<strong>Boa pratica:</strong> escreva automacoes pensando que elas podem esperar na fila antes de comecar. Evite qualquer logica que dependa do horario exato do clique do usuario se isso nao for estritamente necessario.
+</div>
+
+<h2>7. Como respeitar a parada da execucao</h2>
+<p>Quando o usuario pede parada, o sistema registra essa solicitacao. A sua automacao precisa verificar isso durante o processamento.</p>
+
+<p>Exemplo:</p>
+<pre>if should_stop:
+    should_stop()</pre>
+
+<p>O ideal e chamar <code>should_stop()</code>:</p>
+<ul>
+<li>antes de loops grandes</li>
+<li>antes de consumir muitos arquivos</li>
+<li>antes de chamadas externas demoradas</li>
+<li>antes de escrever grandes volumes de resultado</li>
+</ul>
+
+<h2>8. Como escrever logs de forma correta</h2>
+<p>Use <code>log()</code> para enviar mensagens ao monitor da execucao.</p>
+
+<pre>if log:
+    log('Iniciando automacao')
+    log(f'Arquivo principal recebido: {arquivo_principal_1.name}')</pre>
+
+<p>Tambem e possivel usar <code>print()</code> em alguns fluxos, mas a forma mais clara para o sistema continua sendo <code>log()</code>.</p>
+
+<h3>Boas praticas de log</h3>
+<ul>
+<li>informe o inicio da execucao</li>
+<li>mostre o nome dos arquivos recebidos</li>
+<li>registre etapas importantes</li>
+<li>registre o nome do arquivo final salvo</li>
+<li>evite logar dados sensiveis</li>
+</ul>
+
+<h2>9. Exemplo minimo de automacao compativel</h2>
+<pre>from pathlib import Path
+
+
+def executar(
+    input_path=None,
+    input_paths=None,
+    attachments=None,
+    output_dir=None,
+    should_stop=None,
+    log=None,
+    parametros=None,
+    parametros_json=None,
+):
+    input_paths = input_paths or ([] if input_path is None else [input_path])
+    attachments = attachments or []
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    if not input_paths:
+        raise ValueError('Envie pelo menos um arquivo principal.')
+
+    arquivo_principal_1 = input_paths[0]
+    arquivo_principal_2 = input_paths[1] if len(input_paths) &gt; 1 else None
+
+    if log:
+        log('Iniciando automacao')
+        log(f'Arquivo principal 1: {arquivo_principal_1.name}')
+        if arquivo_principal_2:
+            log(f'Arquivo principal 2: {arquivo_principal_2.name}')
+        for anexo in attachments:
+            log(f'Arquivo secundario: {anexo.name}')
+
+    if should_stop:
+        should_stop()
+
+    arquivo_saida = output_dir / 'resultado.txt'
+    arquivo_saida.write_text('Automacao executada com sucesso.', encoding='utf-8')
+
+    if log:
+        log(f'Resultado salvo em: {arquivo_saida.name}')
+
+    return {
+        'message': 'Automacao concluida com sucesso.'
+    }
+</pre>
+
+<h2>10. Como cadastrar a automacao no sistema</h2>
+<ol>
+<li>Entre com usuario com acesso a area <strong>Administrador</strong></li>
+<li>No menu lateral, entre em <strong>Administrador</strong></li>
+<li>Clique em <strong>Criar Automacao</strong></li>
+<li>Preencha os campos principais</li>
+<li>Salve</li>
+</ol>
+
+<h3>Campos principais do cadastro</h3>
+<ul>
+<li><strong>Nome da automacao</strong></li>
+<li><strong>Identificador</strong></li>
+<li><strong>Descricao</strong></li>
+<li><strong>Executor Python</strong></li>
+<li><strong>Setor ou setores</strong></li>
+<li><strong>Aceita arquivo principal</strong></li>
+<li><strong>Quantidade maxima de arquivos principais</strong></li>
+<li><strong>Aceita anexos</strong></li>
+<li><strong>Ativa</strong></li>
+</ul>
+
+<h3>Como montar o executor_path</h3>
+<p>Se o arquivo estiver salvo em:</p>
+<pre>financeiro/automacoes/meu_robo.py</pre>
+
+<p>e a funcao for <code>executar</code>, entao o valor no cadastro deve ser:</p>
+<pre>financeiro.automacoes.meu_robo.executar</pre>
+
+<div class="ok">
+<strong>Regra simples:</strong><br>
+<code>setor/automacoes/nome_do_arquivo.py</code><br>
+se transforma em<br>
+<code>setor.automacoes.nome_do_arquivo.executar</code>
+</div>
+
+<h2>11. Exemplo pratico do projeto</h2>
+<p>O projeto possui uma automacao exemplo para referencia tecnica:</p>
+<pre>comercial/automacoes/pesquisar_youtube.py</pre>
+
+<p>Ela segue este fluxo:</p>
+<ol>
+<li>recebe um <code>tema.txt</code> como arquivo principal</li>
+<li>le o tema de pesquisa</li>
+<li>consulta o YouTube</li>
+<li>gera um arquivo <code>resultado_youtube.csv</code></li>
+<li>salva o resultado em <code>output_dir</code></li>
+<li>disponibiliza o download no frontend</li>
+</ol>
+
+<h2>12. Como a automacao aparece para o usuario final</h2>
+<p>Depois de cadastrada e ativa, a automacao passa a aparecer dentro do modulo correspondente.</p>
+
+<p>O usuario pode:</p>
+<ul>
+<li>abrir o modal da automacao</li>
+<li>anexar arquivos</li>
+<li>informar observacoes</li>
+<li>executar</li>
+<li>acompanhar logs</li>
+<li>baixar o arquivo final, se houver saida</li>
+</ul>
+
+<h2>13. O que roda bem em Docker</h2>
+<p>No ambiente atual, o sistema foi preparado para trabalhar muito bem com automacoes baseadas em web, arquivos e integracoes.</p>
+
+<h3>Boas escolhas para novas automacoes</h3>
+<ul>
+<li><code>Playwright</code> para automacao web headless</li>
+<li><code>requests</code> e <code>httpx</code> para integracoes</li>
+<li><code>pandas</code> e <code>openpyxl</code> para planilhas</li>
+<li><code>pdfplumber</code> e <code>pypdf</code> para PDFs</li>
+<li><code>beautifulsoup4</code> para leitura de HTML</li>
+</ul>
+
+<div class="ok">
+<strong>Recomendacao principal:</strong> para novas automacoes web dentro do Docker, prefira <code>Playwright</code>. Hoje ele e a opcao mais alinhada com a arquitetura do projeto.
+</div>
+
+<h2>14. O que nao e ideal em Docker</h2>
+<p>Automações desktop visuais nao sao a melhor opcao dentro de um container de servidor.</p>
+
+<p>Exemplo de biblioteca que exige mais cuidado:</p>
+<ul>
+<li><code>pyautogui</code></li>
+</ul>
+
+<p>Motivos:</p>
+<ul>
+<li>depende de ambiente grafico</li>
+<li>container nao representa a tela real do usuario</li>
+<li>mouse e teclado do container nao sao o desktop do operador</li>
+</ul>
+
+<div class="warn">
+<strong>Conclusao pratica:</strong> se a automacao for web, use <code>Playwright</code>. Se for desktop tradicional, o ideal e uma esteira separada com worker apropriado para GUI, maquina virtual ou servidor com sessao grafica controlada.
+</div>
+
+<h2>15. Bibliotecas ja preparadas no projeto</h2>
+<p>O projeto ja foi preparado com bibliotecas comuns de automacao, leitura de arquivos e integracao. Mesmo assim, a automacao deve importar somente o que realmente usar.</p>
+
+<p>Exemplos de bibliotecas presentes na esteira atual:</p>
+<ul>
+<li><code>playwright</code></li>
+<li><code>selenium</code></li>
+<li><code>rpaframework</code></li>
+<li><code>pandas</code></li>
+<li><code>openpyxl</code></li>
+<li><code>pdfplumber</code></li>
+<li><code>python-docx</code></li>
+<li><code>requests</code></li>
+<li><code>httpx</code></li>
+<li><code>beautifulsoup4</code></li>
+</ul>
+
+<h2>16. Regras de publicacao para automacoes novas</h2>
+<ul>
+<li>grave sempre os resultados em <code>output_dir</code></li>
+<li>nao dependa de caminhos fixos fora do contrato da execucao</li>
+<li>registre logs claros</li>
+<li>trate validacao de arquivo principal</li>
+<li>respeite a parada com <code>should_stop()</code></li>
+<li>retorne uma mensagem final sempre que possivel</li>
+<li>prefira automacoes compativeis com Docker para producao</li>
+</ul>
+
+<h2>17. O que nao deve ir para producao</h2>
+<p>O projeto ja teve automacoes de exemplo para demonstracao, mas a esteira atual foi ajustada para nao levar seeds de testes para producao.</p>
+
+<p>Isso significa que novas automacoes publicadas devem ser somente automacoes reais do ambiente. Arquivos de exemplo podem existir no repositorio como referencia tecnica, mas nao devem ser tratados como cadastro padrao de producao.</p>
+
+<h2>18. Checklist antes de cadastrar uma automacao</h2>
+<ol>
+<li>o arquivo esta na pasta correta do setor</li>
+<li>a funcao se chama <code>executar</code></li>
+<li>o <code>executor_path</code> foi montado corretamente</li>
+<li>a automacao valida os arquivos recebidos</li>
+<li>a automacao usa <code>output_dir</code> para o resultado</li>
+<li>a automacao escreve logs suficientes</li>
+<li>a automacao respeita <code>should_stop()</code></li>
+<li>a automacao e compativel com Docker ou foi desenhada para a esteira correta</li>
+</ol>
+
+<h2>19. Exemplo de cadastro completo</h2>
+<table class="table">
+<tr><th>Campo</th><th>Exemplo</th></tr>
+<tr><td>Nome da automacao</td><td>Pesquisar YouTube</td></tr>
+<tr><td>Identificador</td><td>pesquisar-youtube</td></tr>
+<tr><td>Descricao</td><td>Le um tema em txt, pesquisa no YouTube e devolve resultado em CSV.</td></tr>
+<tr><td>Executor Python</td><td><code>comercial.automacoes.pesquisar_youtube.executar</code></td></tr>
+<tr><td>Setor</td><td>Comercial</td></tr>
+<tr><td>Aceita arquivo principal</td><td>Sim</td></tr>
+<tr><td>Aceita anexos</td><td>Opcional</td></tr>
+<tr><td>Ativa</td><td>Sim</td></tr>
+</table>
+
+<h2>20. Fluxo final da execucao</h2>
+<ol>
+<li>O usuario abre o modulo</li>
+<li>Seleciona a automacao</li>
+<li>Envia os arquivos necessarios</li>
+<li>O sistema registra a execucao</li>
+<li>A fila decide se comeca agora ou se fica pendente</li>
+<li>O worker executa a rotina</li>
+<li>Os logs aparecem no monitor</li>
+<li>O arquivo salvo em <code>output_dir</code> aparece para download</li>
+</ol>
+
+<h2>21. Conclusao</h2>
+<p>Hoje o AutoControllers esta preparado para receber automacoes reais com uma arquitetura mais madura, separando interface, fila, banco e execucao.</p>
+
+<p>Se voce seguir este guia, a automacao fica alinhada com o comportamento que o sistema espera em desenvolvimento e em producao.</p>
+
+<div class="ok">
+<strong>Regra final para nao errar:</strong><br>
+Salve o arquivo no setor certo, exponha a funcao <code>executar(...)</code>, use os parametros entregues pelo sistema, grave a saida em <code>output_dir</code> e prefira automacoes web e de arquivos para rodar no Docker com mais seguranca.
+</div>
+
+<p class="small">Documento oficial interno do AutoControllers. Atualizado para a arquitetura com Docker, MySQL, fila e worker separado.</p>
+</body>
+</html>

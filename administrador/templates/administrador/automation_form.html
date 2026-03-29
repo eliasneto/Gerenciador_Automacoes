@@ -1,0 +1,184 @@
+{% extends 'base.html' %}
+
+{% block title %}Criar Automação | Speed AutoControllers{% endblock %}
+
+{% block content %}
+<section class="mb-8">
+    <div class="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#111111] via-[#161616] to-[#222222] p-8 md:p-10 shadow-[0_30px_80px_rgba(15,15,15,0.28)]">
+        <div class="absolute -right-16 -top-16 h-56 w-56 rounded-full bg-ageis-yellow/10 blur-3xl"></div>
+        <div class="absolute bottom-0 right-0 h-40 w-40 rounded-full bg-white/5 blur-3xl"></div>
+
+        <div class="relative flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+            <div class="max-w-3xl">
+                <span class="inline-flex items-center gap-2 rounded-full border border-ageis-yellow/20 bg-white/5 px-4 py-2 text-[10px] font-black uppercase tracking-[0.25em] text-ageis-yellow">
+                    <i data-lucide="plus-square" class="h-3.5 w-3.5"></i>
+                    Cadastro central
+                </span>
+                <h1 class="mt-5 text-3xl font-black italic uppercase leading-none text-white md:text-5xl">
+                    Criar automação para um ou vários setores
+                </h1>
+                <p class="mt-4 max-w-2xl text-sm leading-7 text-gray-300 md:text-base">
+                    Preencha os dados uma vez e escolha onde essa automação deve existir. Se você marcar mais de um setor, o sistema cria uma cópia em cada módulo selecionado.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:min-w-[360px]">
+                <div class="rounded-[1.5rem] border border-white/10 bg-white/5 p-5 backdrop-blur-sm">
+                    <p class="text-[10px] font-black uppercase tracking-[0.25em] text-gray-400">Catálogo total</p>
+                    <strong class="mt-3 block text-3xl font-black text-white">{{ sector_total }}</strong>
+                    <p class="mt-2 text-xs text-gray-400">Automações publicadas</p>
+                </div>
+                <div class="rounded-[1.5rem] border border-white/10 bg-white/5 p-5 backdrop-blur-sm">
+                    <p class="text-[10px] font-black uppercase tracking-[0.25em] text-gray-400">Duplicação</p>
+                    <strong class="mt-3 block text-2xl font-black text-white">Multi-setor</strong>
+                    <p class="mt-2 text-xs text-gray-400">Uma criação, vários módulos</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="grid grid-cols-1 gap-8 xl:grid-cols-[1.3fr_0.9fr]">
+    <div class="rounded-[2rem] border border-gray-100 bg-white p-8 shadow-[0_18px_50px_rgba(15,23,42,0.08)]">
+        <div class="mb-8">
+            <p class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Formulário</p>
+            <h2 class="mt-2 text-3xl font-black text-gray-900">Nova automação</h2>
+            <p class="mt-3 max-w-2xl text-sm text-gray-500">
+                Cadastre o nome, o identificador e o executor Python. Depois escolha em quais setores a automação deve existir.
+            </p>
+        </div>
+
+        {% if form.non_field_errors %}
+            <div class="mb-6 rounded-[1.5rem] border border-red-100 bg-red-50 px-5 py-4 text-sm text-red-700">
+                {{ form.non_field_errors }}
+            </div>
+        {% endif %}
+
+        <form method="post" class="space-y-6">
+            {% csrf_token %}
+
+            <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
+                <div class="space-y-2 md:col-span-2">
+                    <label for="{{ form.nome.id_for_label }}" class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">Nome da automação</label>
+                    <input type="text" name="{{ form.nome.name }}" id="{{ form.nome.id_for_label }}" value="{{ form.nome.value|default:'' }}" class="w-full rounded-[1.25rem] border border-gray-200 bg-[#FAFBFC] px-5 py-4 text-sm text-gray-800 outline-none transition-all focus:border-yellow-300 focus:ring-4 focus:ring-yellow-100" placeholder="Ex: Cadastro de contratos em lote">
+                    {% if form.nome.errors %}<p class="text-sm text-red-600">{{ form.nome.errors.0 }}</p>{% endif %}
+                </div>
+
+                <div class="space-y-2">
+                    <label for="{{ form.identificador.id_for_label }}" class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">Identificador</label>
+                    <input type="text" name="{{ form.identificador.name }}" id="{{ form.identificador.id_for_label }}" value="{{ form.identificador.value|default:'' }}" class="w-full rounded-[1.25rem] border border-gray-200 bg-[#FAFBFC] px-5 py-4 text-sm text-gray-800 outline-none transition-all focus:border-yellow-300 focus:ring-4 focus:ring-yellow-100" placeholder="cadastro-contratos">
+                    <p class="text-xs text-gray-400">Se deixar em branco, o sistema gera automaticamente a partir do nome.</p>
+                    {% if form.identificador.errors %}<p class="text-sm text-red-600">{{ form.identificador.errors.0 }}</p>{% endif %}
+                </div>
+
+                <div class="space-y-2">
+                    <label for="{{ form.executor_path.id_for_label }}" class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">Executor Python</label>
+                    <input type="text" name="{{ form.executor_path.name }}" id="{{ form.executor_path.id_for_label }}" value="{{ form.executor_path.value|default:'' }}" class="w-full rounded-[1.25rem] border border-gray-200 bg-[#FAFBFC] px-5 py-4 text-sm text-gray-800 outline-none transition-all focus:border-yellow-300 focus:ring-4 focus:ring-yellow-100" placeholder="financeiro.automacoes.conciliar_pagamentos.executar">
+                    {% if form.executor_path.errors %}<p class="text-sm text-red-600">{{ form.executor_path.errors.0 }}</p>{% endif %}
+                </div>
+
+                <div class="space-y-2 md:col-span-2">
+                    <label for="{{ form.descricao.id_for_label }}" class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">Descrição</label>
+                    <textarea name="{{ form.descricao.name }}" id="{{ form.descricao.id_for_label }}" rows="4" class="w-full rounded-[1.25rem] border border-gray-200 bg-[#FAFBFC] px-5 py-4 text-sm text-gray-800 outline-none transition-all focus:border-yellow-300 focus:ring-4 focus:ring-yellow-100" placeholder="Explique o objetivo da automação, insumos e saídas esperadas.">{{ form.descricao.value|default:'' }}</textarea>
+                    {% if form.descricao.errors %}<p class="text-sm text-red-600">{{ form.descricao.errors.0 }}</p>{% endif %}
+                </div>
+            </div>
+
+            <div class="rounded-[1.5rem] border border-gray-100 bg-[#FAFBFC] p-6">
+                <div class="flex items-center justify-between gap-4">
+                    <div>
+                        <p class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Publicação por setor</p>
+                        <h3 class="mt-2 text-xl font-black text-gray-900">Escolha um ou mais setores</h3>
+                        <p class="mt-2 text-sm text-gray-500">Marque mais de um setor para duplicar automaticamente a mesma automação.</p>
+                    </div>
+                    <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-ageis-yellow/15 text-yellow-700">
+                        <i data-lucide="copy-plus" class="h-5 w-5"></i>
+                    </div>
+                </div>
+
+                <div class="mt-5 grid grid-cols-1 gap-4 md:grid-cols-3">
+                    {% for checkbox in form.setores %}
+                        <label class="flex cursor-pointer items-start gap-3 rounded-[1.25rem] border border-gray-200 bg-white px-4 py-4 transition hover:border-yellow-300 hover:bg-yellow-50/40">
+                            {{ checkbox.tag }}
+                            <span class="pt-0.5">
+                                <span class="block text-sm font-black text-gray-900">{{ checkbox.choice_label }}</span>
+                                <span class="mt-1 block text-xs text-gray-500">Publicar uma cópia desta automação no módulo {{ checkbox.choice_label }}.</span>
+                            </span>
+                        </label>
+                    {% endfor %}
+                </div>
+                {% if form.setores.errors %}<p class="mt-3 text-sm text-red-600">{{ form.setores.errors.0 }}</p>{% endif %}
+            </div>
+
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+                <label class="flex items-center gap-3 rounded-[1.25rem] border border-gray-200 bg-[#FAFBFC] px-4 py-4">
+                    <input type="checkbox" name="{{ form.aceita_arquivo_entrada.name }}" {% if form.aceita_arquivo_entrada.value %}checked{% endif %} class="h-5 w-5 rounded border-gray-300 text-yellow-500 focus:ring-yellow-400">
+                    <span>
+                        <span class="block text-sm font-black text-gray-900">Aceita arquivo principal</span>
+                        <span class="block text-xs text-gray-500">Permite até 2 arquivos principais no modal.</span>
+                    </span>
+                </label>
+
+                <label class="flex items-center gap-3 rounded-[1.25rem] border border-gray-200 bg-[#FAFBFC] px-4 py-4">
+                    <input type="checkbox" name="{{ form.aceita_anexos.name }}" {% if form.aceita_anexos.value %}checked{% endif %} class="h-5 w-5 rounded border-gray-300 text-yellow-500 focus:ring-yellow-400">
+                    <span>
+                        <span class="block text-sm font-black text-gray-900">Aceita anexos</span>
+                        <span class="block text-xs text-gray-500">Libera o envio de arquivos auxiliares.</span>
+                    </span>
+                </label>
+
+                <label class="flex items-center gap-3 rounded-[1.25rem] border border-gray-200 bg-[#FAFBFC] px-4 py-4">
+                    <input type="checkbox" name="{{ form.ativa.name }}" {% if form.ativa.value %}checked{% endif %} class="h-5 w-5 rounded border-gray-300 text-yellow-500 focus:ring-yellow-400">
+                    <span>
+                        <span class="block text-sm font-black text-gray-900">Criar já ativa</span>
+                        <span class="block text-xs text-gray-500">Disponibiliza a automação assim que salvar.</span>
+                    </span>
+                </label>
+            </div>
+
+            <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                <a href="{% url 'administrador:hub' %}" class="inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-gray-700 transition hover:bg-gray-50">
+                    <i data-lucide="arrow-left" class="h-4 w-4"></i>
+                    Voltar
+                </a>
+                <button type="submit" class="inline-flex items-center justify-center gap-2 rounded-2xl bg-ageis-yellow px-6 py-4 text-[10px] font-black uppercase tracking-[0.24em] text-black shadow-[0_18px_35px_rgba(255,193,7,0.28)] transition hover:brightness-95">
+                    <i data-lucide="save" class="h-4 w-4"></i>
+                    Criar automação
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div class="space-y-6">
+        {% for card in sector_cards %}
+            <article class="rounded-[2rem] border border-gray-100 bg-white p-6 shadow-[0_18px_50px_rgba(15,23,42,0.08)]">
+                <div class="flex items-center justify-between gap-4">
+                    <div class="flex items-center gap-3">
+                        <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-ageis-black text-ageis-yellow shadow-lg">
+                            <i data-lucide="{{ card.icon }}" class="h-5 w-5"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-black text-gray-900">{{ card.label }}</h3>
+                            <p class="text-sm text-gray-500">{{ card.count }} automações cadastradas</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-5 rounded-[1.5rem] border border-gray-100 bg-[#FAFBFC] p-4">
+                    <p class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Últimas criadas</p>
+                    <div class="mt-4 space-y-3">
+                        {% for automacao in card.recent %}
+                            <div class="rounded-2xl bg-white px-4 py-3 shadow-sm">
+                                <p class="text-sm font-black text-gray-900">{{ automacao.nome }}</p>
+                                <p class="mt-1 text-xs text-gray-500">{{ automacao.identificador }}</p>
+                            </div>
+                        {% empty %}
+                            <p class="text-sm text-gray-400">Ainda não há automações neste setor.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </article>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

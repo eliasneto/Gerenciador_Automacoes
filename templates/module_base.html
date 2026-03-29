@@ -1,0 +1,970 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<section class="mb-8">
+    <div class="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#111111] via-[#1A1A1A] to-[#2A2A2A] p-8 md:p-10 shadow-[0_30px_80px_rgba(15,15,15,0.28)]">
+        <div class="absolute -right-16 -top-16 h-56 w-56 rounded-full bg-ageis-yellow/10 blur-3xl"></div>
+        <div class="absolute bottom-0 right-0 h-40 w-40 rounded-full bg-white/5 blur-3xl"></div>
+
+        <div class="relative flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+            <div class="max-w-3xl">
+                <span class="inline-flex items-center gap-2 rounded-full border border-ageis-yellow/20 bg-white/5 px-4 py-2 text-[10px] font-black uppercase tracking-[0.25em] text-ageis-yellow">
+                    <i data-lucide="sparkles" class="h-3.5 w-3.5"></i>
+                    Modulo {{ modulo.nome }}
+                </span>
+                <h1 class="mt-5 text-3xl font-black italic uppercase leading-none text-white md:text-5xl">
+                    {{ modulo.nome }}
+                </h1>
+                <p class="mt-4 max-w-2xl text-sm leading-7 text-gray-300 md:text-base">
+                    {{ modulo.descricao }}
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-3 lg:min-w-[420px]">
+                <div class="rounded-[1.5rem] border border-white/10 bg-white/5 p-5 backdrop-blur-sm">
+                    <p class="text-[10px] font-black uppercase tracking-[0.25em] text-gray-400">Automações</p>
+                    <strong class="mt-3 block text-3xl font-black text-white">{{ modulo.contador }}</strong>
+                    <p class="mt-2 text-xs text-gray-400">Catálogo do módulo</p>
+                </div>
+                <div class="rounded-[1.5rem] border border-white/10 bg-white/5 p-5 backdrop-blur-sm">
+                    <p class="text-[10px] font-black uppercase tracking-[0.25em] text-gray-400">Execução</p>
+                    <strong class="mt-3 block text-2xl font-black text-white">Play / Stop</strong>
+                    <p class="mt-2 text-xs text-gray-400">Controle manual</p>
+                </div>
+                <div class="rounded-[1.5rem] border border-white/10 bg-white/5 p-5 backdrop-blur-sm">
+                    <p class="text-[10px] font-black uppercase tracking-[0.25em] text-gray-400">Foco</p>
+                    <strong class="mt-3 block text-2xl font-black text-white">{{ modulo.status_label }}</strong>
+                    <p class="mt-2 text-xs text-gray-400">Operação principal</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="mb-8">
+    <div class="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div>
+            <p class="text-[10px] font-black uppercase tracking-[0.25em] text-gray-400">Automacoes do modulo</p>
+            <h2 class="mt-2 text-2xl font-black text-gray-900 md:text-3xl">Automações em grade limpa</h2>
+        </div>
+        <p class="max-w-2xl text-sm leading-6 text-gray-500">
+            Cada linha mostra apenas o essencial. Os arquivos necessários ficam dentro de um modal acionado pela coluna de ações.
+        </p>
+    </div>
+
+    <div class="overflow-hidden rounded-[2rem] border border-gray-100 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.08)]">
+        <div class="hidden border-b border-gray-100 bg-[#FCFCFD] px-6 py-4 xl:grid xl:grid-cols-[1.2fr_0.8fr_1fr_1.1fr] xl:gap-4">
+            <div class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Automação</div>
+            <div class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Status</div>
+            <div class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Última execução</div>
+            <div class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Ação</div>
+        </div>
+
+        <div class="divide-y divide-gray-100">
+            {% for automacao in automacoes %}
+                <article class="px-6 py-5 transition hover:bg-[#FAFBFC]">
+                    <div class="grid grid-cols-1 gap-4 xl:grid-cols-[1.2fr_0.8fr_1fr_1.1fr] xl:items-center">
+                        <div class="min-w-0">
+                            <div class="flex items-center gap-3">
+                                <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-ageis-black text-ageis-yellow shadow-lg">
+                                    <i data-lucide="bot" class="h-5 w-5"></i>
+                                </div>
+                                <div class="min-w-0">
+                                    <div class="flex items-center gap-2">
+                                        <h3 class="truncate text-sm font-black uppercase tracking-[0.05em] text-gray-900">{{ automacao.nome }}</h3>
+                                        <div class="relative group">
+                                            <div class="flex h-6 w-6 items-center justify-center rounded-full bg-black/5 text-gray-500">
+                                                <i data-lucide="info" class="h-3.5 w-3.5"></i>
+                                            </div>
+                                            <div class="pointer-events-none absolute left-8 top-1/2 z-20 hidden w-72 -translate-y-1/2 rounded-2xl border border-gray-200 bg-white p-4 text-xs leading-6 text-gray-600 shadow-2xl group-hover:block">
+                                                {{ automacao.descricao|default:'Sem descricao cadastrada.' }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <p class="mt-1 text-xs text-gray-400">{{ automacao.identificador }}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex flex-wrap gap-2">
+                                <span class="inline-flex items-center gap-2 rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] {% if automacao.ativa %}border border-green-100 bg-green-50 text-green-700{% else %}border border-red-100 bg-red-50 text-red-700{% endif %}">
+                                    <span class="h-2 w-2 rounded-full {% if automacao.ativa %}bg-green-500{% else %}bg-red-500{% endif %}"></span>
+                                    {% if automacao.ativa %}Ativa{% else %}Inativa{% endif %}
+                                </span>
+                                {% if automacao.execucao_ativa %}
+                                    <span class="inline-flex items-center gap-2 rounded-full bg-yellow-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-yellow-700">
+                                        <span class="h-2 w-2 rounded-full bg-yellow-500"></span>
+                                        Executando
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div>
+                            {% if automacao.ultima_execucao %}
+                                <p class="text-sm font-bold text-gray-800">{{ automacao.ultima_execucao.criado_em|date:'d/m/Y H:i' }}</p>
+                                <p class="mt-1 text-xs text-gray-500">{{ automacao.ultima_execucao.get_status_display }}</p>
+                            {% else %}
+                                <p class="text-sm text-gray-400">Sem execuções</p>
+                            {% endif %}
+                        </div>
+
+                        <div>
+                            {% if automacao.execucao_ativa %}
+                                <div class="flex flex-wrap items-center gap-3 xl:justify-end">
+                                    <span class="inline-flex items-center gap-2 rounded-full bg-yellow-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-yellow-700">
+                                        <i data-lucide="loader-circle" class="h-3.5 w-3.5 animate-spin"></i>
+                                        Processando
+                                    </span>
+                                    <form method="post" action="{% url modulo.namespace|add:':stop' automacao.execucao_ativa.id %}">
+                                        {% csrf_token %}
+                                        <button type="submit" class="inline-flex items-center gap-2 rounded-2xl bg-red-500 px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-white transition hover:bg-red-600">
+                                            <i data-lucide="square" class="h-4 w-4 fill-white"></i>
+                                            <span>Parar</span>
+                                        </button>
+                                    </form>
+                                </div>
+                            {% else %}
+                                <div class="flex flex-wrap items-center gap-3 xl:justify-end">
+                                    <button
+                                        type="button"
+                                        class="automation-modal-trigger inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-sky-100 bg-gradient-to-br from-sky-50 to-cyan-100 text-sky-700 shadow-sm transition hover:scale-[1.03] hover:shadow-md"
+                                        data-modal-id="automation-modal-{{ automacao.id }}"
+                                        title="Selecionar arquivos para executar a automação"
+                                        aria-label="Selecionar arquivos para executar a automação"
+                                    >
+                                        <i data-lucide="folder-up" class="h-5 w-5"></i>
+                                    </button>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </article>
+
+                {% if not automacao.execucao_ativa %}
+                    <div id="automation-modal-{{ automacao.id }}" class="automation-modal fixed inset-0 z-[120] hidden items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+                        <div class="automation-modal-close absolute inset-0"></div>
+                        <div class="relative z-10 flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-[2rem] bg-white shadow-[0_30px_80px_rgba(15,23,42,0.25)]">
+                            <div class="border-b border-gray-100 bg-gradient-to-r from-white to-[#FFF8E1] px-6 py-6">
+                                <div class="flex items-start justify-between gap-4">
+                                    <div>
+                                        <p class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Executar automação</p>
+                                        <h3 class="mt-2 text-2xl font-black text-gray-900">{{ automacao.nome }}</h3>
+                                        <p class="mt-2 text-sm text-gray-500">Envie os arquivos necessários e inicie a execução.</p>
+                                    </div>
+                                    <button type="button" class="automation-modal-close flex h-10 w-10 items-center justify-center rounded-2xl bg-black/5 text-gray-600 transition hover:bg-black/10">
+                                        <i data-lucide="x" class="h-4 w-4"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <form method="post" enctype="multipart/form-data" action="{% url modulo.namespace|add:':execute' automacao.id %}" class="flex-1 space-y-5 overflow-y-auto px-6 py-6">
+                                {% csrf_token %}
+
+                                <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                    {% if automacao.aceita_arquivo_entrada %}
+                                        <div class="rounded-[1.5rem] border border-gray-100 bg-[#FAFBFC] p-5 md:col-span-2">
+                                            <label class="mb-3 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">
+                                                <i data-lucide="file-up" class="h-4 w-4"></i>
+                                                Arquivo principal
+                                            </label>
+                                            <input type="file" name="arquivo_entrada" multiple data-preview-target="preview-{{ automacao.id }}" data-preview-type="Principal" data-preview-input-id="primary-{{ automacao.id }}" data-preview-max="2" data-preview-limit-label-id="preview-limit-primary-{{ automacao.id }}" class="block w-full text-sm text-gray-600 file:mr-4 file:rounded-2xl file:border-0 file:bg-ageis-yellow file:px-5 file:py-3 file:text-xs file:font-black file:uppercase file:tracking-[0.2em] file:text-black hover:file:brightness-95 disabled:cursor-not-allowed disabled:opacity-60">
+                                            <p id="preview-limit-primary-{{ automacao.id }}" class="mt-3 text-xs text-gray-400">Use até 2 arquivos principais para esta automação.</p>
+                                        </div>
+                                    {% endif %}
+
+                                    {% if automacao.aceita_anexos %}
+                                        <div class="rounded-[1.5rem] border border-gray-100 bg-[#FAFBFC] p-5 md:col-span-2">
+                                            <label class="mb-3 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">
+                                                <i data-lucide="paperclip" class="h-4 w-4"></i>
+                                                Arquivos auxiliares
+                                            </label>
+                                            <input type="file" name="anexos" multiple data-preview-target="preview-{{ automacao.id }}" data-preview-type="Auxiliar" data-preview-input-id="auxiliary-{{ automacao.id }}" class="block w-full text-sm text-gray-600 file:mr-4 file:rounded-2xl file:border-0 file:bg-black file:px-5 file:py-3 file:text-xs file:font-black file:uppercase file:tracking-[0.2em] file:text-white hover:file:bg-gray-800">
+                                            <p class="mt-3 text-xs text-gray-400">Adicione planilhas, PDFs ou documentos complementares se a automação precisar.</p>
+                                        </div>
+                                    {% endif %}
+
+                                    <div class="rounded-[1.5rem] border border-gray-100 bg-[#FAFBFC] p-5 md:col-span-2">
+                                        <label class="mb-3 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">
+                                            <i data-lucide="sliders-horizontal" class="h-4 w-4"></i>
+                                            Observações da execução
+                                        </label>
+                                        <textarea name="parametros_texto" rows="2" maxlength="250" class="w-full rounded-[1.25rem] border border-gray-200 bg-white p-4 text-sm text-gray-700 outline-none transition-all focus:border-yellow-300 focus:ring-4 focus:ring-yellow-100" placeholder="Opcional: informe contexto ou instruções para esta execução"></textarea>
+                                        <div class="mt-2 text-right text-[11px] text-gray-400">Máximo de 250 caracteres</div>
+                                    </div>
+                                </div>
+
+                                <div class="rounded-[1.5rem] border border-gray-100 bg-[#FAFBFC] p-5">
+                                    <div class="flex items-center justify-between gap-4">
+                                        <div>
+                                            <p class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Arquivos salvos da automação</p>
+                                            <p class="mt-2 text-sm text-gray-500">Visualize os arquivos principais e auxiliares já vinculados a esta automação.</p>
+                                        </div>
+                                        <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-sky-50 text-sky-700">
+                                            <i data-lucide="files" class="h-5 w-5"></i>
+                                        </div>
+                                    </div>
+
+                                    <div class="mt-4 flex items-center justify-between rounded-[1rem] border border-gray-200 bg-white px-4 py-3">
+                                        <span class="text-[10px] font-black uppercase tracking-[0.18em] text-gray-400">Arquivos na seleção atual</span>
+                                        <span id="preview-count-{{ automacao.id }}" class="preview-file-count text-sm font-black text-gray-700">0 arquivo</span>
+                                    </div>
+
+                                    <div class="mt-5 overflow-hidden rounded-[1.25rem] border border-gray-200 bg-white">
+                                        <div class="hidden grid-cols-[0.9fr_1.1fr_1.6fr_0.7fr] gap-3 border-b border-gray-100 px-4 py-3 text-[10px] font-black uppercase tracking-[0.18em] text-gray-400 md:grid">
+                                            <span>Tipo</span>
+                                            <span>Data e hora</span>
+                                            <span>Arquivo</span>
+                                            <span class="text-right">Baixar</span>
+                                        </div>
+
+                                        <div id="preview-{{ automacao.id }}" class="border-b border-dashed border-gray-100 bg-sky-50/40">
+                                            <div class="px-4 py-3 text-[10px] font-black uppercase tracking-[0.18em] text-sky-700">
+                                                Arquivos selecionados nesta execução
+                                            </div>
+                                            <div class="preview-file-list px-4 pb-4 text-sm text-gray-400">
+                                                Nenhum arquivo selecionado no momento.
+                                            </div>
+                                        </div>
+
+                                        <div class="max-h-72 overflow-y-auto divide-y divide-gray-100">
+                                            {% for arquivo in automacao.arquivos_modal %}
+                                                <div class="grid gap-2 px-4 py-3 text-sm text-gray-600 md:grid-cols-[0.9fr_1.1fr_1.6fr_0.7fr] md:gap-3">
+                                                    <div>
+                                                        <span class="text-[10px] font-black uppercase tracking-[0.18em] text-gray-400 md:hidden">Tipo</span>
+                                                        <div class="font-bold text-gray-700">{{ arquivo.get_tipo_display }}</div>
+                                                    </div>
+                                                    <div>
+                                                        <span class="text-[10px] font-black uppercase tracking-[0.18em] text-gray-400 md:hidden">Data e hora</span>
+                                                        <div>{{ arquivo.criado_em|date:'d/m/Y H:i' }}</div>
+                                                    </div>
+                                                    <div class="min-w-0">
+                                                        <span class="text-[10px] font-black uppercase tracking-[0.18em] text-gray-400 md:hidden">Arquivo</span>
+                                                        <div class="truncate" title="{{ arquivo.nome_original }}">{{ arquivo.nome_original }}</div>
+                                                    </div>
+                                                    <div class="md:justify-self-end">
+                                                        <a href="{{ arquivo.arquivo.url }}" class="mt-1 inline-flex rounded-xl bg-black/5 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-gray-700 transition hover:bg-black/10">
+                                                            Baixar
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                            {% empty %}
+                                                <div class="px-4 py-6 text-sm text-gray-400">
+                                                    Nenhum arquivo salvo ainda para esta automação.
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                                    <button type="button" class="automation-modal-close inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-gray-700 transition hover:bg-gray-50">
+                                        <i data-lucide="x" class="h-4 w-4"></i>
+                                        Cancelar
+                                    </button>
+                                    <button type="submit" class="inline-flex items-center justify-center gap-2 rounded-2xl bg-ageis-yellow px-6 py-4 text-[10px] font-black uppercase tracking-[0.24em] text-black shadow-[0_18px_35px_rgba(255,193,7,0.28)] transition hover:brightness-95">
+                                        <i data-lucide="play" class="h-4 w-4 fill-black"></i>
+                                        Executar automação
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                {% endif %}
+            {% empty %}
+                <div class="px-6 py-10 text-center">
+                    <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-black/5 text-gray-500">
+                        <i data-lucide="folder-search-2" class="h-7 w-7"></i>
+                    </div>
+                    <h3 class="mt-5 text-xl font-black text-gray-900">Nenhuma automação cadastrada</h3>
+                    <p class="mt-3 text-sm text-gray-500">Cadastre automações para este módulo e elas aparecerão aqui em formato de grade.</p>
+                </div>
+            {% endfor %}
+        </div>
+
+        {% if automacoes_page_obj.paginator.num_pages > 1 %}
+            <div class="border-t border-gray-100 bg-[#FCFCFD] px-6 py-4">
+                <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                    <p class="text-xs text-gray-500">
+                        Página {{ automacoes_page_obj.number }} de {{ automacoes_page_obj.paginator.num_pages }}
+                    </p>
+                    <div class="flex flex-wrap items-center gap-2">
+                        {% if automacoes_page_obj.has_previous %}
+                            <a href="?automacoes_page={{ automacoes_page_obj.previous_page_number }}&execucoes_page={{ execucoes_page_obj.number }}" class="inline-flex items-center justify-center rounded-2xl border border-gray-200 bg-white px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-gray-700 transition hover:bg-gray-50">
+                                Anterior
+                            </a>
+                        {% endif %}
+                        {% for page_num in automacoes_page_obj.paginator.page_range %}
+                            {% if page_num == automacoes_page_obj.number %}
+                                <span class="inline-flex h-10 min-w-10 items-center justify-center rounded-2xl bg-ageis-yellow px-3 text-[10px] font-black uppercase tracking-[0.18em] text-black">
+                                    {{ page_num }}
+                                </span>
+                            {% elif page_num >= automacoes_page_obj.number|add:'-2' and page_num <= automacoes_page_obj.number|add:'2' %}
+                                <a href="?automacoes_page={{ page_num }}&execucoes_page={{ execucoes_page_obj.number }}" class="inline-flex h-10 min-w-10 items-center justify-center rounded-2xl border border-gray-200 bg-white px-3 text-[10px] font-black uppercase tracking-[0.18em] text-gray-700 transition hover:bg-gray-50">
+                                    {{ page_num }}
+                                </a>
+                            {% endif %}
+                        {% endfor %}
+                        {% if automacoes_page_obj.has_next %}
+                            <a href="?automacoes_page={{ automacoes_page_obj.next_page_number }}&execucoes_page={{ execucoes_page_obj.number }}" class="inline-flex items-center justify-center rounded-2xl border border-gray-200 bg-white px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-gray-700 transition hover:bg-gray-50">
+                                Próxima
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</section>
+
+<section>
+    <div class="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div>
+            <p class="text-[10px] font-black uppercase tracking-[0.25em] text-gray-400">Historico recente</p>
+            <h2 class="mt-2 text-2xl font-black text-gray-900 md:text-3xl">Execuções em formato de grade</h2>
+        </div>
+        <p class="max-w-2xl text-sm leading-6 text-gray-500">
+            Visualização em linhas, no estilo planilha, com filtros rápidos para localizar a automação certa pelo status, nome e momento da última execução.
+        </p>
+    </div>
+
+    <div class="overflow-hidden rounded-[2rem] border border-gray-100 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.08)]">
+        <div class="border-b border-gray-100 bg-gradient-to-r from-white to-[#F8F9FA] px-6 py-5">
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-3 xl:grid-cols-[1.4fr_0.9fr_0.8fr] xl:items-center">
+                <div>
+                    <label for="executionSearch" class="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Buscar automação</label>
+                    <div class="relative">
+                        <i data-lucide="search" class="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"></i>
+                        <input id="executionSearch" type="text" placeholder="Digite o nome da automação" class="w-full rounded-2xl border border-gray-200 bg-[#FAFBFC] py-3 pl-11 pr-4 text-sm text-gray-700 outline-none transition-all focus:border-yellow-300 focus:ring-4 focus:ring-yellow-100">
+                    </div>
+                </div>
+
+                <div>
+                    <label for="statusFilter" class="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Status</label>
+                    <select id="statusFilter" class="w-full rounded-2xl border border-gray-200 bg-[#FAFBFC] px-4 py-3 text-sm text-gray-700 outline-none transition-all focus:border-yellow-300 focus:ring-4 focus:ring-yellow-100">
+                        <option value="all">Todos</option>
+                        <option value="success">Sucesso</option>
+                        <option value="running">Executando</option>
+                        <option value="error">Erro</option>
+                        <option value="stopped">Interrompida</option>
+                        <option value="pending">Pendente</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="timeFilter" class="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Periodo</label>
+                    <select id="timeFilter" class="w-full rounded-2xl border border-gray-200 bg-[#FAFBFC] px-4 py-3 text-sm text-gray-700 outline-none transition-all focus:border-yellow-300 focus:ring-4 focus:ring-yellow-100">
+                        <option value="all">Tudo</option>
+                        <option value="today">Hoje</option>
+                        <option value="week">7 dias</option>
+                        <option value="month">30 dias</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="hidden border-b border-gray-100 bg-[#FCFCFD] px-6 py-4 xl:grid xl:grid-cols-[1.2fr_0.9fr_0.8fr_1fr_1fr] xl:gap-4">
+            <div class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Automação</div>
+            <div class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Status</div>
+            <div class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Usuário</div>
+            <div class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Última execução</div>
+            <div class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Resumo</div>
+        </div>
+
+        <div id="executionGridRows" class="divide-y divide-gray-100">
+            {% for execucao in execucoes_recentes %}
+                <article
+                    class="execution-row px-6 py-5 transition hover:bg-[#FAFBFC]"
+                    data-name="{{ execucao.automacao_nome|lower }}"
+                    data-status="{{ execucao.status }}"
+                    data-created="{{ execucao.criado_em|date:'U' }}"
+                >
+                    <div class="grid grid-cols-1 gap-4 xl:grid-cols-[1.2fr_0.9fr_0.8fr_1fr_1fr] xl:items-center">
+                        <div class="min-w-0">
+                            <div class="flex items-center gap-3">
+                                <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-ageis-black text-ageis-yellow shadow-lg">
+                                    <i data-lucide="workflow" class="h-4 w-4"></i>
+                                </div>
+                                <div class="min-w-0">
+                                    <h3 class="truncate text-sm font-black uppercase tracking-[0.05em] text-gray-900">{{ execucao.automacao_nome }}</h3>
+                                    <p class="mt-1 truncate text-xs text-gray-500">ID #{{ execucao.id }}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <span class="inline-flex items-center gap-2 rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] {% if execucao.status == 'success' %}bg-green-50 text-green-700{% elif execucao.status == 'error' %}bg-red-50 text-red-700{% elif execucao.status == 'running' %}bg-yellow-50 text-yellow-700{% elif execucao.status == 'stopped' %}bg-gray-900 text-white{% else %}bg-gray-100 text-gray-700{% endif %}">
+                                <span class="h-2 w-2 rounded-full {% if execucao.status == 'success' %}bg-green-500{% elif execucao.status == 'error' %}bg-red-500{% elif execucao.status == 'running' %}bg-yellow-500{% elif execucao.status == 'stopped' %}bg-white{% else %}bg-gray-500{% endif %}"></span>
+                                {{ execucao.get_status_display }}
+                            </span>
+                        </div>
+
+                        <div>
+                            <p class="text-sm font-bold text-gray-700">{{ execucao.usuario.username }}</p>
+                        </div>
+
+                        <div>
+                            <p class="text-sm font-bold text-gray-800">
+                                {% if execucao.finalizado_em %}
+                                    {{ execucao.finalizado_em|date:'d/m/Y H:i' }}
+                                {% elif execucao.iniciado_em %}
+                                    {{ execucao.iniciado_em|date:'d/m/Y H:i' }}
+                                {% else %}
+                                    {{ execucao.criado_em|date:'d/m/Y H:i' }}
+                                {% endif %}
+                            </p>
+                            <p class="mt-1 text-xs text-gray-400">
+                                {% if execucao.finalizado_em %}
+                                    última atualização
+                                {% elif execucao.status == 'running' %}
+                                    em andamento
+                                {% else %}
+                                    criada em {{ execucao.criado_em|date:'d/m/Y H:i' }}
+                                {% endif %}
+                            </p>
+                        </div>
+
+                        <div class="min-w-0">
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="min-w-0 flex-1">
+                                    <p class="truncate text-sm text-gray-600">{{ execucao.mensagem_resumo|default:'Execucao registrada.' }}</p>
+                                    <div class="mt-2 flex flex-wrap items-center gap-3 text-[11px] text-gray-400">
+                                        {% if execucao.arquivo_entrada %}
+                                            <span class="inline-flex items-center gap-1">
+                                                <i data-lucide="file-input" class="h-3.5 w-3.5"></i>
+                                                entrada
+                                            </span>
+                                        {% endif %}
+                                        {% if execucao.arquivos.all %}
+                                            <span class="inline-flex items-center gap-1">
+                                                <i data-lucide="paperclip" class="h-3.5 w-3.5"></i>
+                                                {{ execucao.arquivos.count }} arquivos
+                                            </span>
+                                        {% endif %}
+                                        {% if execucao.output_files %}
+                                            <span class="inline-flex items-center gap-1 text-emerald-600">
+                                                <i data-lucide="file-output" class="h-3.5 w-3.5"></i>
+                                                {{ execucao.output_files|length }} resultado{{ execucao.output_files|length|pluralize }}
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="flex shrink-0 items-start gap-2">
+                                    {% if execucao.primary_output_file %}
+                                        <a
+                                            href="{{ execucao.primary_output_file.arquivo.url }}"
+                                            class="inline-flex h-12 w-12 items-center justify-center self-start rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50 to-lime-100 text-emerald-700 shadow-sm transition hover:scale-[1.03] hover:shadow-md"
+                                            title="Baixar resultado da execução"
+                                            aria-label="Baixar resultado da execução"
+                                        >
+                                            <i data-lucide="download" class="h-5 w-5"></i>
+                                        </a>
+                                    {% endif %}
+                                    <button
+                                        type="button"
+                                        class="automation-modal-trigger inline-flex h-12 w-12 items-center justify-center self-start rounded-2xl border border-sky-100 bg-gradient-to-br from-sky-50 to-cyan-100 text-sky-700 shadow-sm transition hover:scale-[1.03] hover:shadow-md"
+                                        data-modal-id="execution-log-modal-{{ execucao.id }}"
+                                        title="Ver logs da execução"
+                                        aria-label="Ver logs da execução"
+                                    >
+                                        <i data-lucide="file-text" class="h-5.5 w-5.5 stroke-[2.4]"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if execucao.log_saida or execucao.arquivo_entrada or execucao.arquivos.all %}
+                        <details class="mt-4 rounded-[1.25rem] border border-gray-100 bg-white">
+                            <summary class="cursor-pointer list-none px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">
+                                Ver detalhes da linha
+                            </summary>
+                            <div class="grid grid-cols-1 gap-4 border-t border-gray-100 px-4 py-4 lg:grid-cols-2">
+                                <div class="rounded-[1rem] bg-[#FAFBFC] p-4">
+                                    <p class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Arquivos</p>
+                                    <div class="mt-3 space-y-2 text-sm text-gray-600">
+                                        {% if execucao.arquivo_entrada %}
+                                            <a href="{{ execucao.arquivo_entrada.url }}" class="flex items-center gap-2 text-blue-700 hover:underline">
+                                                <i data-lucide="file-input" class="h-4 w-4"></i>
+                                                {{ execucao.arquivo_entrada.name }}
+                                            </a>
+                                        {% endif %}
+                                        {% for arquivo in execucao.support_files %}
+                                            <a href="{{ arquivo.arquivo.url }}" class="flex items-center gap-2 text-blue-700 hover:underline">
+                                                <i data-lucide="paperclip" class="h-4 w-4"></i>
+                                                {{ arquivo.nome_original }}
+                                            </a>
+                                        {% endfor %}
+                                        {% if execucao.output_files %}
+                                            <div class="pt-3">
+                                                <p class="mb-2 text-[10px] font-black uppercase tracking-[0.2em] text-emerald-600">Resultados para download</p>
+                                                <div class="space-y-2">
+                                                    {% for arquivo in execucao.output_files %}
+                                                        <a href="{{ arquivo.arquivo.url }}" class="flex items-center justify-between gap-3 rounded-2xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-emerald-700 transition hover:bg-emerald-100">
+                                                            <span class="flex min-w-0 items-center gap-2">
+                                                                <i data-lucide="file-output" class="h-4 w-4 shrink-0"></i>
+                                                                <span class="truncate">{{ arquivo.nome_original }}</span>
+                                                            </span>
+                                                            <span class="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-[0.16em]">
+                                                                <i data-lucide="download" class="h-3.5 w-3.5"></i>
+                                                                Baixar
+                                                            </span>
+                                                        </a>
+                                                    {% endfor %}
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                        {% if not execucao.arquivo_entrada and not execucao.support_files and not execucao.output_files %}
+                                            <span class="block text-gray-400">Sem anexos ou saídas registradas.</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <div class="rounded-[1rem] bg-[#FAFBFC] p-4">
+                                    <p class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Log</p>
+                                    {% if execucao.log_saida %}
+                                        <pre class="mt-3 whitespace-pre-wrap text-xs leading-6 text-gray-600">{{ execucao.log_saida }}</pre>
+                                    {% else %}
+                                        <p class="mt-3 text-sm text-gray-400">Sem log detalhado para esta execução.</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </details>
+                    {% endif %}
+
+                    <div
+                        id="execution-log-modal-{{ execucao.id }}"
+                        class="automation-modal execution-log-modal fixed inset-0 z-[130] hidden items-center justify-center bg-black/75 p-4 backdrop-blur-sm"
+                        data-log-url="{% url modulo.namespace|add:':logs' execucao.id %}"
+                        data-log-output-id="execution-log-output-{{ execucao.id }}"
+                        data-log-status-id="execution-log-status-{{ execucao.id }}"
+                        data-log-summary-id="execution-log-summary-{{ execucao.id }}"
+                        data-log-time-id="execution-log-time-{{ execucao.id }}"
+                    >
+                        <div class="automation-modal-close absolute inset-0"></div>
+                        <div class="relative z-10 flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-[2rem] border border-white/10 bg-[#0B1020] shadow-[0_30px_90px_rgba(0,0,0,0.45)]">
+                            <div class="border-b border-white/10 bg-gradient-to-r from-[#0F172A] via-[#101827] to-[#111827] px-6 py-5">
+                                <div class="flex items-start justify-between gap-4">
+                                    <div class="min-w-0">
+                                        <p class="text-[10px] font-black uppercase tracking-[0.22em] text-cyan-300">Monitor de execução</p>
+                                        <h3 class="mt-2 truncate text-2xl font-black text-white">{{ execucao.automacao_nome }}</h3>
+                                        <div class="mt-3 flex flex-wrap items-center gap-3 text-xs text-slate-300">
+                                            <span id="execution-log-status-{{ execucao.id }}" class="inline-flex items-center gap-2 rounded-full border border-cyan-400/20 bg-cyan-400/10 px-3 py-1 font-black uppercase tracking-[0.18em] text-cyan-200">
+                                                {{ execucao.get_status_display }}
+                                            </span>
+                                            <span id="execution-log-time-{{ execucao.id }}" class="text-slate-400">
+                                                Atualizado em {% if execucao.finalizado_em %}{{ execucao.finalizado_em|date:'d/m/Y H:i' }}{% elif execucao.iniciado_em %}{{ execucao.iniciado_em|date:'d/m/Y H:i' }}{% else %}{{ execucao.criado_em|date:'d/m/Y H:i' }}{% endif %}
+                                            </span>
+                                        </div>
+                                        <p id="execution-log-summary-{{ execucao.id }}" class="mt-3 text-sm text-slate-400">
+                                            {{ execucao.mensagem_resumo|default:'Aguardando eventos da automação.' }}
+                                        </p>
+                                    </div>
+                                    <button type="button" class="automation-modal-close flex h-11 w-11 items-center justify-center rounded-2xl bg-white/5 text-slate-300 transition hover:bg-white/10 hover:text-white">
+                                        <i data-lucide="x" class="h-4 w-4"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="flex-1 overflow-hidden bg-[#050816] p-5">
+                                <div class="flex h-full min-h-[68vh] flex-col overflow-hidden rounded-[1.5rem] border border-white/10 bg-[#020617]">
+                                    <div class="flex items-center justify-between border-b border-white/10 bg-white/5 px-4 py-3">
+                                        <div class="flex items-center gap-2">
+                                            <span class="h-3 w-3 rounded-full bg-red-400"></span>
+                                            <span class="h-3 w-3 rounded-full bg-yellow-400"></span>
+                                            <span class="h-3 w-3 rounded-full bg-green-400"></span>
+                                        </div>
+                                        <span class="text-[10px] font-black uppercase tracking-[0.22em] text-slate-500">stdout / stderr</span>
+                                    </div>
+                                    <pre id="execution-log-output-{{ execucao.id }}" class="flex-1 overflow-auto bg-[radial-gradient(circle_at_top,_rgba(34,197,94,0.08),_transparent_35%),linear-gradient(180deg,_#030712_0%,_#020617_100%)] px-5 py-4 font-mono text-[12px] leading-6 text-emerald-300">{{ execucao.log_saida|default:'Nenhum log disponível ainda. Os prints da automação aparecerão aqui.' }}</pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+            {% empty %}
+                <div class="px-6 py-10 text-center">
+                    <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-black/5 text-gray-500">
+                        <i data-lucide="history" class="h-7 w-7"></i>
+                    </div>
+                    <h3 class="mt-5 text-xl font-black text-gray-900">Nenhuma execução registrada</h3>
+                    <p class="mt-3 text-sm text-gray-500">Quando você executar uma automação, o histórico aparecerá aqui em linhas no formato de grade.</p>
+                </div>
+            {% endfor %}
+        </div>
+
+        {% if execucoes_page_obj.paginator.num_pages > 1 %}
+            <div class="border-t border-gray-100 bg-[#FCFCFD] px-6 py-4">
+                <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                    <p class="text-xs text-gray-500">
+                        Página {{ execucoes_page_obj.number }} de {{ execucoes_page_obj.paginator.num_pages }}
+                    </p>
+                    <div class="flex flex-wrap items-center gap-2">
+                        {% if execucoes_page_obj.has_previous %}
+                            <a href="?automacoes_page={{ automacoes_page_obj.number }}&execucoes_page={{ execucoes_page_obj.previous_page_number }}" class="inline-flex items-center justify-center rounded-2xl border border-gray-200 bg-white px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-gray-700 transition hover:bg-gray-50">
+                                Anterior
+                            </a>
+                        {% endif %}
+                        {% for page_num in execucoes_page_obj.paginator.page_range %}
+                            {% if page_num == execucoes_page_obj.number %}
+                                <span class="inline-flex h-10 min-w-10 items-center justify-center rounded-2xl bg-ageis-yellow px-3 text-[10px] font-black uppercase tracking-[0.18em] text-black">
+                                    {{ page_num }}
+                                </span>
+                            {% elif page_num >= execucoes_page_obj.number|add:'-2' and page_num <= execucoes_page_obj.number|add:'2' %}
+                                <a href="?automacoes_page={{ automacoes_page_obj.number }}&execucoes_page={{ page_num }}" class="inline-flex h-10 min-w-10 items-center justify-center rounded-2xl border border-gray-200 bg-white px-3 text-[10px] font-black uppercase tracking-[0.18em] text-gray-700 transition hover:bg-gray-50">
+                                    {{ page_num }}
+                                </a>
+                            {% endif %}
+                        {% endfor %}
+                        {% if execucoes_page_obj.has_next %}
+                            <a href="?automacoes_page={{ automacoes_page_obj.number }}&execucoes_page={{ execucoes_page_obj.next_page_number }}" class="inline-flex items-center justify-center rounded-2xl border border-gray-200 bg-white px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-gray-700 transition hover:bg-gray-50">
+                                Próxima
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</section>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('executionSearch');
+        const statusFilter = document.getElementById('statusFilter');
+        const timeFilter = document.getElementById('timeFilter');
+        const rows = document.querySelectorAll('.execution-row');
+        const modalTriggers = document.querySelectorAll('.automation-modal-trigger');
+        const modalCloseButtons = document.querySelectorAll('.automation-modal-close');
+        const modals = document.querySelectorAll('.automation-modal');
+        const previewInputs = document.querySelectorAll('[data-preview-target]');
+        const previewState = new Map();
+        let activeLogModal = null;
+        let logPollingTimer = null;
+
+        function applyExecutionFilters() {
+            const searchValue = (searchInput?.value || '').toLowerCase().trim();
+            const statusValue = statusFilter?.value || 'all';
+            const timeValue = timeFilter?.value || 'all';
+            const now = Math.floor(Date.now() / 1000);
+
+            rows.forEach((row) => {
+                const name = row.dataset.name || '';
+                const status = row.dataset.status || '';
+                const created = Number(row.dataset.created || 0);
+
+                const matchesSearch = !searchValue || name.includes(searchValue);
+                const matchesStatus = statusValue === 'all' || status === statusValue;
+
+                let matchesTime = true;
+                if (timeValue === 'today') {
+                    matchesTime = now - created <= 86400;
+                } else if (timeValue === 'week') {
+                    matchesTime = now - created <= 604800;
+                } else if (timeValue === 'month') {
+                    matchesTime = now - created <= 2592000;
+                }
+
+                row.style.display = matchesSearch && matchesStatus && matchesTime ? '' : 'none';
+            });
+        }
+
+        function openModal(id) {
+            const modal = document.getElementById(id);
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+                document.body.classList.add('overflow-hidden');
+                if (modal.classList.contains('execution-log-modal')) {
+                    activeLogModal = modal;
+                    refreshExecutionLog(modal);
+                    startExecutionLogPolling(modal);
+                }
+            }
+        }
+
+        function closeModals() {
+            modals.forEach((modal) => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            });
+            stopExecutionLogPolling();
+            activeLogModal = null;
+            document.body.classList.remove('overflow-hidden');
+        }
+
+        function stopExecutionLogPolling() {
+            if (logPollingTimer) {
+                window.clearInterval(logPollingTimer);
+                logPollingTimer = null;
+            }
+        }
+
+        function updateExecutionLogModal(modal, payload) {
+            const output = document.getElementById(modal.dataset.logOutputId);
+            const status = document.getElementById(modal.dataset.logStatusId);
+            const summary = document.getElementById(modal.dataset.logSummaryId);
+            const time = document.getElementById(modal.dataset.logTimeId);
+
+            if (status) {
+                status.textContent = payload.status_label || 'Sem status';
+            }
+
+            if (summary) {
+                summary.textContent = payload.summary || 'Aguardando eventos da automação.';
+            }
+
+            if (time) {
+                time.textContent = `Atualizado em ${payload.updated_at || '--'}`;
+            }
+
+            if (output) {
+                const nextLog = payload.log || 'Nenhum log disponível ainda. Os prints da automação aparecerão aqui.';
+                const shouldStickToBottom = output.scrollTop + output.clientHeight >= output.scrollHeight - 30;
+                output.textContent = nextLog;
+                if (shouldStickToBottom) {
+                    output.scrollTop = output.scrollHeight;
+                }
+            }
+
+            if (payload.is_finished) {
+                stopExecutionLogPolling();
+            }
+        }
+
+        function refreshExecutionLog(modal) {
+            const url = modal?.dataset.logUrl;
+            if (!url) return;
+
+            fetch(url, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+            })
+                .then((response) => {
+                    if (!response.ok) {
+                        throw new Error('Nao foi possivel atualizar os logs.');
+                    }
+                    return response.json();
+                })
+                .then((payload) => {
+                    updateExecutionLogModal(modal, payload);
+                })
+                .catch(() => {
+                    const output = document.getElementById(modal.dataset.logOutputId);
+                    if (output) {
+                        output.textContent = 'Falha ao carregar os logs desta execução.';
+                    }
+                    stopExecutionLogPolling();
+                });
+        }
+
+        function startExecutionLogPolling(modal) {
+            stopExecutionLogPolling();
+            logPollingTimer = window.setInterval(() => {
+                if (activeLogModal && !activeLogModal.classList.contains('hidden')) {
+                    refreshExecutionLog(activeLogModal);
+                } else {
+                    stopExecutionLogPolling();
+                }
+            }, 2500);
+        }
+
+        function syncInputFiles(input) {
+            const inputId = input.dataset.previewInputId;
+            const files = previewState.get(inputId) || [];
+            const transfer = new DataTransfer();
+            files.forEach((file) => transfer.items.add(file));
+            input.value = '';
+            input.files = transfer.files;
+            updateInputAvailability(input, files.length);
+        }
+
+        function updateInputAvailability(input, fileCount) {
+            const maxFiles = Number(input.dataset.previewMax || 0);
+            const limitLabelId = input.dataset.previewLimitLabelId;
+            const limitLabel = limitLabelId ? document.getElementById(limitLabelId) : null;
+            const isBlocked = maxFiles > 0 && fileCount >= maxFiles;
+
+            input.disabled = isBlocked;
+
+            if (limitLabel) {
+                if (maxFiles > 0) {
+                    limitLabel.textContent = isBlocked
+                        ? `Limite de ${maxFiles} arquivos principais atingido. Remova um arquivo para adicionar outro.`
+                        : `${fileCount} de ${maxFiles} arquivos principais selecionados.`;
+                } else {
+                    limitLabel.textContent = '';
+                }
+            }
+        }
+
+        function getPreviewFiles(targetId) {
+            const relatedInputs = document.querySelectorAll(`input[type="file"][data-preview-target="${targetId}"][data-preview-input-id]`);
+            const items = [];
+
+            relatedInputs.forEach((input) => {
+                const typeLabel = input.dataset.previewType || 'Arquivo';
+                const inputId = input.dataset.previewInputId;
+                const files = previewState.get(inputId) || [];
+                files.forEach((file, index) => {
+                    items.push({
+                        typeLabel,
+                        inputId,
+                        file,
+                        index,
+                    });
+                });
+            });
+
+            return items;
+        }
+
+        function renderPreview(targetId) {
+            const container = document.getElementById(targetId);
+            if (!container) return;
+
+            const list = container.querySelector('.preview-file-list');
+            const counterId = targetId.replace('preview-', 'preview-count-');
+            const counter = document.getElementById(counterId);
+            const rows = [];
+            const items = getPreviewFiles(targetId);
+
+            items.forEach(({ typeLabel, inputId, file, index }) => {
+                rows.push(`
+                    <div class="grid gap-2 py-2 text-sm text-gray-600 md:grid-cols-[0.9fr_1.1fr_1.4fr_0.9fr] md:gap-3">
+                        <div><span class="font-bold text-gray-700">${typeLabel}</span></div>
+                        <div><span>${file.type || 'Tipo não identificado'}</span></div>
+                        <div class="truncate" title="${file.name}">${file.name}</div>
+                        <div class="flex justify-end">
+                            <button
+                                type="button"
+                                class="preview-remove-file inline-flex h-8 w-8 items-center justify-center rounded-xl bg-red-50 text-red-600 transition hover:bg-red-100"
+                                data-preview-target="${targetId}"
+                                data-preview-input-id="${inputId}"
+                                data-file-index="${index}"
+                                title="Excluir arquivo selecionado"
+                                aria-label="Excluir arquivo selecionado"
+                            >
+                                <i data-lucide="trash-2" class="h-4 w-4"></i>
+                            </button>
+                        </div>
+                    </div>
+                `);
+            });
+
+            list.innerHTML = rows.length
+                ? rows.join('')
+                : '<div class="text-sm text-gray-400">Nenhum arquivo selecionado no momento.</div>';
+
+            if (counter) {
+                counter.textContent = `${rows.length} ${rows.length === 1 ? 'arquivo' : 'arquivos'}`;
+            }
+
+            document
+                .querySelectorAll(`input[type="file"][data-preview-target="${targetId}"][data-preview-input-id]`)
+                .forEach((input) => {
+                    const inputId = input.dataset.previewInputId;
+                    const files = previewState.get(inputId) || [];
+                    updateInputAvailability(input, files.length);
+                });
+
+            if (window.lucide) {
+                window.lucide.createIcons();
+            }
+        }
+
+        function mergeSelectedFiles(input, newFiles) {
+            const inputId = input.dataset.previewInputId;
+            const maxFiles = Number(input.dataset.previewMax || 0);
+            const currentFiles = previewState.get(inputId) || [];
+            const mergedFiles = [...currentFiles];
+
+            newFiles.forEach((file) => {
+                const alreadyExists = mergedFiles.some(
+                    (existingFile) =>
+                        existingFile.name === file.name &&
+                        existingFile.size === file.size &&
+                        existingFile.lastModified === file.lastModified &&
+                        existingFile.type === file.type
+                );
+
+                if (!alreadyExists) {
+                    mergedFiles.push(file);
+                }
+            });
+
+            return maxFiles > 0 ? mergedFiles.slice(0, maxFiles) : mergedFiles;
+        }
+
+        searchInput?.addEventListener('input', applyExecutionFilters);
+        statusFilter?.addEventListener('change', applyExecutionFilters);
+        timeFilter?.addEventListener('change', applyExecutionFilters);
+
+        quickFilters.forEach((button) => {
+            button.addEventListener('click', function() {
+                const value = this.dataset.quickFilter || 'all';
+                if (statusFilter) {
+                    statusFilter.value = value;
+                }
+                applyExecutionFilters();
+            });
+        });
+
+        modalTriggers.forEach((button) => {
+            button.addEventListener('click', function() {
+                openModal(this.dataset.modalId);
+            });
+        });
+
+        previewInputs.forEach((input) => {
+            input.addEventListener('change', function() {
+                const inputId = this.dataset.previewInputId;
+                const newFiles = Array.from(this.files || []);
+                const mergedFiles = mergeSelectedFiles(this, newFiles);
+
+                previewState.set(inputId, mergedFiles);
+                syncInputFiles(this);
+                renderPreview(this.dataset.previewTarget);
+            });
+        });
+
+        document.addEventListener('click', function(event) {
+            const button = event.target.closest('.preview-remove-file');
+            if (!button) return;
+
+             event.preventDefault();
+             event.stopPropagation();
+
+            const inputId = button.dataset.previewInputId;
+            const targetId = button.dataset.previewTarget;
+            const fileIndex = Number(button.dataset.fileIndex);
+            const currentFiles = previewState.get(inputId) || [];
+            const nextFiles = currentFiles.filter((_, index) => index !== fileIndex);
+            previewState.set(inputId, nextFiles);
+
+            const input = document.querySelector(`[data-preview-input-id="${inputId}"]`);
+            if (input) {
+                syncInputFiles(input);
+            }
+
+            renderPreview(targetId);
+        });
+
+        modalCloseButtons.forEach((button) => {
+            button.addEventListener('click', closeModals);
+        });
+
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeModals();
+            }
+        });
+
+        previewInputs.forEach((input) => {
+            updateInputAvailability(input, 0);
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,682 @@
+<div
+    class="space-y-3"
+    data-rich-editor-root
+    data-editor-field-id="{{ form.raw_content.id_for_label }}"
+    data-editor-placeholder="{{ editor_placeholder|default:'Comece a escrever sua documentação aqui.' }}"
+>
+    <div class="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+            <label for="{{ form.raw_content.id_for_label }}" class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">
+                {{ editor_label|default:'Conteúdo do documento' }}
+            </label>
+            <p class="mt-2 text-sm text-gray-500">
+                Formate visualmente o documento, aplique estilos, insira imagens, links, tabelas, blocos de destaque e, se precisar, edite o HTML completo.
+            </p>
+        </div>
+        <div class="inline-flex items-center gap-2 rounded-full border border-sky-100 bg-sky-50 px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-sky-700">
+            <i data-lucide="sparkles" class="h-3.5 w-3.5"></i>
+            Editor visual ativo
+        </div>
+    </div>
+
+    <div class="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white p-2 shadow-sm">
+        <button
+            type="button"
+            data-editor-mode-button="visual"
+            class="inline-flex min-w-[120px] items-center justify-center gap-2 rounded-xl bg-ageis-yellow px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-black transition"
+        >
+            <i data-lucide="brush" class="h-3.5 w-3.5"></i>
+            Visual
+        </button>
+        <button
+            type="button"
+            data-editor-mode-button="html"
+            class="inline-flex min-w-[120px] items-center justify-center gap-2 rounded-xl px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-gray-500 transition hover:bg-gray-50"
+        >
+            <i data-lucide="code-xml" class="h-3.5 w-3.5"></i>
+            HTML avançado
+        </button>
+    </div>
+
+    <div class="overflow-hidden rounded-[1.75rem] border border-gray-200 bg-[#FAFBFC] shadow-[0_16px_45px_rgba(15,23,42,0.06)]">
+        <div class="flex flex-wrap items-center gap-2 border-b border-gray-200 bg-white px-4 py-4" data-editor-toolbar>
+            <select data-editor-control="fontName" class="rounded-xl border border-gray-200 bg-[#FAFBFC] px-3 py-2 text-xs font-semibold text-gray-700 outline-none transition focus:border-sky-200 focus:ring-2 focus:ring-sky-100">
+                <option value="Arial">Arial</option>
+                <option value="Georgia">Georgia</option>
+                <option value="Trebuchet MS">Trebuchet</option>
+                <option value="Verdana">Verdana</option>
+                <option value="Tahoma">Tahoma</option>
+                <option value="Courier New">Courier New</option>
+            </select>
+
+            <div class="inline-flex h-10 items-center gap-2 rounded-xl border border-gray-200 bg-[#FAFBFC] px-3">
+                <i data-lucide="type" class="h-4 w-4 text-gray-500"></i>
+                <input
+                    type="number"
+                    min="10"
+                    max="72"
+                    step="1"
+                    value="16"
+                    data-editor-font-size
+                    class="w-14 border-0 bg-transparent p-0 text-xs font-semibold text-gray-700 outline-none focus:ring-0"
+                    title="Tamanho da fonte em pixels"
+                >
+                <span class="text-[10px] font-black uppercase tracking-[0.18em] text-gray-400">px</span>
+                <button type="button" data-editor-action="apply-font-size" class="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-white text-gray-700 transition hover:bg-gray-100" title="Aplicar tamanho">
+                    <i data-lucide="check" class="h-3.5 w-3.5"></i>
+                </button>
+            </div>
+
+            <button type="button" data-editor-command="bold" class="editor-tool inline-flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-700 transition hover:border-gray-300 hover:bg-gray-50" title="Negrito">
+                <i data-lucide="bold" class="h-4 w-4"></i>
+            </button>
+            <button type="button" data-editor-command="italic" class="editor-tool inline-flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-700 transition hover:border-gray-300 hover:bg-gray-50" title="Itálico">
+                <i data-lucide="italic" class="h-4 w-4"></i>
+            </button>
+            <button type="button" data-editor-command="underline" class="editor-tool inline-flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-700 transition hover:border-gray-300 hover:bg-gray-50" title="Sublinhado">
+                <i data-lucide="underline" class="h-4 w-4"></i>
+            </button>
+
+            <div class="h-8 w-px bg-gray-200"></div>
+
+            <button type="button" data-editor-block="p" class="editor-tool inline-flex h-10 items-center justify-center rounded-xl border border-gray-200 bg-white px-3 text-[10px] font-black uppercase tracking-[0.18em] text-gray-700 transition hover:border-gray-300 hover:bg-gray-50" title="Parágrafo">
+                P
+            </button>
+            <button type="button" data-editor-block="h2" class="editor-tool inline-flex h-10 items-center justify-center rounded-xl border border-gray-200 bg-white px-3 text-[10px] font-black uppercase tracking-[0.18em] text-gray-700 transition hover:border-gray-300 hover:bg-gray-50" title="Título H2">
+                H2
+            </button>
+            <button type="button" data-editor-block="h3" class="editor-tool inline-flex h-10 items-center justify-center rounded-xl border border-gray-200 bg-white px-3 text-[10px] font-black uppercase tracking-[0.18em] text-gray-700 transition hover:border-gray-300 hover:bg-gray-50" title="Título H3">
+                H3
+            </button>
+
+            <div class="h-8 w-px bg-gray-200"></div>
+
+            <button type="button" data-editor-command="insertUnorderedList" class="editor-tool inline-flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-700 transition hover:border-gray-300 hover:bg-gray-50" title="Lista">
+                <i data-lucide="list" class="h-4 w-4"></i>
+            </button>
+            <button type="button" data-editor-command="insertOrderedList" class="editor-tool inline-flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-700 transition hover:border-gray-300 hover:bg-gray-50" title="Lista numerada">
+                <i data-lucide="list-ordered" class="h-4 w-4"></i>
+            </button>
+            <button type="button" data-editor-command="justifyLeft" class="editor-tool inline-flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-700 transition hover:border-gray-300 hover:bg-gray-50" title="Alinhar à esquerda">
+                <i data-lucide="align-left" class="h-4 w-4"></i>
+            </button>
+            <button type="button" data-editor-command="justifyCenter" class="editor-tool inline-flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-700 transition hover:border-gray-300 hover:bg-gray-50" title="Centralizar">
+                <i data-lucide="align-center" class="h-4 w-4"></i>
+            </button>
+            <button type="button" data-editor-command="justifyRight" class="editor-tool inline-flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-700 transition hover:border-gray-300 hover:bg-gray-50" title="Alinhar à direita">
+                <i data-lucide="align-right" class="h-4 w-4"></i>
+            </button>
+
+            <div class="h-8 w-px bg-gray-200"></div>
+
+            <div class="relative">
+                <button type="button" data-editor-popover-target="text-color" class="editor-tool inline-flex h-10 items-center justify-center rounded-xl border border-gray-200 bg-white px-3 text-xs font-semibold text-gray-700 transition hover:border-gray-300 hover:bg-gray-50" title="Cor do texto">
+                    <i data-lucide="palette" class="mr-2 h-4 w-4"></i>
+                    Texto
+                </button>
+                <div data-editor-popover="text-color" class="hidden absolute left-0 top-full z-30 mt-2 w-56 rounded-2xl border border-gray-200 bg-white p-4 shadow-[0_18px_45px_rgba(15,23,42,0.16)]">
+                    <p class="mb-3 text-[10px] font-black uppercase tracking-[0.18em] text-gray-400">Cor do texto</p>
+                    <div class="grid grid-cols-6 gap-2">
+                        <button type="button" data-editor-inline-style="color" data-editor-style-value="#111827" class="h-8 w-8 rounded-lg border border-gray-200" style="background-color:#111827" title="Preto"></button>
+                        <button type="button" data-editor-inline-style="color" data-editor-style-value="#475569" class="h-8 w-8 rounded-lg border border-gray-200" style="background-color:#475569" title="Slate"></button>
+                        <button type="button" data-editor-inline-style="color" data-editor-style-value="#2563eb" class="h-8 w-8 rounded-lg border border-gray-200" style="background-color:#2563eb" title="Azul"></button>
+                        <button type="button" data-editor-inline-style="color" data-editor-style-value="#0f766e" class="h-8 w-8 rounded-lg border border-gray-200" style="background-color:#0f766e" title="Verde água"></button>
+                        <button type="button" data-editor-inline-style="color" data-editor-style-value="#b45309" class="h-8 w-8 rounded-lg border border-gray-200" style="background-color:#b45309" title="Âmbar"></button>
+                        <button type="button" data-editor-inline-style="color" data-editor-style-value="#be123c" class="h-8 w-8 rounded-lg border border-gray-200" style="background-color:#be123c" title="Vermelho"></button>
+                        <button type="button" data-editor-inline-style="color" data-editor-style-value="#7c3aed" class="h-8 w-8 rounded-lg border border-gray-200" style="background-color:#7c3aed" title="Violeta"></button>
+                        <button type="button" data-editor-inline-style="color" data-editor-style-value="#ea580c" class="h-8 w-8 rounded-lg border border-gray-200" style="background-color:#ea580c" title="Laranja"></button>
+                        <button type="button" data-editor-inline-style="color" data-editor-style-value="#0284c7" class="h-8 w-8 rounded-lg border border-gray-200" style="background-color:#0284c7" title="Sky"></button>
+                        <button type="button" data-editor-inline-style="color" data-editor-style-value="#16a34a" class="h-8 w-8 rounded-lg border border-gray-200" style="background-color:#16a34a" title="Verde"></button>
+                        <button type="button" data-editor-inline-style="color" data-editor-style-value="#dc2626" class="h-8 w-8 rounded-lg border border-gray-200" style="background-color:#dc2626" title="Tomate"></button>
+                        <button type="button" data-editor-inline-style="color" data-editor-style-value="#ffffff" class="h-8 w-8 rounded-lg border border-gray-200" style="background-color:#ffffff" title="Branco"></button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="relative">
+                <button type="button" data-editor-popover-target="highlight-color" class="editor-tool inline-flex h-10 items-center justify-center rounded-xl border border-gray-200 bg-white px-3 text-xs font-semibold text-gray-700 transition hover:border-gray-300 hover:bg-gray-50" title="Cor de destaque">
+                    <i data-lucide="highlighter" class="mr-2 h-4 w-4"></i>
+                    Destaque
+                </button>
+                <div data-editor-popover="highlight-color" class="hidden absolute left-0 top-full z-30 mt-2 w-56 rounded-2xl border border-gray-200 bg-white p-4 shadow-[0_18px_45px_rgba(15,23,42,0.16)]">
+                    <p class="mb-3 text-[10px] font-black uppercase tracking-[0.18em] text-gray-400">Cor de destaque</p>
+                    <div class="grid grid-cols-6 gap-2">
+                        <button type="button" data-editor-inline-style="backgroundColor" data-editor-style-value="#fef3c7" class="h-8 w-8 rounded-lg border border-gray-200" style="background-color:#fef3c7" title="Amarelo claro"></button>
+                        <button type="button" data-editor-inline-style="backgroundColor" data-editor-style-value="#fde68a" class="h-8 w-8 rounded-lg border border-gray-200" style="background-color:#fde68a" title="Amarelo"></button>
+                        <button type="button" data-editor-inline-style="backgroundColor" data-editor-style-value="#dbeafe" class="h-8 w-8 rounded-lg border border-gray-200" style="background-color:#dbeafe" title="Azul claro"></button>
+                        <button type="button" data-editor-inline-style="backgroundColor" data-editor-style-value="#dcfce7" class="h-8 w-8 rounded-lg border border-gray-200" style="background-color:#dcfce7" title="Verde claro"></button>
+                        <button type="button" data-editor-inline-style="backgroundColor" data-editor-style-value="#fae8ff" class="h-8 w-8 rounded-lg border border-gray-200" style="background-color:#fae8ff" title="Lilás"></button>
+                        <button type="button" data-editor-inline-style="backgroundColor" data-editor-style-value="#ffe4e6" class="h-8 w-8 rounded-lg border border-gray-200" style="background-color:#ffe4e6" title="Rosa"></button>
+                        <button type="button" data-editor-inline-style="backgroundColor" data-editor-style-value="#ffedd5" class="h-8 w-8 rounded-lg border border-gray-200" style="background-color:#ffedd5" title="Laranja claro"></button>
+                        <button type="button" data-editor-inline-style="backgroundColor" data-editor-style-value="#e0f2fe" class="h-8 w-8 rounded-lg border border-gray-200" style="background-color:#e0f2fe" title="Sky claro"></button>
+                        <button type="button" data-editor-inline-style="backgroundColor" data-editor-style-value="#ecfccb" class="h-8 w-8 rounded-lg border border-gray-200" style="background-color:#ecfccb" title="Lima"></button>
+                        <button type="button" data-editor-inline-style="backgroundColor" data-editor-style-value="#f3f4f6" class="h-8 w-8 rounded-lg border border-gray-200" style="background-color:#f3f4f6" title="Cinza claro"></button>
+                        <button type="button" data-editor-inline-style="backgroundColor" data-editor-style-value="#ffffff" class="h-8 w-8 rounded-lg border border-gray-200" style="background-color:#ffffff" title="Branco"></button>
+                        <button type="button" data-editor-inline-style="backgroundColor" data-editor-style-value="transparent" class="h-8 w-8 rounded-lg border border-gray-200 bg-[linear-gradient(135deg,#ffffff_45%,#fecaca_45%,#fecaca_55%,#ffffff_55%)]" title="Remover destaque"></button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="h-8 w-px bg-gray-200"></div>
+
+            <button type="button" data-editor-action="link" class="editor-tool inline-flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-700 transition hover:border-gray-300 hover:bg-gray-50" title="Inserir link">
+                <i data-lucide="link" class="h-4 w-4"></i>
+            </button>
+            <button type="button" data-editor-action="image-url" class="editor-tool inline-flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-700 transition hover:border-gray-300 hover:bg-gray-50" title="Inserir imagem por URL">
+                <i data-lucide="image-plus" class="h-4 w-4"></i>
+            </button>
+            <label class="editor-tool inline-flex h-10 cursor-pointer items-center justify-center rounded-xl border border-gray-200 bg-white px-3 text-xs font-semibold text-gray-700 transition hover:border-gray-300 hover:bg-gray-50" title="Inserir imagem do computador">
+                <i data-lucide="image-up" class="mr-2 h-4 w-4"></i>
+                Imagem
+                <input type="file" accept="image/*" data-editor-image-upload class="hidden">
+            </label>
+
+            <div class="h-8 w-px bg-gray-200"></div>
+
+            <button type="button" data-editor-command="undo" class="editor-tool inline-flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-700 transition hover:border-gray-300 hover:bg-gray-50" title="Desfazer">
+                <i data-lucide="undo-2" class="h-4 w-4"></i>
+            </button>
+            <button type="button" data-editor-command="redo" class="editor-tool inline-flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-700 transition hover:border-gray-300 hover:bg-gray-50" title="Refazer">
+                <i data-lucide="redo-2" class="h-4 w-4"></i>
+            </button>
+            <button type="button" data-editor-command="removeFormat" class="editor-tool inline-flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-700 transition hover:border-gray-300 hover:bg-gray-50" title="Limpar formatação">
+                <i data-lucide="eraser" class="h-4 w-4"></i>
+            </button>
+
+            <div class="h-8 w-px bg-gray-200"></div>
+
+            <button type="button" data-editor-snippet="ok" class="editor-tool inline-flex h-10 items-center justify-center rounded-xl border border-gray-200 bg-white px-3 text-[10px] font-black uppercase tracking-[0.18em] text-emerald-700 transition hover:border-gray-300 hover:bg-gray-50" title="Bloco de sucesso">
+                Sucesso
+            </button>
+            <button type="button" data-editor-snippet="note" class="editor-tool inline-flex h-10 items-center justify-center rounded-xl border border-gray-200 bg-white px-3 text-[10px] font-black uppercase tracking-[0.18em] text-amber-700 transition hover:border-gray-300 hover:bg-gray-50" title="Bloco de aviso">
+                Aviso
+            </button>
+            <button type="button" data-editor-snippet="warn" class="editor-tool inline-flex h-10 items-center justify-center rounded-xl border border-gray-200 bg-white px-3 text-[10px] font-black uppercase tracking-[0.18em] text-rose-700 transition hover:border-gray-300 hover:bg-gray-50" title="Bloco de atenção">
+                Atenção
+            </button>
+            <button type="button" data-editor-snippet="table" class="editor-tool inline-flex h-10 items-center justify-center rounded-xl border border-gray-200 bg-white px-3 text-[10px] font-black uppercase tracking-[0.18em] text-gray-700 transition hover:border-gray-300 hover:bg-gray-50" title="Inserir tabela">
+                Tabela
+            </button>
+            <button type="button" data-editor-table-action="add-row" class="editor-tool inline-flex h-10 items-center justify-center rounded-xl border border-gray-200 bg-white px-3 text-[10px] font-black uppercase tracking-[0.18em] text-gray-700 transition hover:border-gray-300 hover:bg-gray-50" title="Adicionar linha">
+                + Linha
+            </button>
+            <button type="button" data-editor-table-action="add-column" class="editor-tool inline-flex h-10 items-center justify-center rounded-xl border border-gray-200 bg-white px-3 text-[10px] font-black uppercase tracking-[0.18em] text-gray-700 transition hover:border-gray-300 hover:bg-gray-50" title="Adicionar coluna">
+                + Coluna
+            </button>
+            <button type="button" data-editor-table-action="remove-row" class="editor-tool inline-flex h-10 items-center justify-center rounded-xl border border-gray-200 bg-white px-3 text-[10px] font-black uppercase tracking-[0.18em] text-rose-700 transition hover:border-gray-300 hover:bg-gray-50" title="Remover linha">
+                - Linha
+            </button>
+            <button type="button" data-editor-table-action="remove-column" class="editor-tool inline-flex h-10 items-center justify-center rounded-xl border border-gray-200 bg-white px-3 text-[10px] font-black uppercase tracking-[0.18em] text-rose-700 transition hover:border-gray-300 hover:bg-gray-50" title="Remover coluna">
+                - Coluna
+            </button>
+        </div>
+
+        <div class="border-b border-gray-200 bg-gradient-to-r from-yellow-50/70 via-white to-sky-50/70 px-5 py-3 text-[11px] font-semibold text-gray-500" data-editor-visual-hint>
+            Dica: selecione um texto antes de aplicar o estilo para ver o resultado com mais precisão. Para documentos completos com estilos, troque para o modo HTML avançado.
+        </div>
+
+        <div
+            data-editor-surface
+            contenteditable="true"
+            class="min-h-[520px] w-full bg-[#FAFBFC] px-6 py-5 text-sm leading-7 text-gray-800 outline-none [&_.note]:mb-4 [&_.note]:rounded-2xl [&_.note]:border [&_.note]:border-amber-200 [&_.note]:bg-amber-50 [&_.note]:px-4 [&_.note]:py-4 [&_.ok]:mb-4 [&_.ok]:rounded-2xl [&_.ok]:border [&_.ok]:border-emerald-200 [&_.ok]:bg-emerald-50 [&_.ok]:px-4 [&_.ok]:py-4 [&_.table]:mb-4 [&_.table]:w-full [&_.table]:border-collapse [&_.table_th]:border [&_.table_th]:border-gray-200 [&_.table_th]:bg-gray-50 [&_.table_th]:px-3 [&_.table_th]:py-2 [&_.table_th]:text-left [&_.table_td]:border [&_.table_td]:border-gray-200 [&_.table_td]:px-3 [&_.table_td]:py-2 [&_.warn]:mb-4 [&_.warn]:rounded-2xl [&_.warn]:border [&_.warn]:border-rose-200 [&_.warn]:bg-rose-50 [&_.warn]:px-4 [&_.warn]:py-4 [&_a]:font-semibold [&_a]:text-sky-700 [&_a]:underline [&_blockquote]:rounded-2xl [&_blockquote]:border-l-4 [&_blockquote]:border-ageis-yellow [&_blockquote]:bg-yellow-50 [&_blockquote]:px-4 [&_blockquote]:py-3 [&_code]:rounded [&_code]:bg-slate-900 [&_code]:px-2 [&_code]:py-1 [&_code]:font-mono [&_code]:text-slate-100 [&_img]:my-4 [&_img]:h-auto [&_img]:max-w-full [&_img]:rounded-2xl [&_li]:mb-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-4 [&_pre]:mb-4 [&_pre]:overflow-x-auto [&_pre]:rounded-2xl [&_pre]:border [&_pre]:border-slate-200 [&_pre]:bg-slate-950 [&_pre]:p-4 [&_pre]:text-slate-100 [&_ul]:list-disc [&_ul]:pl-5"
+        ></div>
+
+        <div class="hidden bg-[#0f172a] p-4" data-editor-html-mode>
+            <label class="mb-3 block text-[10px] font-black uppercase tracking-[0.18em] text-sky-100">HTML do documento</label>
+            <textarea
+                data-editor-html-source
+                class="min-h-[520px] w-full rounded-[1.5rem] border border-slate-700 bg-[#020617] px-5 py-4 font-mono text-sm leading-7 text-slate-100 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-900/40"
+                spellcheck="false"
+            ></textarea>
+            <p class="mt-3 text-xs leading-6 text-slate-300">
+                Neste modo você pode colar HTML avançado com <code class="rounded bg-slate-800 px-1.5 py-0.5 text-slate-100">&lt;style&gt;</code>, <code class="rounded bg-slate-800 px-1.5 py-0.5 text-slate-100">&lt;table&gt;</code>, <code class="rounded bg-slate-800 px-1.5 py-0.5 text-slate-100">&lt;pre&gt;</code>, blocos personalizados e documentos completos com <code class="rounded bg-slate-800 px-1.5 py-0.5 text-slate-100">&lt;html&gt;</code>, <code class="rounded bg-slate-800 px-1.5 py-0.5 text-slate-100">&lt;head&gt;</code> e <code class="rounded bg-slate-800 px-1.5 py-0.5 text-slate-100">&lt;body&gt;</code>.
+            </p>
+        </div>
+    </div>
+
+    <textarea name="{{ form.raw_content.name }}" id="{{ form.raw_content.id_for_label }}" class="hidden">{{ form.raw_content.value|default:'' }}</textarea>
+    {% if form.raw_content.errors %}<p class="text-sm text-red-600">{{ form.raw_content.errors.0 }}</p>{% endif %}
+    <div class="rounded-[1.25rem] border border-gray-100 bg-[#FAFBFC] px-4 py-4 text-xs leading-6 text-gray-500">
+        O conteúdo é salvo em HTML e aberto no navegador. Você pode usar o modo visual para documentos rápidos e o modo HTML avançado para layouts mais completos, com grades, tabelas, caixas e estilos personalizados.
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('[data-rich-editor-root]').forEach(function (root) {
+            if (root.dataset.editorInitialized === 'true') {
+                return;
+            }
+
+            const hiddenField = root.querySelector('textarea[name]');
+            const editor = root.querySelector('[data-editor-surface]');
+            const toolbar = root.querySelector('[data-editor-toolbar]');
+            const imageUpload = root.querySelector('[data-editor-image-upload]');
+            const fontSizeInput = root.querySelector('[data-editor-font-size]');
+            const htmlModeContainer = root.querySelector('[data-editor-html-mode]');
+            const htmlSource = root.querySelector('[data-editor-html-source]');
+            const modeButtons = root.querySelectorAll('[data-editor-mode-button]');
+            const visualHint = root.querySelector('[data-editor-visual-hint]');
+            const placeholder = root.dataset.editorPlaceholder || 'Comece a escrever sua documentação aqui.';
+            let savedRange = null;
+            let currentMode = 'visual';
+
+            if (!hiddenField || !editor) {
+                return;
+            }
+
+            root.dataset.editorInitialized = 'true';
+
+            const initialValue = hiddenField.value.trim();
+            editor.innerHTML = initialValue || `<p>${placeholder}</p>`;
+            if (htmlSource) {
+                htmlSource.value = initialValue;
+            }
+
+            function syncEditor() {
+                hiddenField.value = currentMode === 'html'
+                    ? (htmlSource ? htmlSource.value.trim() : '')
+                    : editor.innerHTML.trim();
+            }
+
+            function updateModeButtons() {
+                modeButtons.forEach(function (button) {
+                    const active = button.dataset.editorModeButton === currentMode;
+                    button.classList.toggle('bg-ageis-yellow', active);
+                    button.classList.toggle('text-black', active);
+                    button.classList.toggle('text-gray-500', !active);
+                    button.classList.toggle('hover:bg-gray-50', !active);
+                });
+            }
+
+            function setMode(mode) {
+                currentMode = mode;
+                const isHtml = mode === 'html';
+
+                if (isHtml) {
+                    if (htmlSource) {
+                        htmlSource.value = editor.innerHTML.trim();
+                    }
+                    editor.classList.add('hidden');
+                    toolbar.classList.add('opacity-60');
+                    toolbar.classList.add('pointer-events-none');
+                    if (htmlModeContainer) {
+                        htmlModeContainer.classList.remove('hidden');
+                    }
+                    if (visualHint) {
+                        visualHint.classList.add('hidden');
+                    }
+                } else {
+                    if (htmlSource && htmlSource.value.trim()) {
+                        editor.innerHTML = htmlSource.value.trim();
+                    } else if (!editor.innerHTML.trim()) {
+                        editor.innerHTML = `<p>${placeholder}</p>`;
+                    }
+                    editor.classList.remove('hidden');
+                    toolbar.classList.remove('opacity-60');
+                    toolbar.classList.remove('pointer-events-none');
+                    if (htmlModeContainer) {
+                        htmlModeContainer.classList.add('hidden');
+                    }
+                    if (visualHint) {
+                        visualHint.classList.remove('hidden');
+                    }
+                }
+
+                updateModeButtons();
+                syncEditor();
+            }
+
+            function saveSelection() {
+                const selection = window.getSelection();
+                if (!selection || selection.rangeCount === 0) {
+                    return;
+                }
+
+                const range = selection.getRangeAt(0);
+                if (editor.contains(range.commonAncestorContainer)) {
+                    savedRange = range.cloneRange();
+                }
+            }
+
+            function restoreSelection() {
+                const selection = window.getSelection();
+                if (!selection) {
+                    return false;
+                }
+
+                if (savedRange) {
+                    selection.removeAllRanges();
+                    selection.addRange(savedRange);
+                    return true;
+                }
+
+                focusEditor();
+                return false;
+            }
+
+            function focusEditor() {
+                editor.focus();
+            }
+
+            function runCommand(command, value = null) {
+                if (currentMode !== 'visual') {
+                    setMode('visual');
+                }
+                restoreSelection();
+                focusEditor();
+                document.execCommand(command, false, value);
+                saveSelection();
+                syncEditor();
+            }
+
+            function applyInlineStyle(styleName, value) {
+                if (currentMode !== 'visual') {
+                    setMode('visual');
+                }
+                restoreSelection();
+                const selection = window.getSelection();
+                if (!selection || selection.rangeCount === 0) {
+                    return;
+                }
+
+                const range = selection.getRangeAt(0);
+                if (!editor.contains(range.commonAncestorContainer) || range.collapsed) {
+                    return;
+                }
+
+                const span = document.createElement('span');
+                span.style[styleName] = value;
+
+                try {
+                    range.surroundContents(span);
+                } catch (error) {
+                    const fragment = range.extractContents();
+                    span.appendChild(fragment);
+                    range.insertNode(span);
+                }
+
+                const newRange = document.createRange();
+                newRange.selectNodeContents(span);
+                selection.removeAllRanges();
+                selection.addRange(newRange);
+                savedRange = newRange.cloneRange();
+                syncEditor();
+            }
+
+            function applyFontSize() {
+                const rawValue = fontSizeInput ? parseInt(fontSizeInput.value, 10) : NaN;
+                if (!rawValue || rawValue < 10 || rawValue > 72) {
+                    return;
+                }
+                applyInlineStyle('fontSize', `${rawValue}px`);
+            }
+
+            function insertHtmlSnippet(html) {
+                if (currentMode !== 'visual') {
+                    setMode('visual');
+                }
+                restoreSelection();
+                focusEditor();
+                document.execCommand('insertHTML', false, html);
+                saveSelection();
+                syncEditor();
+            }
+
+            function getSelectedCell() {
+                const selection = window.getSelection();
+                if (!selection || selection.rangeCount === 0) {
+                    return null;
+                }
+
+                let node = selection.getRangeAt(0).commonAncestorContainer;
+                if (node.nodeType !== Node.ELEMENT_NODE) {
+                    node = node.parentElement;
+                }
+
+                return node ? node.closest('td, th') : null;
+            }
+
+            function getSelectedTable() {
+                const cell = getSelectedCell();
+                return cell ? cell.closest('table') : null;
+            }
+
+            function updateTableMarkup(table) {
+                if (!table) {
+                    return;
+                }
+                table.classList.add('table');
+                syncEditor();
+            }
+
+            function changeTable(action) {
+                if (currentMode !== 'visual') {
+                    setMode('visual');
+                }
+
+                const cell = getSelectedCell();
+                const table = getSelectedTable();
+                if (!cell || !table) {
+                    window.alert('Clique dentro de uma célula da tabela para editar a estrutura.');
+                    return;
+                }
+
+                const row = cell.closest('tr');
+                const rows = Array.from(table.querySelectorAll('tr'));
+                const rowIndex = rows.indexOf(row);
+                const cells = Array.from(row.children);
+                const colIndex = cells.indexOf(cell);
+
+                if (action === 'add-row') {
+                    const newRow = document.createElement('tr');
+                    cells.forEach(function (_, index) {
+                        const tag = rowIndex === 0 ? 'th' : 'td';
+                        const newCell = document.createElement(tag);
+                        newCell.textContent = rowIndex === 0 ? `Título ${index + 1}` : `Nova célula ${index + 1}`;
+                        newRow.appendChild(newCell);
+                    });
+                    row.after(newRow);
+                }
+
+                if (action === 'remove-row') {
+                    if (rows.length <= 1) {
+                        window.alert('A tabela precisa ter pelo menos uma linha.');
+                        return;
+                    }
+                    row.remove();
+                }
+
+                if (action === 'add-column') {
+                    rows.forEach(function (currentRow, currentIndex) {
+                        const currentCells = Array.from(currentRow.children);
+                        const tag = currentIndex === 0 ? 'th' : 'td';
+                        const newCell = document.createElement(tag);
+                        newCell.textContent = currentIndex === 0 ? `Título ${colIndex + 2}` : `Nova célula ${colIndex + 2}`;
+                        if (currentCells[colIndex]) {
+                            currentCells[colIndex].after(newCell);
+                        } else {
+                            currentRow.appendChild(newCell);
+                        }
+                    });
+                }
+
+                if (action === 'remove-column') {
+                    const firstRowCells = rows[0] ? rows[0].children.length : 0;
+                    if (firstRowCells <= 1) {
+                        window.alert('A tabela precisa ter pelo menos uma coluna.');
+                        return;
+                    }
+                    rows.forEach(function (currentRow) {
+                        const currentCells = Array.from(currentRow.children);
+                        if (currentCells[colIndex]) {
+                            currentCells[colIndex].remove();
+                        }
+                    });
+                }
+
+                updateTableMarkup(table);
+            }
+
+            function closePopovers() {
+                root.querySelectorAll('[data-editor-popover]').forEach(function (popover) {
+                    popover.classList.add('hidden');
+                });
+            }
+
+            root.querySelectorAll('[data-editor-command]').forEach(function (button) {
+                button.addEventListener('mousedown', function (event) {
+                    event.preventDefault();
+                    saveSelection();
+                });
+                button.addEventListener('click', function () {
+                    runCommand(this.dataset.editorCommand);
+                });
+            });
+
+            root.querySelectorAll('[data-editor-control]').forEach(function (control) {
+                control.addEventListener('mousedown', function () {
+                    saveSelection();
+                });
+                control.addEventListener('change', function () {
+                    runCommand(this.dataset.editorControl, this.value);
+                });
+            });
+
+            root.querySelectorAll('[data-editor-block]').forEach(function (button) {
+                button.addEventListener('mousedown', function (event) {
+                    event.preventDefault();
+                    saveSelection();
+                });
+                button.addEventListener('click', function () {
+                    runCommand('formatBlock', this.dataset.editorBlock);
+                });
+            });
+
+            root.querySelectorAll('[data-editor-inline-style]').forEach(function (button) {
+                button.addEventListener('click', function () {
+                    applyInlineStyle(this.dataset.editorInlineStyle, this.dataset.editorStyleValue);
+                    closePopovers();
+                });
+            });
+
+            root.querySelectorAll('[data-editor-popover-target]').forEach(function (button) {
+                button.addEventListener('click', function (event) {
+                    event.stopPropagation();
+                    const target = root.querySelector(`[data-editor-popover="${this.dataset.editorPopoverTarget}"]`);
+                    const willOpen = target.classList.contains('hidden');
+                    closePopovers();
+                    if (willOpen) {
+                        target.classList.remove('hidden');
+                    }
+                });
+            });
+
+            root.querySelectorAll('[data-editor-mode-button]').forEach(function (button) {
+                button.addEventListener('click', function () {
+                    setMode(this.dataset.editorModeButton);
+                });
+            });
+
+            root.querySelectorAll('[data-editor-snippet]').forEach(function (button) {
+                button.addEventListener('mousedown', function (event) {
+                    event.preventDefault();
+                    saveSelection();
+                });
+                button.addEventListener('click', function () {
+                    if (this.dataset.editorSnippet === 'table') {
+                        const columns = Math.max(1, parseInt(window.prompt('Quantas colunas a tabela deve ter?', '2') || '2', 10) || 2);
+                        const rows = Math.max(1, parseInt(window.prompt('Quantas linhas de conteúdo a tabela deve ter?', '2') || '2', 10) || 2);
+                        const headerCells = Array.from({ length: columns }, function (_, index) {
+                            return `<th>Título ${index + 1}</th>`;
+                        }).join('');
+                        const bodyRows = Array.from({ length: rows }, function (_, rowIndex) {
+                            const rowCells = Array.from({ length: columns }, function (_, colIndex) {
+                                return `<td>Linha ${rowIndex + 1} / Coluna ${colIndex + 1}</td>`;
+                            }).join('');
+                            return `<tr>${rowCells}</tr>`;
+                        }).join('');
+
+                        insertHtmlSnippet(`<table class="table"><tr>${headerCells}</tr>${bodyRows}</table><p><br></p>`);
+                        return;
+                    }
+
+                    const snippets = {
+                        ok: '<div class="ok"><strong>Resumo rápido:</strong><br>Escreva aqui uma orientação positiva, resumo ou confirmação importante.</div><p><br></p>',
+                        note: '<div class="note"><strong>Importante:</strong><br>Escreva aqui um aviso operacional ou contexto importante para o usuário.</div><p><br></p>',
+                        warn: '<div class="warn"><strong>Atenção:</strong><br>Escreva aqui um alerta, risco ou cuidado relevante para o processo.</div><p><br></p>',
+                    };
+                    insertHtmlSnippet(snippets[this.dataset.editorSnippet] || '');
+                });
+            });
+
+            root.querySelectorAll('[data-editor-table-action]').forEach(function (button) {
+                button.addEventListener('click', function () {
+                    changeTable(this.dataset.editorTableAction);
+                });
+            });
+
+            root.querySelector('[data-editor-action="apply-font-size"]')?.addEventListener('click', applyFontSize);
+            root.querySelector('[data-editor-action="link"]')?.addEventListener('click', function () {
+                const url = window.prompt('Informe a URL do link:');
+                if (url) {
+                    runCommand('createLink', url);
+                }
+            });
+
+            root.querySelector('[data-editor-action="image-url"]')?.addEventListener('click', function () {
+                const url = window.prompt('Informe a URL da imagem:');
+                if (url) {
+                    insertHtmlSnippet(`<img src="${url}" alt="Imagem da documentação">`);
+                }
+            });
+
+            imageUpload?.addEventListener('change', function (event) {
+                const file = event.target.files?.[0];
+                if (!file) {
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = function (loadEvent) {
+                    const result = loadEvent.target?.result;
+                    if (result) {
+                        insertHtmlSnippet(`<img src="${result}" alt="Imagem enviada para a documentação">`);
+                    }
+                };
+                reader.readAsDataURL(file);
+                event.target.value = '';
+            });
+
+            editor.addEventListener('focus', saveSelection);
+            editor.addEventListener('keyup', function () {
+                saveSelection();
+                syncEditor();
+            });
+            editor.addEventListener('mouseup', saveSelection);
+            editor.addEventListener('input', syncEditor);
+
+            if (htmlSource) {
+                htmlSource.addEventListener('input', syncEditor);
+            }
+
+            if (fontSizeInput) {
+                fontSizeInput.addEventListener('keydown', function (event) {
+                    if (event.key === 'Enter') {
+                        event.preventDefault();
+                        applyFontSize();
+                    }
+                });
+            }
+
+            root.closest('form')?.addEventListener('submit', syncEditor);
+            document.addEventListener('click', function (event) {
+                if (!root.contains(event.target)) {
+                    closePopovers();
+                }
+            });
+
+            setMode('visual');
+        });
+    });
+</script>

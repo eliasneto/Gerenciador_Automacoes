@@ -1,0 +1,9 @@
+#CRIAR USUARIO
+.venv/bin/python manage.py createsuperuser
+
+#RODAR SISTEMA
+.venv/bin/python manage.py runserver
+
+#ACESSAR SISTEMA
+http://127.0.0.1:8000/contas/login/
+

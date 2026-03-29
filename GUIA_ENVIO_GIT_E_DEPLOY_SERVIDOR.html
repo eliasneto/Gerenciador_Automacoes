@@ -1,0 +1,403 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>Guia Oficial - Git, GitHub e Deploy do AutoControllers</title>
+<style>
+body { font-family: Arial, sans-serif; margin: 32px; color: #1f2937; line-height: 1.65; }
+h1, h2, h3 { color: #111827; }
+h1 { border-bottom: 2px solid #e5e7eb; padding-bottom: 10px; }
+h2 { margin-top: 32px; }
+h3 { margin-top: 20px; }
+p, li, td, th { font-size: 14px; }
+pre { background: #f3f4f6; padding: 14px; border: 1px solid #e5e7eb; white-space: pre-wrap; border-radius: 8px; overflow-x: auto; }
+code { font-family: Consolas, monospace; }
+ul, ol { margin-top: 8px; }
+li { margin-bottom: 6px; }
+.note { background: #fffbeb; border: 1px solid #fde68a; padding: 14px; border-radius: 8px; }
+.ok { background: #ecfdf5; border: 1px solid #a7f3d0; padding: 14px; border-radius: 8px; }
+.warn { background: #fef2f2; border: 1px solid #fecaca; padding: 14px; border-radius: 8px; }
+.table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+.table th, .table td { border: 1px solid #e5e7eb; padding: 10px; text-align: left; vertical-align: top; }
+.table th { background: #f9fafb; }
+.small { color: #6b7280; font-size: 13px; }
+.kbd { display: inline-block; padding: 2px 8px; border: 1px solid #d1d5db; border-radius: 6px; background: #f9fafb; font-family: Consolas, monospace; font-size: 12px; }
+</style>
+</head>
+<body>
+<h1>Guia Oficial - Git, GitHub e Deploy do AutoControllers</h1>
+
+<p>Este documento descreve o fluxo completo para versionar o projeto no Git, enviar para o GitHub, preparar um servidor Linux e subir o AutoControllers em producao com Docker.</p>
+
+<div class="ok">
+<strong>Resumo rapido:</strong><br>
+O fluxo recomendado e: preparar o repositório local, criar o repositório no GitHub, fazer o primeiro <code>push</code>, acessar o servidor Linux, instalar Docker e Docker Compose, configurar o arquivo de ambiente, clonar o projeto e subir os containers com <code>docker compose up --build -d</code> ou <code>docker-compose up --build -d</code>.
+</div>
+
+<h2>1. O que este projeto usa hoje</h2>
+<table class="table">
+<tr><th>Componente</th><th>Uso atual</th></tr>
+<tr><td>Aplicacao</td><td>Django</td></tr>
+<tr><td>Banco</td><td>MySQL 8.4</td></tr>
+<tr><td>Execucao</td><td>Docker com <code>web + worker + db</code></td></tr>
+<tr><td>Porta da aplicacao</td><td><code>8190</code></td></tr>
+<tr><td>Arquivos de apoio</td><td><code>Dockerfile</code>, <code>docker-compose.yml</code>, <code>.env.example</code>, <code>.env.server.example</code></td></tr>
+</table>
+
+<div class="note">
+<strong>Importante:</strong> o repositório deve subir sem levar arquivos locais como <code>.venv</code>, <code>.env.docker</code>, <code>db.sqlite3</code>, <code>media</code> e <code>logs</code>. O projeto ja foi preparado com <code>.gitignore</code> para isso.
+</div>
+
+<h2>2. Antes de enviar para o GitHub</h2>
+<p>Confirme que voce esta na raiz do projeto.</p>
+
+<h3>Linux</h3>
+<pre>cd /caminho/do/projeto/AutoControllers
+pwd
+ls -la</pre>
+
+<h3>Windows PowerShell</h3>
+<pre>cd C:\caminho\do\projeto\AutoControllers
+Get-Location
+Get-ChildItem</pre>
+
+<p>Confira o status do Git:</p>
+
+<h3>Linux</h3>
+<pre>git status</pre>
+
+<h3>Windows PowerShell</h3>
+<pre>git status</pre>
+
+<h2>3. Criar o primeiro commit</h2>
+<p>Se este ainda for o primeiro envio do projeto, use o fluxo abaixo.</p>
+
+<h3>Linux</h3>
+<pre>git add .
+git commit -m "Initial project setup"</pre>
+
+<h3>Windows PowerShell</h3>
+<pre>git add .
+git commit -m "Initial project setup"</pre>
+
+<div class="warn">
+<strong>Atencao:</strong> se o Git reclamar de nome e email, configure antes do commit.
+</div>
+
+<h3>Linux</h3>
+<pre>git config --global user.name "Seu Nome"
+git config --global user.email "seu-email@empresa.com"</pre>
+
+<h3>Windows PowerShell</h3>
+<pre>git config --global user.name "Seu Nome"
+git config --global user.email "seu-email@empresa.com"</pre>
+
+<h2>4. Criar o repositório no GitHub</h2>
+<p>No GitHub, crie um novo repositório vazio. Nao adicione <code>README</code>, <code>.gitignore</code> ou <code>license</code> se o projeto ja tiver esses arquivos localmente.</p>
+
+<p>Exemplo de URL remota:</p>
+<pre>https://github.com/sua-empresa/autocontrollers.git</pre>
+
+<h2>5. Conectar o projeto local ao GitHub</h2>
+
+<h3>Linux</h3>
+<pre>git remote add origin https://github.com/sua-empresa/autocontrollers.git
+git branch -M main
+git push -u origin main</pre>
+
+<h3>Windows PowerShell</h3>
+<pre>git remote add origin https://github.com/sua-empresa/autocontrollers.git
+git branch -M main
+git push -u origin main</pre>
+
+<p>Para conferir a remota configurada:</p>
+<pre>git remote -v</pre>
+
+<h2>6. Fluxo do dia a dia para novas alteracoes</h2>
+
+<h3>Linux</h3>
+<pre>git status
+git add .
+git commit -m "Descreva a alteracao"
+git push origin main</pre>
+
+<h3>Windows PowerShell</h3>
+<pre>git status
+git add .
+git commit -m "Descreva a alteracao"
+git push origin main</pre>
+
+<h2>7. O que o servidor Linux precisa ter</h2>
+<p>Para rodar este projeto em producao, o servidor precisa de:</p>
+<ul>
+<li>Linux com acesso SSH</li>
+<li>Git instalado</li>
+<li>Docker instalado</li>
+<li>Docker Compose ou plugin <code>docker compose</code></li>
+<li>Porta <code>8190</code> liberada no firewall ou exposta por proxy reverso</li>
+</ul>
+
+<h2>8. Instalacao basica no servidor Linux</h2>
+<p>Os comandos abaixo servem como base para distribuicoes Debian ou Ubuntu.</p>
+
+<h3>Atualizar pacotes</h3>
+<pre>sudo apt update
+sudo apt upgrade -y</pre>
+
+<h3>Instalar Git</h3>
+<pre>sudo apt install -y git</pre>
+
+<h3>Instalar Docker</h3>
+<pre>sudo apt install -y ca-certificates curl gnupg
+sudo install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+sudo chmod a+r /etc/apt/keyrings/docker.gpg
+
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+  $(. /etc/os-release && echo $VERSION_CODENAME) stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+sudo apt update
+sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin</pre>
+
+<h3>Permitir usar Docker sem sudo</h3>
+<pre>sudo usermod -aG docker $USER
+newgrp docker</pre>
+
+<p>Teste:</p>
+<pre>docker --version
+docker compose version</pre>
+
+<div class="note">
+<strong>Se seu servidor usar o binario legado:</strong> use <code>docker-compose</code> no lugar de <code>docker compose</code>.
+</div>
+
+<h2>9. Clonar o projeto no servidor</h2>
+<p>Crie uma pasta de trabalho e clone o repositório.</p>
+
+<pre>mkdir -p ~/projetos
+cd ~/projetos
+git clone https://github.com/sua-empresa/autocontrollers.git
+cd autocontrollers</pre>
+
+<p>Se o repositório for privado, use a estrategia de autenticacao da empresa, como token ou chave SSH.</p>
+
+<h2>10. Preparar o arquivo de ambiente do servidor</h2>
+<p>O projeto possui um modelo pronto:</p>
+<pre>.env.server.example</pre>
+
+<p>Crie o arquivo real do servidor com base nele.</p>
+
+<h3>Linux</h3>
+<pre>cp .env.server.example .env.server</pre>
+
+<p>Depois edite o arquivo:</p>
+<pre>nano .env.server</pre>
+
+<p>Exemplo de valores esperados:</p>
+<pre>DJANGO_SECRET_KEY=sua-chave-secreta-forte
+DJANGO_DEBUG=False
+DJANGO_ALLOWED_HOSTS=seu-dominio.com,IP_DO_SERVIDOR
+DJANGO_CSRF_TRUSTED_ORIGINS=https://seu-dominio.com
+DJANGO_SUPERUSER_USERNAME=admin
+DJANGO_SUPERUSER_EMAIL=admin@empresa.com
+DJANGO_SUPERUSER_PASSWORD=troque-esta-senha
+DATABASE_URL=mysql://autocontrollers:senha-forte@db:3306/autocontrollers
+AUTOMATION_SCHEDULER_ENABLED=0
+AUTOMATION_WORKER_POLL_INTERVAL=5</pre>
+
+<div class="warn">
+<strong>Atencao:</strong> nunca suba <code>.env.server</code> para o GitHub. Ele deve existir apenas no servidor.
+</div>
+
+<h2>11. Ajustar o docker-compose para o servidor</h2>
+<p>Confirme se o <code>docker-compose.yml</code> esta lendo o arquivo de ambiente correto. O fluxo ideal em producao e usar:</p>
+<pre>.env.server</pre>
+
+<p>Se preferir, voce tambem pode exportar as variaveis manualmente antes do start.</p>
+
+<h2>12. Subir o sistema no servidor</h2>
+<p>Na raiz do projeto, rode o build e start dos containers.</p>
+
+<h3>Com plugin novo</h3>
+<pre>docker compose up --build -d</pre>
+
+<h3>Com binario legado</h3>
+<pre>docker-compose up --build -d</pre>
+
+<p>Esse comando sobe:</p>
+<ul>
+<li><code>db</code> com MySQL</li>
+<li><code>web</code> com Django + Gunicorn</li>
+<li><code>worker</code> para consumir a fila</li>
+</ul>
+
+<h2>13. O que acontece na primeira subida</h2>
+<ul>
+<li>o MySQL inicializa o banco</li>
+<li>o container <code>web</code> roda <code>migrate</code></li>
+<li>o container <code>web</code> roda <code>collectstatic</code></li>
+<li>o superusuario inicial e criado ou atualizado</li>
+<li>o <code>worker</code> inicia e passa a monitorar a fila</li>
+</ul>
+
+<h2>14. Como validar que subiu corretamente</h2>
+
+<h3>Ver containers ativos</h3>
+<pre>docker compose ps</pre>
+
+<h3>Ver logs da aplicacao</h3>
+<pre>docker compose logs -f web</pre>
+
+<h3>Ver logs do worker</h3>
+<pre>docker compose logs -f worker</pre>
+
+<h3>Ver logs do banco</h3>
+<pre>docker compose logs -f db</pre>
+
+<p>Se estiver usando o binario antigo, troque <code>docker compose</code> por <code>docker-compose</code>.</p>
+
+<h3>Validar no navegador</h3>
+<pre>http://IP_DO_SERVIDOR:8190</pre>
+
+<p>ou com dominio/proxy:</p>
+<pre>https://seu-dominio.com</pre>
+
+<h2>15. Login inicial do Django</h2>
+<p>O projeto esta preparado para criar um superusuario inicial automaticamente com base nas variaveis abaixo:</p>
+<ul>
+<li><code>DJANGO_SUPERUSER_USERNAME</code></li>
+<li><code>DJANGO_SUPERUSER_EMAIL</code></li>
+<li><code>DJANGO_SUPERUSER_PASSWORD</code></li>
+</ul>
+
+<p>Depois do primeiro acesso, troque a senha imediatamente.</p>
+
+<h2>16. Atualizar o projeto no servidor depois de novas alteracoes</h2>
+<p>Quando houver novas alteracoes no GitHub, o fluxo no servidor normalmente sera:</p>
+
+<pre>cd ~/projetos/autocontrollers
+git pull origin main
+docker compose up --build -d</pre>
+
+<p>Para acompanhar o restart:</p>
+<pre>docker compose logs -f web
+docker compose logs -f worker</pre>
+
+<h2>17. Parar ou reiniciar o sistema</h2>
+
+<h3>Parar</h3>
+<pre>docker compose down</pre>
+
+<h3>Reiniciar mantendo volumes</h3>
+<pre>docker compose down
+docker compose up --build -d</pre>
+
+<h3>Recriar tudo, inclusive volumes</h3>
+<pre>docker compose down -v
+docker compose up --build -d</pre>
+
+<div class="warn">
+<strong>Atencao:</strong> o comando com <code>-v</code> remove volumes. Use com cuidado, porque ele apaga banco e arquivos persistidos dos volumes Docker se voce nao tiver backup.
+</div>
+
+<h2>18. Firewall e exposicao da porta</h2>
+<p>Se for acessar diretamente a porta da aplicacao, libere a <code>8190</code> no firewall.</p>
+
+<h3>Exemplo com UFW</h3>
+<pre>sudo ufw allow 8190/tcp
+sudo ufw status</pre>
+
+<p>Em ambiente corporativo, o mais recomendado e usar um proxy reverso como Nginx, com HTTPS e dominio.</p>
+
+<h2>19. Exemplo de proxy reverso com Nginx</h2>
+<p>Exemplo simples de bloco de servidor:</p>
+<pre>server {
+    listen 80;
+    server_name seu-dominio.com;
+
+    location / {
+        proxy_pass http://127.0.0.1:8190;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}</pre>
+
+<p>Depois de configurar o Nginx:</p>
+<pre>sudo nginx -t
+sudo systemctl reload nginx</pre>
+
+<h2>20. Checklist de producao</h2>
+<ul>
+<li>o repositório esta no GitHub</li>
+<li>o servidor possui Docker e Git</li>
+<li>o arquivo <code>.env.server</code> foi criado</li>
+<li><code>DJANGO_SECRET_KEY</code> foi trocada</li>
+<li>a senha do admin inicial foi trocada</li>
+<li><code>DJANGO_DEBUG=False</code> esta definido</li>
+<li><code>ALLOWED_HOSTS</code> esta correto</li>
+<li>a porta 8190 ou o dominio esta acessivel</li>
+<li>os containers <code>web</code>, <code>worker</code> e <code>db</code> estao ativos</li>
+<li>o login no sistema funciona</li>
+<li>o worker esta processando fila normalmente</li>
+</ul>
+
+<h2>21. Comandos uteis para suporte</h2>
+
+<h3>Entrar no container web</h3>
+<pre>docker compose exec web bash</pre>
+
+<h3>Entrar no container do banco</h3>
+<pre>docker compose exec db bash</pre>
+
+<h3>Resetar senha do admin</h3>
+<pre>docker compose exec web python manage.py shell -c "from django.contrib.auth import get_user_model; U=get_user_model(); u=U.objects.get(username='admin'); u.set_password('NovaSenha123'); u.is_superuser=True; u.is_staff=True; u.save(); print('senha resetada')"</pre>
+
+<h3>Conferir status do Django</h3>
+<pre>docker compose exec web python manage.py check</pre>
+
+<h2>22. Comandos uteis para Windows local</h2>
+<p>Se voce estiver preparando o projeto a partir do Windows, os comandos Git continuam praticamente os mesmos.</p>
+
+<h3>Clonar</h3>
+<pre>git clone https://github.com/sua-empresa/autocontrollers.git
+cd autocontrollers</pre>
+
+<h3>Commit e push</h3>
+<pre>git add .
+git commit -m "Atualizacao do projeto"
+git push origin main</pre>
+
+<p>Se quiser rodar Docker localmente no Windows, prefira:</p>
+<ul>
+<li>Docker Desktop</li>
+<li>PowerShell ou terminal do VS Code</li>
+</ul>
+
+<h3>Subir localmente no Windows</h3>
+<pre>docker compose up --build -d</pre>
+
+<h2>23. Fluxo completo resumido</h2>
+<ol>
+<li>organizar o projeto local</li>
+<li>fazer commit</li>
+<li>criar repositório no GitHub</li>
+<li>fazer <code>push</code> da branch <code>main</code></li>
+<li>acessar o servidor Linux</li>
+<li>instalar Git e Docker</li>
+<li>clonar o projeto</li>
+<li>criar <code>.env.server</code></li>
+<li>subir com <code>docker compose up --build -d</code></li>
+<li>validar logs, login e worker</li>
+</ol>
+
+<div class="ok">
+<strong>Regra final para nao errar:</strong><br>
+Nunca envie arquivos sensiveis para o GitHub, mantenha o ambiente do servidor em <code>.env.server</code>, use <code>docker compose up --build -d</code> para subir o projeto e sempre valide <code>web</code>, <code>worker</code> e <code>db</code> apos cada deploy.
+</div>
+
+<p class="small">Documento interno do AutoControllers. Guia tecnico para versionamento no Git, envio ao GitHub e deploy em servidor Linux com Docker.</p>
+</body>
+</html>

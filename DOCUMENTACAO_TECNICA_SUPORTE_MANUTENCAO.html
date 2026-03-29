@@ -1,0 +1,550 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>Documentacao Tecnica - Suporte e Manutencao do AutoControllers</title>
+<style>
+body { font-family: Arial, sans-serif; margin: 32px; color: #1f2937; line-height: 1.65; }
+h1, h2, h3, h4 { color: #111827; }
+h1 { border-bottom: 2px solid #e5e7eb; padding-bottom: 10px; }
+h2 { margin-top: 34px; }
+h3 { margin-top: 24px; }
+h4 { margin-top: 18px; }
+p, li, td, th { font-size: 14px; }
+pre { background: #f3f4f6; padding: 14px; border: 1px solid #e5e7eb; white-space: pre-wrap; border-radius: 8px; overflow-x: auto; }
+code { font-family: Consolas, monospace; }
+ul, ol { margin-top: 8px; }
+li { margin-bottom: 6px; }
+.note { background: #eff6ff; border: 1px solid #bfdbfe; padding: 14px; border-radius: 8px; }
+.ok { background: #ecfdf5; border: 1px solid #a7f3d0; padding: 14px; border-radius: 8px; }
+.warn { background: #fef2f2; border: 1px solid #fecaca; padding: 14px; border-radius: 8px; }
+.table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+.table th, .table td { border: 1px solid #e5e7eb; padding: 10px; text-align: left; vertical-align: top; }
+.table th { background: #f9fafb; }
+.small { color: #6b7280; font-size: 13px; }
+.muted { color: #6b7280; }
+</style>
+</head>
+<body>
+<h1>Documentacao Tecnica - Suporte e Manutencao do AutoControllers</h1>
+
+<p>Este documento foi escrito para equipes de suporte, manutencao e evolucao do AutoControllers. O objetivo e permitir que uma pessoa assuma o sistema com seguranca, entendendo a arquitetura, os modulos, as rotas, as regras de negocio, os grupos de seguranca e a responsabilidade de cada arquivo importante.</p>
+
+<div class="ok">
+<strong>Resumo executivo:</strong><br>
+O AutoControllers e um sistema Django com arquitetura <code>web + worker + MySQL</code>, executado em Docker na porta <code>8190</code>. A interface registra execucoes, a fila controla concorrencia, o worker processa automacoes em segundo plano, o modulo de documentacao centraliza consulta e publicacao de conhecimento operacional e uma camada separada de <code>API</code> expõe integracoes por token sem substituir o fluxo web atual.
+</div>
+
+<h2>1. Arquitetura geral do sistema</h2>
+
+<table class="table">
+<tr><th>Componente</th><th>Responsabilidade</th></tr>
+<tr><td><code>web</code></td><td>Aplicacao Django/Gunicorn. Recebe login, navegaçao, cadastros, execucoes, documentacao e admin.</td></tr>
+<tr><td><code>worker</code></td><td>Processa a fila de automacoes pendentes e dispara o comando <code>run_automation</code>.</td></tr>
+<tr><td><code>db</code></td><td>MySQL 8.4. Armazena usuarios, grupos, automacoes, execucoes, fila, documentos e auditorias.</td></tr>
+<tr><td><code>media</code></td><td>Arquivos de entrada, anexos e saidas das automacoes.</td></tr>
+<tr><td><code>static/staticfiles</code></td><td>Arquivos estaticos da interface e da administracao.</td></tr>
+</table>
+
+<p>Entrada principal do sistema:</p>
+<pre>http://127.0.0.1:8190/</pre>
+
+<div class="note">
+<strong>Fluxo tecnico de execucao:</strong><br>
+Usuario clica em executar -> Django valida formulario e arquivos -> cria registro em <code>AutomationExecution</code> -> fila decide se executa ou aguarda -> worker monitora pendencias -> comando <code>manage.py run_automation &lt;id&gt;</code> importa a funcao Python da automacao e executa -> arquivos gerados em <code>output_dir</code> sao registrados no banco para download.
+</div>
+
+<h2>2. Rotas principais</h2>
+
+<table class="table">
+<tr><th>Rota base</th><th>Destino</th><th>Observacao</th></tr>
+<tr><td><code>/</code></td><td>Dashboard</td><td>Redireciona para <code>core:dashboard</code>.</td></tr>
+<tr><td><code>/api/</code></td><td>Camada de integracao</td><td>API separada com autenticacao por token e endpoints de leitura/execucao.</td></tr>
+<tr><td><code>/contas/</code></td><td>Autenticacao</td><td>Login, logout e logout por inatividade.</td></tr>
+<tr><td><code>/dashboard/</code></td><td>Core</td><td>Painel consolidado com filtros e metricas.</td></tr>
+<tr><td><code>/administrador/</code></td><td>Cadastro administrativo</td><td>Criar automacoes e ver hub administrativo.</td></tr>
+<tr><td><code>/documentacao/</code></td><td>Documentacao</td><td>Consulta publica autenticada e manutencao administrativa.</td></tr>
+<tr><td><code>/comercial/</code></td><td>Modulo Comercial</td><td>Execucao e historico das automacoes comerciais.</td></tr>
+<tr><td><code>/financeiro/</code></td><td>Modulo Financeiro</td><td>Execucao e historico das automacoes financeiras.</td></tr>
+<tr><td><code>/ti/</code></td><td>Modulo TI</td><td>Execucao e historico das automacoes de TI.</td></tr>
+<tr><td><code>/admin/</code></td><td>Django Admin</td><td>Gestao do banco, auditorias e configuracoes.</td></tr>
+</table>
+
+<h2>3. Seguranca e controle de acesso</h2>
+
+<h3>3.1 Grupos de modulo</h3>
+<ul>
+<li><code>Modulo Comercial</code></li>
+<li><code>Modulo Financeiro</code></li>
+<li><code>Modulo TI</code></li>
+<li><code>Modulo Documentacao</code></li>
+<li><code>Modulo Administracao</code></li>
+</ul>
+
+<h3>3.2 Grupos de dashboard</h3>
+<ul>
+<li><code>Dashboard Comercial</code></li>
+<li><code>Dashboard Financeiro</code></li>
+<li><code>Dashboard TI</code></li>
+</ul>
+
+<h3>3.3 Regras atuais</h3>
+<ul>
+<li>Usuario so ve modulo se estiver no grupo correspondente.</li>
+<li>Usuario so ve indicadores do dashboard dos grupos de dashboard que possuir.</li>
+<li><code>superuser</code> ve tudo, mesmo sem grupo.</li>
+<li><code>Documentacao Sistema</code> fica acessivel a qualquer usuario autenticado.</li>
+<li>Edicao da documentacao continua restrita ao grupo de documentacao.</li>
+<li>A API respeita os mesmos grupos de modulo e administracao ja usados pela interface web.</li>
+</ul>
+
+<div class="warn">
+<strong>Ponto importante para suporte:</strong><br>
+Quando um usuario disser que "o modulo sumiu", quase sempre a causa esta em grupos de permissao no Django Admin, e nao em erro de rota ou template.
+</div>
+
+<h2>4. Regras de negocio centrais</h2>
+
+<ol>
+<li>Cada automacao pertence a um ou mais setores no momento do cadastro administrativo.</li>
+<li>Execucoes respeitam fila e limite de concorrencia.</li>
+<li>Se a fila estiver lotada, a execucao entra em <code>Pendente</code>.</li>
+<li>Documentacao vinculada a automacao so aparece ao usuario se estiver <code>Publicado</code>.</li>
+<li>Ao editar um documento existente, ele volta para <code>Rascunho</code>.</li>
+<li>Somente uma documentacao pode ficar vinculada a uma mesma automacao.</li>
+<li>Documentos publicados sem vinculo com automacao podem aparecer em <code>Sistema</code>, <code>Administracao</code>, <code>Comercial</code>, <code>Financeiro</code> ou <code>TI</code>, conforme o setor de publicacao.</li>
+<li>Automações de exemplo nao devem ser tratadas como seeds de producao.</li>
+</ol>
+
+<h2>5. Modulo Config</h2>
+<p>Este modulo define a espinha dorsal do projeto Django.</p>
+
+<table class="table">
+<tr><th>Arquivo</th><th>Funcao</th><th>Observacoes de suporte</th></tr>
+<tr><td><code>config/settings.py</code></td><td>Configuracoes centrais: apps, middleware, banco, cookies, sessao, static, media, seguranca e worker.</td><td>Ler primeiro quando houver erro de ambiente, host, banco, sessao, csrf ou arquivos estaticos.</td></tr>
+<tr><td><code>config/urls.py</code></td><td>Roteamento principal do projeto e configuracao do Django Admin.</td><td>Define as URLs base e o redirecionamento inicial para o dashboard.</td></tr>
+<tr><td><code>config/wsgi.py</code></td><td>Ponto de entrada WSGI para Gunicorn.</td><td>Usado no container <code>web</code>.</td></tr>
+<tr><td><code>config/asgi.py</code></td><td>Ponto de entrada ASGI.</td><td>Hoje nao e o caminho principal em producao.</td></tr>
+<tr><td><code>config/__init__.py</code></td><td>Inicializacao do pacote.</td><td>Arquivo estrutural.</td></tr>
+</table>
+
+<h3>Rotas definidas em <code>config/urls.py</code></h3>
+<ul>
+<li><code>/</code> -> dashboard</li>
+<li><code>/admin/</code> -> Django Admin</li>
+<li><code>/api/</code> -> camada de integracao externa</li>
+<li><code>/contas/</code></li>
+<li><code>/dashboard/</code></li>
+<li><code>/administrador/</code></li>
+<li><code>/documentacao/</code></li>
+<li><code>/comercial/</code></li>
+<li><code>/financeiro/</code></li>
+<li><code>/ti/</code></li>
+</ul>
+
+<h2>6. Modulo API</h2>
+<p>Este app foi criado para oferecer integracao externa sem quebrar as views HTML existentes. Ele usa autenticacao por token propria e reaproveita os servicos e regras de permissao do projeto.</p>
+
+<table class="table">
+<tr><th>Arquivo</th><th>Funcao</th><th>Observacoes de suporte</th></tr>
+<tr><td><code>api/models.py</code></td><td>Define o modelo <code>APIToken</code>.</td><td>Armazena token, usuario, expiração, ultimo uso e status ativo.</td></tr>
+<tr><td><code>api/auth.py</code></td><td>Resolve token Bearer, autentica usuario e protege endpoints.</td><td>Arquivo central da seguranca da API.</td></tr>
+<tr><td><code>api/views.py</code></td><td>Implementa endpoints de health, token, usuario, modulos, automacoes, execucoes e documentacoes.</td><td>Tambem concentra a paginação da API.</td></tr>
+<tr><td><code>api/urls.py</code></td><td>Rotas da API sob <code>/api/</code>.</td><td>Camada separada da interface web.</td></tr>
+<tr><td><code>api/admin.py</code></td><td>Administra os tokens de API no Django Admin.</td><td>Permite suporte operacional e diagnostico rapido.</td></tr>
+<tr><td><code>api/apps.py</code></td><td>Configura o app API.</td><td>Estrutural.</td></tr>
+<tr><td><code>api/migrations/0001_initial.py</code></td><td>Cria a tabela de tokens de API.</td><td>Obrigatoria para uso da API autenticada.</td></tr>
+</table>
+
+<h3>Rotas da API</h3>
+<ul>
+<li><code>/api/health/</code></li>
+<li><code>/api/auth/token/</code></li>
+<li><code>/api/auth/token/revoke/</code></li>
+<li><code>/api/me/</code></li>
+<li><code>/api/modules/</code></li>
+<li><code>/api/automacoes/</code></li>
+<li><code>/api/automacoes/&lt;module_key&gt;/&lt;identificador&gt;/executar/</code></li>
+<li><code>/api/execucoes/</code></li>
+<li><code>/api/execucoes/&lt;execution_id&gt;/</code></li>
+<li><code>/api/execucoes/&lt;execution_id&gt;/parar/</code></li>
+<li><code>/api/documentacoes/</code></li>
+</ul>
+
+<h3>Regras de negocio da API</h3>
+<ul>
+<li>A API nao substitui o login web por sessao; ela roda em paralelo.</li>
+<li>Autenticacao usa token do tipo <code>Bearer</code>.</li>
+<li>Os tokens podem ser revogados sem afetar o login web do usuario.</li>
+<li>Permissoes respeitam os mesmos grupos usados nas telas.</li>
+<li>Endpoints de lista possuem paginação com <code>page</code> e <code>per_page</code>.</li>
+<li>O endpoint de execucao reaproveita a mesma logica da fila do sistema web.</li>
+</ul>
+
+<div class="note">
+<strong>Observacao operacional:</strong><br>
+Incidentes de API tendem a se concentrar em quatro pontos: token ausente/invalido, usuario sem grupo, modulo inacessivel ou migration da tabela <code>APIToken</code> ainda nao aplicada.
+</div>
+
+<h2>7. Modulo Accounts</h2>
+<p>Responsavel por autenticacao e logout por inatividade.</p>
+
+<table class="table">
+<tr><th>Arquivo</th><th>Funcao</th><th>Observacoes de suporte</th></tr>
+<tr><td><code>accounts/views.py</code></td><td>Implementa login, logout e logout automatico por inatividade.</td><td>O login sempre redireciona para o dashboard.</td></tr>
+<tr><td><code>accounts/urls.py</code></td><td>Mapeia as rotas de autenticacao.</td><td>Inclui rota de timeout.</td></tr>
+<tr><td><code>accounts/forms.py</code></td><td>Customiza o formulario de login.</td><td>Controla placeholders, classes CSS e integracao visual.</td></tr>
+<tr><td><code>accounts/admin.py</code></td><td>Registro administrativo, se houver.</td><td>Arquivo estrutural.</td></tr>
+<tr><td><code>accounts/apps.py</code></td><td>Configuracao do app.</td><td>Arquivo estrutural.</td></tr>
+<tr><td><code>accounts/models.py</code></td><td>Sem modelo funcional relevante hoje.</td><td>O sistema usa o usuario padrao do Django.</td></tr>
+<tr><td><code>accounts/tests.py</code></td><td>Base para testes do modulo.</td><td>Pode estar vazio.</td></tr>
+<tr><td><code>accounts/migrations/__init__.py</code></td><td>Pasta de migracoes.</td><td>Sem migracoes funcionais hoje.</td></tr>
+</table>
+
+<h3>Rotas do modulo</h3>
+<ul>
+<li><code>/contas/login/</code></li>
+<li><code>/contas/logout/</code></li>
+<li><code>/contas/logout/inatividade/</code></li>
+</ul>
+
+<h3>Regra importante</h3>
+<p>O sistema encerra sessao por inatividade apos 20 minutos e usa uma combinacao de expiracao de sessao no backend e timer no frontend.</p>
+
+<h2>8. Modulo Core</h2>
+<p>Core concentra modelos base, fila, execucao, seguranca, dashboard e comportamento comum entre setores.</p>
+
+<table class="table">
+<tr><th>Arquivo</th><th>Funcao</th><th>Observacoes de suporte</th></tr>
+<tr><td><code>core/models.py</code></td><td>Modelos centrais: base de automacao, fila, execucao, arquivos e ativos.</td><td>E o coracao do dominio tecnico.</td></tr>
+<tr><td><code>core/services.py</code></td><td>Disparo de automacoes, fila, parada, importacao do executor, coleta de saida e limpeza.</td><td>Primeiro lugar para investigar falhas de execucao.</td></tr>
+<tr><td><code>core/views.py</code></td><td>Dashboard principal.</td><td>Filtra metricas conforme grupos de dashboard.</td></tr>
+<tr><td><code>core/module_views.py</code></td><td>Views base reutilizadas por Comercial, Financeiro e TI.</td><td>Controla home do modulo, start, stop e consulta de logs.</td></tr>
+<tr><td><code>core/security.py</code></td><td>Regras de acesso por grupo, superuser e sincronizacao de grupos.</td><td>Arquivo critico para permissao.</td></tr>
+<tr><td><code>core/sector_registry.py</code></td><td>Catalogo de setores, labels, modelos, icones, executores default e grupos.</td><td>Se novo modulo for criado, normalmente passa por aqui.</td></tr>
+<tr><td><code>core/context_processors.py</code></td><td>Envia permissoes e visibilidade para os templates.</td><td>Afeta menu lateral e cards do dashboard.</td></tr>
+<tr><td><code>core/admin.py</code></td><td>Admin de execucoes e configuracao da fila.</td><td>Mostra status, fila e configuracao de concorrencia.</td></tr>
+<tr><td><code>core/forms.py</code></td><td>Formulario de execucao das automacoes.</td><td>Valida arquivos principais, anexos e parametros.</td></tr>
+<tr><td><code>core/urls.py</code></td><td>Rota do dashboard.</td><td>Simples, mas central.</td></tr>
+<tr><td><code>core/signals.py</code></td><td>Sincronizacao de grupos do sistema.</td><td>Ajuda a manter grupos padrao existentes.</td></tr>
+<tr><td><code>core/apps.py</code></td><td>Inicializacao do app.</td><td>Geralmente aciona signals.</td></tr>
+<tr><td><code>core/catalog.py</code></td><td>Arquivo auxiliar estrutural, se presente.</td><td>Verificar uso antes de alterar.</td></tr>
+<tr><td><code>core/tests.py</code></td><td>Base para testes.</td><td>Pode estar vazio.</td></tr>
+<tr><td><code>core/migrations/0001_initial.py</code></td><td>Cria os modelos base do core.</td><td>Inclui execucoes e arquivos.</td></tr>
+<tr><td><code>core/migrations/0002_automationasset.py</code></td><td>Adiciona ativos salvos de automacao.</td><td>Relaciona arquivos salvos por automacao.</td></tr>
+<tr><td><code>core/migrations/0003_alter_automationasset_options_and_more.py</code></td><td>Ajustes de opcoes e nomes.</td><td>Suporte a admin/verbose names.</td></tr>
+<tr><td><code>core/migrations/0004_automationqueuesettings.py</code></td><td>Cria configuracao da fila.</td><td>Permite definir concorrencia pelo Admin.</td></tr>
+<tr><td><code>core/migrations/0005_automationexecution_metrics.py</code></td><td>Adiciona campos de telemetria na execucao.</td><td>Base para monitoramento de RAM e CPU por automacao.</td></tr>
+<tr><td><code>core/management/commands/run_automation.py</code></td><td>Executa uma execucao especifica a partir do ID.</td><td>Importa o executor, chama a funcao, registra logs, saidas e agora atualiza métricas de consumo da execucao.</td></tr>
+<tr><td><code>core/management/commands/run_automation_worker.py</code></td><td>Worker simples da fila.</td><td>Roda continuamente e tenta iniciar execucoes pendentes.</td></tr>
+</table>
+
+<h3>Modelos principais do core</h3>
+<ul>
+<li><code>AutomationBaseModel</code>: base herdada pelos modelos de setor.</li>
+<li><code>AutomationQueueSettings</code>: define quantas execucoes simultaneas podem rodar.</li>
+<li><code>AutomationExecution</code>: historico, estado e metricas de cada execucao.</li>
+<li><code>AutomationExecutionFile</code>: arquivos anexados ou gerados em cada execucao.</li>
+<li><code>AutomationAsset</code>: arquivos salvos por automacao para reaproveitamento.</li>
+</ul>
+
+<h3>Rotas do core</h3>
+<ul>
+<li><code>/dashboard/</code></li>
+</ul>
+
+<h3>Regras de negocio do core</h3>
+<ul>
+<li>Se o limite de concorrencia estiver cheio, a nova execucao entra em fila.</li>
+<li>Se o usuario pedir parada de uma execucao pendente, ela vira <code>Interrompida</code> sem rodar.</li>
+<li>Se o usuario pedir parada de uma execucao em andamento, o sistema marca <code>interromper_solicitado</code> e tenta enviar sinal ao processo.</li>
+<li>Resultados so aparecem ao usuario se forem gravados em <code>output_dir</code> e registrados em <code>AutomationExecutionFile</code>.</li>
+<li>Durante a execucao, o processo agora grava memoria atual, pico de memoria, CPU de usuario, CPU de sistema e data da ultima atualizacao.</li>
+</ul>
+
+<h2>9. Modulo Administrador</h2>
+<p>Responsavel pelo cadastro de automacoes, operacao centralizada de execucoes e monitoramento do ambiente.</p>
+
+<table class="table">
+<tr><th>Arquivo</th><th>Funcao</th><th>Observacoes de suporte</th></tr>
+<tr><td><code>administrador/views.py</code></td><td>Hub administrativo, criacao de automacoes, listagem central de execucoes e tela de monitoramento.</td><td>Protegido pelo grupo <code>Modulo Administracao</code>.</td></tr>
+<tr><td><code>administrador/forms.py</code></td><td>Formulario de criacao de automacao.</td><td>Valida identificador unico e formato de <code>executor_path</code>.</td></tr>
+<tr><td><code>administrador/services.py</code></td><td>Cria automacoes em um ou varios setores.</td><td>Usa transacao atomica.</td></tr>
+<tr><td><code>administrador/urls.py</code></td><td>Rotas do modulo administrativo.</td><td>Hub, cadastro, execucoes e monitoramento.</td></tr>
+<tr><td><code>administrador/catalog.py</code></td><td>Catalogo/setores usados no modulo.</td><td>Verificar consistencia com <code>core/sector_registry.py</code>.</td></tr>
+<tr><td><code>administrador/apps.py</code></td><td>Configuracao do app.</td><td>Estrutural.</td></tr>
+<tr><td><code>administrador/templates/administrador/hub.html</code></td><td>Painel principal administrativo.</td><td>Agora possui atalhos para criacao, execucoes e monitoramento.</td></tr>
+<tr><td><code>administrador/templates/administrador/executions.html</code></td><td>Tela central de todas as execucoes.</td><td>Possui filtros, paginação, resumo e acesso rápido aos logs.</td></tr>
+<tr><td><code>administrador/templates/administrador/monitoring.html</code></td><td>Tela de monitoramento do ambiente.</td><td>Mostra RAM, load average, storage e consumo por execucao em andamento.</td></tr>
+</table>
+
+<h3>Rotas do modulo</h3>
+<ul>
+<li><code>/administrador/</code></li>
+<li><code>/administrador/automacoes/nova/</code></li>
+<li><code>/administrador/execucoes/</code></li>
+<li><code>/administrador/monitoramento/</code></li>
+</ul>
+
+<h3>Regra importante</h3>
+<p>Uma mesma criacao pode replicar a automacao para mais de um setor. O identificador precisa ser unico por setor selecionado.</p>
+
+<h3>Operacao administrativa</h3>
+<ul>
+<li>A tela de <code>Execuções</code> centraliza o histórico de todos os setores com filtros por automacao, modulo, status e usuario.</li>
+<li>A tela de <code>Monitoramento</code> mostra a saude visivel do ambiente Linux/Docker e o consumo salvo por cada automacao em execução.</li>
+<li>Os logs continuam sendo consumidos pelas rotas originais de cada modulo, mas agora podem ser abertos a partir do grid administrativo.</li>
+</ul>
+
+<h2>10. Modulos de setor: Comercial, Financeiro e TI</h2>
+<p>Os tres modulos seguem a mesma arquitetura: cada um define modelo, rotas e views especificas, mas reaproveita as classes base de <code>core/module_views.py</code>.</p>
+
+<h3>9.1 Modulo Comercial</h3>
+<table class="table">
+<tr><th>Arquivo</th><th>Funcao</th><th>Observacoes</th></tr>
+<tr><td><code>comercial/models.py</code></td><td>Modelo <code>AutomacaoComercial</code>.</td><td>Herda de <code>AutomationBaseModel</code>.</td></tr>
+<tr><td><code>comercial/views.py</code></td><td>Especializa as views base do modulo para Comercial.</td><td>Define descricao, namespace e classe do modelo.</td></tr>
+<tr><td><code>comercial/urls.py</code></td><td>Rotas do modulo Comercial.</td><td>Home, executar, parar, logs.</td></tr>
+<tr><td><code>comercial/admin.py</code></td><td>Admin do modelo comercial.</td><td>Busca por nome, descricao, identificador e executor.</td></tr>
+<tr><td><code>comercial/apps.py</code></td><td>Configuracao do app.</td><td>Estrutural.</td></tr>
+<tr><td><code>comercial/tests.py</code></td><td>Base para testes.</td><td>Pode estar vazio.</td></tr>
+<tr><td><code>comercial/automacoes/pesquisar_youtube.py</code></td><td>Exemplo funcional de automacao compatível com o sistema.</td><td>Referencia tecnica para entrada, logs, should_stop e output.</td></tr>
+<tr><td><code>comercial/automacoes/processar_leads.py</code></td><td>Exemplo adicional do setor.</td><td>Referencia tecnica, nao seed de producao.</td></tr>
+<tr><td><code>comercial/migrations/0001_initial.py</code></td><td>Cria o modelo do setor.</td><td>Estrutural.</td></tr>
+<tr><td><code>comercial/migrations/0002_automacaocomercial_aceita_anexos_and_more.py</code></td><td>Expande campos do modelo.</td><td>Adiciona configuracoes de arquivos.</td></tr>
+<tr><td><code>comercial/migrations/0003_seed_automacoes.py</code></td><td>Historico de seeds de exemplo.</td><td>Importante apenas como historico.</td></tr>
+<tr><td><code>comercial/migrations/0004_remove_seed_automacoes.py</code></td><td>Remove seeds da esteira de producao.</td><td>Importante para deploy limpo.</td></tr>
+</table>
+
+<p>Rotas:</p>
+<pre>/comercial/
+/comercial/automacoes/&lt;pk&gt;/executar/
+/comercial/execucoes/&lt;execution_id&gt;/parar/
+/comercial/execucoes/&lt;execution_id&gt;/logs/</pre>
+
+<h3>9.2 Modulo Financeiro</h3>
+<table class="table">
+<tr><th>Arquivo</th><th>Funcao</th><th>Observacoes</th></tr>
+<tr><td><code>financeiro/models.py</code></td><td>Modelo <code>AutomacaoFinanceira</code>.</td><td>Herda de <code>AutomationBaseModel</code>.</td></tr>
+<tr><td><code>financeiro/views.py</code></td><td>Especializa as views base do modulo para Financeiro.</td><td>Define descricao, namespace e classe do modelo.</td></tr>
+<tr><td><code>financeiro/urls.py</code></td><td>Rotas do modulo Financeiro.</td><td>Home, executar, parar, logs.</td></tr>
+<tr><td><code>financeiro/admin.py</code></td><td>Admin do modelo financeiro.</td><td>Busca por nome, descricao, identificador e executor.</td></tr>
+<tr><td><code>financeiro/apps.py</code></td><td>Configuracao do app.</td><td>Estrutural.</td></tr>
+<tr><td><code>financeiro/tests.py</code></td><td>Base para testes.</td><td>Pode estar vazio.</td></tr>
+<tr><td><code>financeiro/automacoes/conciliar_pagamentos.py</code></td><td>Exemplo de automacao do setor.</td><td>Referencia tecnica, nao seed padrao de producao.</td></tr>
+<tr><td><code>financeiro/migrations/0001_initial.py</code></td><td>Cria o modelo do setor.</td><td>Estrutural.</td></tr>
+<tr><td><code>financeiro/migrations/0002_automacaofinanceira_aceita_anexos_and_more.py</code></td><td>Expande campos do modelo.</td><td>Adiciona configuracoes de arquivos.</td></tr>
+<tr><td><code>financeiro/migrations/0003_seed_automacoes.py</code></td><td>Historico de seed de exemplo.</td><td>Somente historico.</td></tr>
+<tr><td><code>financeiro/migrations/0004_remove_seed_automacoes.py</code></td><td>Remove seed de teste.</td><td>Importante para producao.</td></tr>
+</table>
+
+<p>Rotas:</p>
+<pre>/financeiro/
+/financeiro/automacoes/&lt;pk&gt;/executar/
+/financeiro/execucoes/&lt;execution_id&gt;/parar/
+/financeiro/execucoes/&lt;execution_id&gt;/logs/</pre>
+
+<h3>9.3 Modulo TI</h3>
+<table class="table">
+<tr><th>Arquivo</th><th>Funcao</th><th>Observacoes</th></tr>
+<tr><td><code>ti/models.py</code></td><td>Modelo <code>AutomacaoTI</code>.</td><td>Herda de <code>AutomationBaseModel</code>.</td></tr>
+<tr><td><code>ti/views.py</code></td><td>Especializa as views base do modulo para TI.</td><td>Define descricao, namespace e classe do modelo.</td></tr>
+<tr><td><code>ti/urls.py</code></td><td>Rotas do modulo TI.</td><td>Home, executar, parar, logs.</td></tr>
+<tr><td><code>ti/admin.py</code></td><td>Admin do modelo de TI.</td><td>Busca por nome, descricao, identificador e executor.</td></tr>
+<tr><td><code>ti/apps.py</code></td><td>Configuracao do app.</td><td>Estrutural.</td></tr>
+<tr><td><code>ti/tests.py</code></td><td>Base para testes.</td><td>Pode estar vazio.</td></tr>
+<tr><td><code>ti/automacoes/processar_inventario.py</code></td><td>Exemplo de automacao do setor.</td><td>Referencia tecnica.</td></tr>
+<tr><td><code>ti/migrations/0001_initial.py</code></td><td>Cria o modelo do setor.</td><td>Estrutural.</td></tr>
+<tr><td><code>ti/migrations/0002_automacaoti_aceita_anexos_and_more.py</code></td><td>Expande campos do modelo.</td><td>Adiciona configuracoes de arquivos.</td></tr>
+<tr><td><code>ti/migrations/0003_seed_automacoes.py</code></td><td>Historico de seed de exemplo.</td><td>Somente historico.</td></tr>
+<tr><td><code>ti/migrations/0004_remove_seed_automacoes.py</code></td><td>Remove seed de teste.</td><td>Importante para producao.</td></tr>
+</table>
+
+<p>Rotas:</p>
+<pre>/ti/
+/ti/automacoes/&lt;pk&gt;/executar/
+/ti/execucoes/&lt;execution_id&gt;/parar/
+/ti/execucoes/&lt;execution_id&gt;/logs/</pre>
+
+<h3>Regras compartilhadas entre os tres setores</h3>
+<ul>
+<li>Todos usam pagina unica do modulo com lista de automacoes e historico recente.</li>
+<li>Todos respeitam grupo de modulo especifico.</li>
+<li>Todos usam a mesma logica de execucao, fila e logs do core.</li>
+<li>Todos suportam paginação de 10 registros no grid principal.</li>
+</ul>
+
+<h2>11. Modulo Documentacao</h2>
+<p>Este modulo cuida da consulta publica autenticada, da manutencao dos documentos, da auditoria e da auditoria de visualizacao.</p>
+
+<table class="table">
+<tr><th>Arquivo</th><th>Funcao</th><th>Observacoes de suporte</th></tr>
+<tr><td><code>documentacao/models.py</code></td><td>Modelos de documento, auditoria de alteracao e auditoria de visualizacao.</td><td>Contem a restricao de uma documentacao por automacao.</td></tr>
+<tr><td><code>documentacao/views.py</code></td><td>Consulta, detalhe, criacao, edicao, grid, publicacao e fechamento de auditoria de visualizacao.</td><td>Arquivo central do modulo.</td></tr>
+<tr><td><code>documentacao/services.py</code></td><td>Renderizacao HTML, resolucao de vinculo, auditoria e salvamento.</td><td>Onde a regra de transformar em <code>Rascunho</code> ao editar esta aplicada.</td></tr>
+<tr><td><code>documentacao/forms.py</code></td><td>Formularios de criacao, edicao, setor de publicacao e vinculo com automacao.</td><td>Hoje trabalha com campo real de vinculo e seletor visual em modal.</td></tr>
+<tr><td><code>documentacao/urls.py</code></td><td>Rotas do modulo.</td><td>Consulta, gestao, leitura, edicao, status e auditoria de visualizacao.</td></tr>
+<tr><td><code>documentacao/admin.py</code></td><td>Admin customizado de documentos e auditorias.</td><td>Tem diff visual, comparacao lado a lado e pre-visualizacao.</td></tr>
+<tr><td><code>documentacao/apps.py</code></td><td>Configuracao do app.</td><td>Estrutural.</td></tr>
+<tr><td><code>documentacao/migrations/0001_initial.py</code></td><td>Cria o documento base.</td><td>Estrutural.</td></tr>
+<tr><td><code>documentacao/migrations/0002_documentationpage_criado_por_and_more.py</code></td><td>Adiciona auditoria basica de usuario e datas.</td><td>Suporte a criacao/atualizacao.</td></tr>
+<tr><td><code>documentacao/migrations/0003_documentationauditlog.py</code></td><td>Cria a auditoria de documentacao.</td><td>Essencial para historico.</td></tr>
+<tr><td><code>documentacao/migrations/0004_alter_documentationpage_options_and_more.py</code></td><td>Expande opcoes e visualizacao.</td><td>Inclui ajustes de auditoria de visualizacao e opcoes.</td></tr>
+<tr><td><code>documentacao/migrations/0005_documentationpage_publication_section.py</code></td><td>Adiciona o setor de publicacao para documentos sem vinculo.</td><td>Base para Sistema, Administracao, Comercial, Financeiro e TI.</td></tr>
+</table>
+
+<h3>Rotas do modulo</h3>
+<ul>
+<li><code>/documentacao/</code> -> arvore de consulta</li>
+<li><code>/documentacao/criar/</code> -> grid administrativo</li>
+<li><code>/documentacao/criar/nova/</code> -> criacao</li>
+<li><code>/documentacao/pagina/&lt;page_id&gt;/status/</code> -> alteracao de status</li>
+<li><code>/documentacao/pagina/&lt;page_id&gt;/editar/</code> -> editar por pagina</li>
+<li><code>/documentacao/sistema/&lt;page_id&gt;/</code> -> leitura de documento geral</li>
+<li><code>/documentacao/visualizacao/&lt;audit_id&gt;/encerrar/</code> -> fechamento da auditoria de visualizacao</li>
+<li><code>/documentacao/&lt;sector&gt;/&lt;identificador&gt;/</code> -> leitura vinculada a automacao</li>
+<li><code>/documentacao/&lt;sector&gt;/&lt;identificador&gt;/editar/</code> -> editar documento vinculado</li>
+</ul>
+
+<h3>Regras de negocio do modulo</h3>
+<ul>
+<li>Documento vinculado a automacao usa relacao generica por <code>content_type</code> e <code>object_id</code>.</li>
+<li>Somente documento <code>Publicado</code> fica visivel para o usuario final.</li>
+<li>Ao editar, o documento volta automaticamente para <code>Rascunho</code>.</li>
+<li>A troca de status e feita no grid administrativo.</li>
+<li>Ao salvar criacao ou edicao, a tela volta para o grid.</li>
+<li>Documentos sem vinculo e publicados podem aparecer em <code>Sistema</code>, <code>Administracao</code>, <code>Comercial</code>, <code>Financeiro</code> e <code>TI</code>.</li>
+<li>Documentos em <code>Administracao</code> so ficam visiveis para administradores.</li>
+<li>Documentos de setor sem vinculo respeitam o grupo do setor correspondente.</li>
+<li>O sistema cria auditoria de criacao, alteracao, mudanca de status e visualizacao.</li>
+</ul>
+
+<h3>Editor de documentacao</h3>
+<ul>
+<li>Modo visual para texto rico.</li>
+<li>Modo HTML avancado para documentos completos com <code>style</code>, <code>table</code>, <code>pre</code> e layouts mais ricos.</li>
+<li>Blocos prontos: sucesso, aviso e atencao.</li>
+<li>Tabela com controle de linhas e colunas.</li>
+<li>Seletor de vinculo com automacao por modal, com filtro e grade de automacoes.</li>
+<li>Pre-visualizacao pelo grid para conferir a renderizacao no navegador.</li>
+</ul>
+
+<h2>12. Templates principais</h2>
+<p>Os templates controlam a interface do sistema. Os arquivos mais importantes sao:</p>
+
+<table class="table">
+<tr><th>Arquivo</th><th>Funcao</th></tr>
+<tr><td><code>templates/base.html</code></td><td>Layout principal, menu lateral, scripts globais, persistencia de scroll e controle visual de grupos do menu.</td></tr>
+<tr><td><code>templates/module_base.html</code></td><td>Layout base dos modulos setoriais, grid de automacoes, historico e filtros.</td></tr>
+<tr><td><code>templates/core/dashboard.html</code></td><td>Painel principal com cards, filtros e grafico.</td></tr>
+<tr><td><code>templates/accounts/login.html</code></td><td>Tela de login com visual Speed e icone de olho no campo senha.</td></tr>
+<tr><td><code>templates/admin/base_site.html</code></td><td>Customizacao visual do Django Admin.</td></tr>
+<tr><td><code>templates/comercial/home.html</code></td><td>Home do modulo Comercial.</td></tr>
+<tr><td><code>templates/financeiro/home.html</code></td><td>Home do modulo Financeiro.</td></tr>
+<tr><td><code>templates/ti/home.html</code></td><td>Home do modulo TI.</td></tr>
+<tr><td><code>documentacao/templates/documentacao/_automation_link_picker.html</code></td><td>Modal de vinculo com automacao usado na criacao e edicao de documentos.</td></tr>
+<tr><td><code>administrador/templates/administrador/executions.html</code></td><td>Grid administrativo das execucoes.</td></tr>
+<tr><td><code>administrador/templates/administrador/monitoring.html</code></td><td>Painel administrativo de monitoramento.</td></tr>
+</table>
+
+<p class="small">Os templates da documentacao ficam dentro do proprio app <code>documentacao/templates/documentacao/</code>, porque sao mais numerosos e especificos do modulo.</p>
+
+<h2>13. Infra Docker</h2>
+
+<table class="table">
+<tr><th>Arquivo</th><th>Funcao</th><th>Observacoes</th></tr>
+<tr><td><code>docker-compose.yml</code></td><td>Define os servicos <code>db</code>, <code>web</code> e <code>worker</code>.</td><td>Mapeia a porta 8190 e cria volumes persistentes.</td></tr>
+<tr><td><code>Dockerfile</code></td><td>Imagem base Python 3.12 com bibliotecas do projeto e Chromium do Playwright.</td><td>Tambem instala dependencias nativas necessarias para RPA web headless.</td></tr>
+<tr><td><code>docker/entrypoint.sh</code></td><td>Espera o banco, roda migrate, collectstatic e cria/atualiza o superusuario inicial.</td><td>Arquivo critico para bootstrap do ambiente.</td></tr>
+<tr><td><code>.env.docker</code></td><td>Variaveis para subida local em Docker.</td><td>Contem usuario inicial e dados de conexao.</td></tr>
+<tr><td><code>.env.example</code></td><td>Modelo base de variaveis.</td><td>Referencia para novos ambientes.</td></tr>
+<tr><td><code>.env.server.example</code></td><td>Exemplo de variaveis para servidor.</td><td>Usar como base para producao.</td></tr>
+<tr><td><code>.dockerignore</code></td><td>Controle do contexto de build.</td><td>Evita enviar lixo para a imagem.</td></tr>
+</table>
+
+<h3>Comportamentos importantes do entrypoint</h3>
+<ul>
+<li>Espera o MySQL responder antes de continuar.</li>
+<li>No container <code>web</code>, aplica migracoes e roda <code>collectstatic</code>.</li>
+<li>No container <code>web</code>, cria ou atualiza o superusuario inicial a partir de variaveis de ambiente.</li>
+<li>No container <code>worker</code>, apenas inicializa o processo final apos validar o banco.</li>
+</ul>
+
+<h2>14. Operacao e suporte diario</h2>
+
+<h3>13.1 Comandos uteis</h3>
+<pre>docker-compose up --build -d
+docker-compose ps
+docker-compose logs -f web
+docker-compose logs -f worker
+docker-compose logs -f db
+docker-compose down</pre>
+
+<h3>13.2 Pontos para verificar quando algo falhar</h3>
+<ol>
+<li>O container <code>db</code> esta de pe?</li>
+<li>O container <code>web</code> subiu sem erro de migrate?</li>
+<li>O container <code>worker</code> esta ativo?</li>
+<li>Se o problema for na API, a migration do app <code>api</code> foi aplicada?</li>
+<li>Se o problema for no monitoramento por execucao, a migration <code>core 0005</code> foi aplicada?</li>
+<li>O usuario tem o grupo certo?</li>
+<li>A automacao esta marcada como ativa?</li>
+<li>O <code>executor_path</code> realmente aponta para um arquivo e uma funcao existentes?</li>
+<li>A automacao gravou resultado em <code>output_dir</code>?</li>
+<li>O documento esta publicado ou ainda esta em rascunho?</li>
+</ol>
+
+<h3>13.3 Diagnosticos tipicos</h3>
+<table class="table">
+<tr><th>Sintoma</th><th>Causa mais comum</th><th>Onde verificar</th></tr>
+<tr><td>Usuario nao ve um modulo</td><td>Grupo ausente</td><td><code>core/security.py</code>, Django Admin, grupos do usuario</td></tr>
+<tr><td>Automacao nao roda</td><td><code>executor_path</code> invalido, worker parado ou fila cheia</td><td><code>administrador/forms.py</code>, <code>core/services.py</code>, logs do worker</td></tr>
+<tr><td>Execucao fica pendente</td><td>Limite de concorrencia atingido</td><td><code>AutomationQueueSettings</code> no Admin</td></tr>
+<tr><td>Usuario nao ve documentacao</td><td>Status nao publicado</td><td>Grid de documentacao e <code>DocumentationPage.status</code></td></tr>
+<tr><td>Cliente externo nao autentica na API</td><td>Token ausente, token revogado ou migration do app API nao aplicada</td><td><code>api/auth.py</code>, <code>api/models.py</code>, Django Admin e tabela <code>APIToken</code></td></tr>
+<tr><td>Lista da API veio vazia</td><td>Usuario sem grupo do modulo ou filtro/paginacao incorretos</td><td><code>api/views.py</code>, grupos do usuario e query string</td></tr>
+<tr><td>Tela de monitoramento sem dados por execucao</td><td>Migracao de metricas nao aplicada ou ainda nao houve execucao nova apos a mudanca</td><td><code>core/migrations/0005_automationexecution_metrics.py</code>, <code>run_automation.py</code> e grid administrativo</td></tr>
+<tr><td>Memoria ou CPU do ambiente parecem diferentes do host</td><td>A leitura pode estar refletindo o escopo do container Docker</td><td><code>administrador/views.py</code>, cgroups e configuracao do Docker</td></tr>
+<tr><td>Login falha em ambiente novo</td><td>Superusuario inicial nao conferido ou senha divergente</td><td><code>docker/entrypoint.sh</code> e variaveis <code>DJANGO_SUPERUSER_*</code></td></tr>
+<tr><td>Saida nao aparece para download</td><td>Arquivo nao foi gravado em <code>output_dir</code></td><td><code>core/management/commands/run_automation.py</code></td></tr>
+</table>
+
+<h2>15. Regras para manutencao segura</h2>
+<ul>
+<li>Nao alterar grupos padrao sem revisar <code>core/security.py</code> e menu lateral.</li>
+<li>Nao mudar <code>executor_path</code> sem garantir que a funcao exista e seja importavel.</li>
+<li>Nao publicar documentacao em nome do usuario final sem validar o status.</li>
+<li>Nao assumir que automacao desktop com <code>pyautogui</code> vai funcionar bem no Docker.</li>
+<li>Ao adicionar novo setor, revisar pelo menos: modelo, rotas, views, registry, seguranca, dashboard e menu.</li>
+<li>Ao alterar filas, validar o comportamento do worker e da configuracao de concorrencia.</li>
+<li>Ao alterar a API, preservar a separacao da camada <code>/api/</code> e evitar mexer nas views HTML sem necessidade.</li>
+<li>Ao alterar paginação da API, validar <code>page</code>, <code>per_page</code>, <code>has_next</code> e <code>has_previous</code>.</li>
+</ul>
+
+<h2>16. Extensao futura do sistema</h2>
+<p>Se for necessario criar um novo modulo setorial, os pontos minimos de extensao costumam ser:</p>
+<ol>
+<li>Criar novo app Django.</li>
+<li>Criar modelo herdando de <code>AutomationBaseModel</code>.</li>
+<li>Criar rotas e views especializadas usando <code>ModuleHomeView</code>, <code>StartAutomationView</code>, <code>StopAutomationView</code> e <code>ExecutionLogView</code>.</li>
+<li>Registrar o setor em <code>core/sector_registry.py</code>.</li>
+<li>Garantir grupos em <code>core/security.py</code> e sincronizacao dos grupos.</li>
+<li>Atualizar menu lateral e dashboard.</li>
+</ol>
+
+<h3>16.1 Extensao futura da API</h3>
+<ol>
+<li>Manter novos endpoints dentro do app <code>api</code>.</li>
+<li>Reaproveitar regras de permissao do <code>core/security.py</code>.</li>
+<li>Preferir reaproveitar servicos de negocio existentes antes de criar logica duplicada.</li>
+<li>Documentar qualquer endpoint novo no arquivo <code>DOCUMENTACAO_API_AUTOCONTROLLERS.html</code>.</li>
+<li>Se houver adocao futura de Swagger/OpenAPI, preservar compatibilidade da rota base <code>/api/</code>.</li>
+</ol>
+
+<div class="ok">
+<strong>Conclusao:</strong><br>
+Para suporte e manutencao, os arquivos mais sensiveis do projeto hoje sao <code>config/settings.py</code>, <code>config/urls.py</code>, <code>core/services.py</code>, <code>core/security.py</code>, <code>core/sector_registry.py</code>, <code>documentacao/views.py</code>, <code>documentacao/services.py</code>, <code>api/auth.py</code>, <code>api/views.py</code>, <code>docker/entrypoint.sh</code> e <code>docker-compose.yml</code>. Se esses pontos estiverem entendidos, a maior parte dos incidentes do sistema fica muito mais facil de diagnosticar.
+</div>
+
+<p class="small">Documento tecnico interno do AutoControllers. Foco: suporte, manutencao, operacao, seguranca e entendimento modular da ferramenta.</p>
+</body>
+</html>

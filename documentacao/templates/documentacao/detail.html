@@ -1,0 +1,239 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if documentation_page.titulo %}{{ documentation_page.titulo }}{% elif automation %}{{ automation.nome }}{% else %}Documentação{% endif %} | Documentação{% endblock %}
+
+{% block content %}
+<style>
+    .documentation-content {
+        color: #334155;
+        line-height: 1.75;
+    }
+    .documentation-content h1,
+    .documentation-content h2,
+    .documentation-content h3 {
+        color: #0f172a;
+        font-weight: 900;
+    }
+    .documentation-content h1 {
+        border-bottom: 2px solid #e5e7eb;
+        padding-bottom: 0.5rem;
+    }
+    .documentation-content h2 {
+        margin-top: 2rem;
+        font-size: 1.5rem;
+    }
+    .documentation-content h3 {
+        margin-top: 1.5rem;
+        font-size: 1.2rem;
+    }
+    .documentation-content p,
+    .documentation-content li {
+        font-size: 0.95rem;
+    }
+    .documentation-content ul,
+    .documentation-content ol {
+        padding-left: 1.4rem;
+        margin: 0.75rem 0;
+    }
+    .documentation-content li {
+        margin-bottom: 0.4rem;
+    }
+    .documentation-content code {
+        background: #0f172a;
+        color: #f8fafc;
+        border-radius: 0.4rem;
+        padding: 0.15rem 0.45rem;
+        font-family: Consolas, monospace;
+        font-size: 0.9em;
+    }
+    .documentation-content pre {
+        background: #f3f4f6;
+        border: 1px solid #e5e7eb;
+        border-radius: 1rem;
+        padding: 1rem;
+        overflow-x: auto;
+        margin: 1rem 0;
+        white-space: pre-wrap;
+    }
+    .documentation-content pre code {
+        background: transparent;
+        color: inherit;
+        padding: 0;
+    }
+    .documentation-content .note,
+    .documentation-content .ok,
+    .documentation-content .warn {
+        border-radius: 1rem;
+        padding: 1rem;
+        margin: 1rem 0;
+    }
+    .documentation-content .note {
+        background: #fffbeb;
+        border: 1px solid #fde68a;
+    }
+    .documentation-content .ok {
+        background: #ecfdf5;
+        border: 1px solid #a7f3d0;
+    }
+    .documentation-content .warn {
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+    }
+    .documentation-content .table,
+    .documentation-content table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 0.75rem;
+        margin-bottom: 1rem;
+    }
+    .documentation-content .table th,
+    .documentation-content .table td,
+    .documentation-content table th,
+    .documentation-content table td {
+        border: 1px solid #e5e7eb;
+        padding: 0.7rem;
+        text-align: left;
+        vertical-align: top;
+    }
+    .documentation-content .table th,
+    .documentation-content table th {
+        background: #f9fafb;
+    }
+    .documentation-content .small {
+        color: #6b7280;
+        font-size: 0.85rem;
+    }
+    .documentation-content a {
+        color: #0369a1;
+        font-weight: 700;
+        text-decoration: underline;
+    }
+    .documentation-content img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 1rem;
+        margin: 1rem 0;
+    }
+</style>
+<section class="mx-auto max-w-5xl">
+    <div class="mb-8 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div class="min-w-0">
+            <span class="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-gray-500 shadow-sm">
+                <i data-lucide="{{ sector.icon }}" class="h-3.5 w-3.5 text-ageis-yellow"></i>
+                {{ sector.label }}
+            </span>
+            <h1 class="mt-5 text-3xl font-black text-gray-900 md:text-5xl">
+                {{ documentation_page.titulo }}
+            </h1>
+            {% if document_is_published and automation %}
+                <p class="mt-3 text-sm text-gray-500">
+                    Documento publicado para a automação <strong class="text-gray-800">{{ automation.nome }}</strong>.
+                </p>
+            {% elif document_is_published %}
+                <p class="mt-3 text-sm text-gray-500">
+                    Documento geral do sistema publicado para consulta.
+                </p>
+            {% elif user.is_superuser %}
+                <p class="mt-3 text-sm text-yellow-700">
+                    {% if automation %}
+                        Documento vinculado à automação <strong class="text-yellow-900">{{ automation.nome }}</strong>, mas ainda não publicado para os usuários.
+                    {% else %}
+                        Documento geral do sistema salvo, mas ainda não publicado para os usuários.
+                    {% endif %}
+                </p>
+            {% endif %}
+        </div>
+
+        <div class="flex flex-wrap gap-3">
+            <a href="{% url 'documentacao:home' %}" class="inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-gray-700 transition hover:bg-gray-50">
+                <i data-lucide="arrow-left" class="h-4 w-4"></i>
+                Voltar
+            </a>
+        </div>
+    </div>
+
+    <div class="rounded-[2rem] border border-gray-100 bg-white p-6 md:p-10 shadow-[0_18px_50px_rgba(15,23,42,0.08)]">
+        {% if can_view_document and documentation_page.rendered_html %}
+            <article class="documentation-content max-w-none">
+                {{ documentation_page.rendered_html|safe }}
+            </article>
+        {% elif user.is_superuser and documentation_page.raw_content %}
+            <div class="rounded-[1.75rem] border border-dashed border-yellow-200 bg-yellow-50 p-6">
+                <div class="flex items-start gap-4">
+                    <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-yellow-700 shadow-sm">
+                        <i data-lucide="eye-off" class="h-5 w-5"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-black text-gray-900">Documento salvo, mas ainda em rascunho</h2>
+                        <p class="mt-2 text-sm leading-6 text-gray-600">
+                            {% if automation %}
+                                Este conteúdo já está vinculado à automação, porém só ficará visível para os usuários quando o status for alterado para <strong>Publicado</strong>.
+                            {% else %}
+                                Este conteúdo geral do sistema só ficará visível para os usuários quando o status for alterado para <strong>Publicado</strong>.
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <div class="rounded-[1.75rem] border border-dashed border-gray-200 bg-[#FAFBFC] p-6">
+                <div class="flex items-start gap-4">
+                    <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-sky-50 text-sky-700">
+                        <i data-lucide="file-stack" class="h-5 w-5"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-black text-gray-900">Documento ainda não disponível</h2>
+                        <p class="mt-2 text-sm leading-6 text-gray-500">
+                            {% if automation %}
+                                A documentação desta automação ainda não foi publicada.
+                            {% else %}
+                                Esta documentação geral do sistema ainda não foi publicada.
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</section>
+
+{% if view_audit %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const auditId = '{{ view_audit.id }}';
+        const closeUrl = '{% url "documentacao:close-view-audit" view_audit.id %}';
+        const startedAt = Date.now();
+        let sent = false;
+
+        function sendViewAudit() {
+            if (sent) return;
+            sent = true;
+
+            const durationSeconds = Math.max(1, Math.round((Date.now() - startedAt) / 1000));
+            const payload = JSON.stringify({ duration_seconds: durationSeconds });
+
+            if (navigator.sendBeacon) {
+                navigator.sendBeacon(closeUrl, new Blob([payload], { type: 'application/json' }));
+                return;
+            }
+
+            fetch(closeUrl, {
+                method: 'POST',
+                body: payload,
+                headers: { 'Content-Type': 'application/json' },
+                keepalive: true,
+                credentials: 'same-origin',
+            }).catch(() => {});
+        }
+
+        window.addEventListener('pagehide', sendViewAudit);
+        window.addEventListener('beforeunload', sendViewAudit);
+        document.addEventListener('visibilitychange', function () {
+            if (document.visibilityState === 'hidden') {
+                sendViewAudit();
+            }
+        });
+    });
+</script>
+{% endif %}
+{% endblock %}

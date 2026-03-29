@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Speed | AutoControllers{% endblock %}</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .bg-ageis-black { background-color: #0F0F0F; }
+        .bg-ageis-yellow { background-color: #FFC107; }
+        .text-ageis-yellow { color: #FFC107; }
+
+        .sidebar-link-active {
+            background-color: rgba(255, 193, 7, 0.1);
+            color: #FFC107 !important;
+            border-left: 4px solid #FFC107;
+            border-radius: 0 12px 12px 0 !important;
+        }
+
+        .sidebar-section-title {
+            color: #7c8798;
+            font-size: 10px;
+            font-weight: 900;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            padding: 0.75rem 1rem;
+        }
+
+        .sidebar-submenu {
+            background: linear-gradient(180deg, rgba(255,255,255,0.035) 0%, rgba(255,255,255,0.015) 100%);
+            border: 1px solid rgba(255,255,255,0.04);
+            border-radius: 1rem;
+            margin-top: 0.35rem;
+            padding: 0.45rem 0;
+            overflow: hidden;
+            transform-origin: top;
+            transition: max-height 0.28s ease, opacity 0.24s ease, transform 0.24s ease, margin-top 0.24s ease, padding 0.24s ease;
+        }
+
+        .sidebar-submenu-open {
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.03), 0 10px 24px rgba(0,0,0,0.14);
+        }
+
+        .sidebar-submenu-expanded {
+            max-height: 720px;
+            opacity: 1;
+            transform: translateY(0) scaleY(1);
+            pointer-events: auto;
+        }
+
+        .sidebar-submenu-collapsed {
+            max-height: 0;
+            opacity: 0;
+            transform: translateY(-6px) scaleY(0.98);
+            pointer-events: none;
+            margin-top: 0;
+            padding-top: 0;
+            padding-bottom: 0;
+            border-color: transparent;
+        }
+
+        .sidebar-submenu-link {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.55rem 1rem 0.55rem 3.25rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            transition: color 0.2s ease, transform 0.2s ease;
+        }
+
+        .sidebar-submenu-link:hover {
+            transform: translateX(2px);
+        }
+
+        .sidebar-toggle-open {
+            color: #FFC107 !important;
+            background: linear-gradient(90deg, rgba(255,193,7,0.14) 0%, rgba(255,255,255,0.03) 100%);
+            box-shadow: inset 3px 0 0 #FFC107;
+        }
+
+        .sidebar-toggle-indicator {
+            width: 6px;
+            height: 6px;
+            border-radius: 9999px;
+            background: rgba(255, 193, 7, 0.24);
+            box-shadow: 0 0 0 4px rgba(255, 193, 7, 0.08);
+            transition: background 0.24s ease, box-shadow 0.24s ease, transform 0.24s ease;
+        }
+
+        .sidebar-toggle-open .sidebar-toggle-indicator {
+            background: #FFC107;
+            box-shadow: 0 0 0 4px rgba(255, 193, 7, 0.18);
+            transform: scale(1.08);
+        }
+
+        #sidebar::-webkit-scrollbar { width: 4px; }
+        #sidebar::-webkit-scrollbar-thumb { background: #2d2d2d; border-radius: 10px; }
+    </style>
+</head>
+<body class="bg-[#F8F9FA] text-gray-900 antialiased">
+    <div class="messages-container fixed top-6 right-6 z-[100] flex flex-col gap-3">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="px-6 py-4 rounded-2xl shadow-2xl border flex items-center gap-3 min-w-[300px]
+                    {% if message.tags == 'success' %} bg-green-50 border-green-100 text-green-800 {% else %} bg-red-50 border-red-100 text-red-800 {% endif %}">
+                    <i data-lucide="{% if message.tags == 'success' %}check-circle{% else %}alert-circle{% endif %}" class="w-5 h-5"></i>
+                    <span class="text-xs font-bold uppercase tracking-tight">{{ message }}</span>
+                </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+
+    {% if user.is_authenticated %}
+    <div id="sidebarOverlay"
+         class="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 hidden md:hidden transition-opacity"
+         onclick="toggleSidebar()">
+    </div>
+
+    <aside id="sidebar" class="fixed top-0 left-0 h-full w-64 bg-ageis-black text-white z-50 transform -translate-x-full transition-all duration-300 ease-in-out md:translate-x-0 border-r border-white/5 shadow-2xl flex flex-col overflow-y-auto">
+        <div class="p-8 mb-4">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 bg-ageis-yellow rounded-lg flex items-center justify-center shadow-[0_0_15px_rgba(255,193,7,0.3)]">
+                    <i data-lucide="zap" class="w-5 h-5 text-black fill-black"></i>
+                </div>
+                <span class="text-2xl font-black italic uppercase tracking-tighter leading-none">Speed</span>
+            </div>
+            <p class="text-[10px] text-gray-500 font-bold tracking-[0.2em] mt-2 ml-1 uppercase">AutoControllers Hub</p>
+        </div>
+
+        <nav class="px-4 space-y-1 flex-grow">
+            <div class="mb-4 relative">
+                <button onclick="toggleSubmenu('submenu-menu-principal', 'seta-menu-principal')"
+                        class="w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 group {% if request.resolver_match.namespace == 'core' or request.resolver_match.namespace == 'comercial' or request.resolver_match.namespace == 'financeiro' or request.resolver_match.namespace == 'ti' or request.resolver_match.namespace == 'documentacao' and request.resolver_match.url_name == 'home' %}sidebar-toggle-open{% else %}text-gray-400 hover:text-white hover:bg-white/5{% endif %}">
+                    <div class="flex items-center gap-3">
+                        <i data-lucide="panel-top-open" class="w-5 h-5 group-hover:scale-110 transition-transform"></i>
+                        <span class="text-sm font-semibold">Menu Principal</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="sidebar-toggle-indicator"></span>
+                        <i data-lucide="chevron-down" id="seta-menu-principal" class="w-4 h-4 transition-transform duration-300 {% if request.resolver_match.namespace == 'core' or request.resolver_match.namespace == 'comercial' or request.resolver_match.namespace == 'financeiro' or request.resolver_match.namespace == 'ti' or request.resolver_match.namespace == 'documentacao' and request.resolver_match.url_name == 'home' %} rotate-180 {% endif %}"></i>
+                    </div>
+                </button>
+                <div id="submenu-menu-principal" class="sidebar-submenu {% if request.resolver_match.namespace == 'core' or request.resolver_match.namespace == 'comercial' or request.resolver_match.namespace == 'financeiro' or request.resolver_match.namespace == 'ti' or request.resolver_match.namespace == 'documentacao' and request.resolver_match.url_name == 'home' %}sidebar-submenu-open sidebar-submenu-expanded{% else %}sidebar-submenu-collapsed{% endif %} flex flex-col gap-1">
+                    <a href="{% url 'core:dashboard' %}" class="sidebar-submenu-link {% if request.resolver_match.namespace == 'core' and request.resolver_match.url_name == 'dashboard' %} text-ageis-yellow {% else %} text-gray-500 hover:text-gray-300 {% endif %}">
+                        <div class="w-1.5 h-1.5 rounded-full {% if request.resolver_match.namespace == 'core' and request.resolver_match.url_name == 'dashboard' %} bg-ageis-yellow {% else %} bg-gray-500 {% endif %}"></div> Dashboard
+                    </a>
+                    <a href="{% url 'documentacao:home' %}" class="sidebar-submenu-link {% if request.resolver_match.namespace == 'documentacao' and request.resolver_match.url_name == 'home' %} text-ageis-yellow {% else %} text-gray-500 hover:text-gray-300 {% endif %}">
+                        <div class="w-1.5 h-1.5 rounded-full {% if request.resolver_match.namespace == 'documentacao' and request.resolver_match.url_name == 'home' %} bg-ageis-yellow {% else %} bg-gray-500 {% endif %}"></div> Documentação Sistema
+                    </a>
+                </div>
+            </div>
+
+            {% if has_any_module_access %}
+            <div class="pt-5 mt-5 border-t border-white/5"></div>
+            <div class="mb-4 relative">
+                <button onclick="toggleSubmenu('submenu-modulos', 'seta-modulos')"
+                        class="w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 group {% if request.resolver_match.namespace == 'comercial' or request.resolver_match.namespace == 'financeiro' or request.resolver_match.namespace == 'ti' %}sidebar-toggle-open{% else %}text-gray-400 hover:text-white hover:bg-white/5{% endif %}">
+                    <div class="flex items-center gap-3">
+                        <i data-lucide="layers-3" class="w-5 h-5 group-hover:scale-110 transition-transform"></i>
+                        <span class="text-sm font-semibold">Módulos</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="sidebar-toggle-indicator"></span>
+                        <i data-lucide="chevron-down" id="seta-modulos" class="w-4 h-4 transition-transform duration-300 {% if request.resolver_match.namespace == 'comercial' or request.resolver_match.namespace == 'financeiro' or request.resolver_match.namespace == 'ti' %} rotate-180 {% endif %}"></i>
+                    </div>
+                </button>
+                <div id="submenu-modulos" class="sidebar-submenu {% if request.resolver_match.namespace == 'comercial' or request.resolver_match.namespace == 'financeiro' or request.resolver_match.namespace == 'ti' %}sidebar-submenu-open sidebar-submenu-expanded{% else %}sidebar-submenu-collapsed{% endif %} flex flex-col gap-1">
+                    {% if module_access.comercial %}
+                    <a href="{% url 'comercial:home' %}" class="sidebar-submenu-link {% if request.resolver_match.namespace == 'comercial' %} text-ageis-yellow {% else %} text-gray-500 hover:text-gray-300 {% endif %}">
+                        <div class="w-1.5 h-1.5 rounded-full {% if request.resolver_match.namespace == 'comercial' %} bg-ageis-yellow {% else %} bg-gray-500 {% endif %}"></div> Comercial
+                    </a>
+                    {% endif %}
+                    {% if module_access.financeiro %}
+                    <a href="{% url 'financeiro:home' %}" class="sidebar-submenu-link {% if request.resolver_match.namespace == 'financeiro' %} text-ageis-yellow {% else %} text-gray-500 hover:text-gray-300 {% endif %}">
+                        <div class="w-1.5 h-1.5 rounded-full {% if request.resolver_match.namespace == 'financeiro' %} bg-ageis-yellow {% else %} bg-gray-500 {% endif %}"></div> Financeiro
+                    </a>
+                    {% endif %}
+                    {% if module_access.ti %}
+                    <a href="{% url 'ti:home' %}" class="sidebar-submenu-link {% if request.resolver_match.namespace == 'ti' %} text-ageis-yellow {% else %} text-gray-500 hover:text-gray-300 {% endif %}">
+                        <div class="w-1.5 h-1.5 rounded-full {% if request.resolver_match.namespace == 'ti' %} bg-ageis-yellow {% else %} bg-gray-500 {% endif %}"></div> TI
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="pt-5 mt-5 border-t border-white/5"></div>
+            <div class="mb-4 relative">
+                <button onclick="toggleSubmenu('submenu-documentacao', 'seta-documentacao')"
+                        class="w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 group {% if request.resolver_match.namespace == 'documentacao' %}sidebar-toggle-open{% else %}text-gray-400 hover:text-white hover:bg-white/5{% endif %}">
+                    <div class="flex items-center gap-3">
+                        <i data-lucide="book-open-text" class="w-5 h-5 group-hover:scale-110 transition-transform"></i>
+                        <span class="text-sm font-semibold">Documentação</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="sidebar-toggle-indicator"></span>
+                        <i data-lucide="chevron-down" id="seta-documentacao" class="w-4 h-4 transition-transform duration-300 {% if request.resolver_match.namespace == 'documentacao' %} rotate-180 {% endif %}"></i>
+                    </div>
+                </button>
+                <div id="submenu-documentacao" class="sidebar-submenu {% if request.resolver_match.namespace == 'documentacao' %}sidebar-submenu-open sidebar-submenu-expanded{% else %}sidebar-submenu-collapsed{% endif %} flex flex-col gap-1">
+                    {% if area_access.documentacao %}
+                    <a href="{% url 'documentacao:manage' %}" class="sidebar-submenu-link {% if request.resolver_match.namespace == 'documentacao' and request.resolver_match.url_name == 'manage' or request.resolver_match.namespace == 'documentacao' and request.resolver_match.url_name == 'create' or request.resolver_match.namespace == 'documentacao' and request.resolver_match.url_name == 'edit-page' %} text-ageis-yellow {% else %} text-gray-500 hover:text-gray-300 {% endif %}">
+                        <div class="w-1.5 h-1.5 rounded-full {% if request.resolver_match.namespace == 'documentacao' and request.resolver_match.url_name == 'manage' or request.resolver_match.namespace == 'documentacao' and request.resolver_match.url_name == 'create' or request.resolver_match.namespace == 'documentacao' and request.resolver_match.url_name == 'edit-page' %} bg-ageis-yellow {% else %} bg-gray-500 {% endif %}"></div> Criar Documentação
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if area_access.administrador %}
+            <div class="pt-5 mt-5 border-t border-white/5"></div>
+            <div class="mb-4 relative">
+                <button onclick="toggleSubmenu('submenu-admin', 'seta-admin')"
+                        class="w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 group {% if request.resolver_match.namespace == 'administrador' %}sidebar-toggle-open{% else %}text-gray-400 hover:text-white hover:bg-white/5{% endif %}">
+                    <div class="flex items-center gap-3">
+                        <i data-lucide="shield-plus" class="w-5 h-5 group-hover:scale-110 transition-transform"></i>
+                        <span class="text-sm font-semibold">Administração</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="sidebar-toggle-indicator"></span>
+                        <i data-lucide="chevron-down" id="seta-admin" class="w-4 h-4 transition-transform duration-300 {% if request.resolver_match.namespace == 'administrador' %} rotate-180 {% endif %}"></i>
+                    </div>
+                </button>
+                <div id="submenu-admin" class="sidebar-submenu {% if request.resolver_match.namespace == 'administrador' %}sidebar-submenu-open sidebar-submenu-expanded{% else %}sidebar-submenu-collapsed{% endif %} flex flex-col gap-1">
+                    <a href="{% url 'administrador:hub' %}" class="sidebar-submenu-link {% if request.resolver_match.namespace == 'administrador' and request.resolver_match.url_name == 'hub' %} text-ageis-yellow {% else %} text-gray-500 hover:text-gray-300 {% endif %}">
+                        <div class="w-1.5 h-1.5 rounded-full {% if request.resolver_match.namespace == 'administrador' and request.resolver_match.url_name == 'hub' %} bg-ageis-yellow {% else %} bg-gray-500 {% endif %}"></div> Painel Admin
+                    </a>
+                    <a href="{% url 'administrador:monitoring' %}" class="sidebar-submenu-link {% if request.resolver_match.namespace == 'administrador' and request.resolver_match.url_name == 'monitoring' %} text-ageis-yellow {% else %} text-gray-500 hover:text-gray-300 {% endif %}">
+                        <div class="w-1.5 h-1.5 rounded-full {% if request.resolver_match.namespace == 'administrador' and request.resolver_match.url_name == 'monitoring' %} bg-ageis-yellow {% else %} bg-gray-500 {% endif %}"></div> Monitoramento
+                    </a>
+                    <a href="{% url 'administrador:execution-list' %}" class="sidebar-submenu-link {% if request.resolver_match.namespace == 'administrador' and request.resolver_match.url_name == 'execution-list' %} text-ageis-yellow {% else %} text-gray-500 hover:text-gray-300 {% endif %}">
+                        <div class="w-1.5 h-1.5 rounded-full {% if request.resolver_match.namespace == 'administrador' and request.resolver_match.url_name == 'execution-list' %} bg-ageis-yellow {% else %} bg-gray-500 {% endif %}"></div> Execuções
+                    </a>
+                    <a href="{% url 'administrador:automation-create' %}" class="sidebar-submenu-link {% if request.resolver_match.namespace == 'administrador' and request.resolver_match.url_name == 'automation-create' %} text-ageis-yellow {% else %} text-gray-500 hover:text-gray-300 {% endif %}">
+                        <div class="w-1.5 h-1.5 rounded-full {% if request.resolver_match.namespace == 'administrador' and request.resolver_match.url_name == 'automation-create' %} bg-ageis-yellow {% else %} bg-gray-500 {% endif %}"></div> Criar Automacao
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+        </nav>
+
+        <div class="mt-auto mb-8 px-6 pt-6">
+            <div class="border-t border-white/5 pt-6">
+                <div class="bg-white/[0.04] rounded-[1.6rem] p-4 border border-white/5 shadow-[0_10px_30px_rgba(0,0,0,0.18)]">
+                <div class="flex items-center gap-3 mb-5">
+                    <div class="w-9 h-9 rounded-2xl bg-gradient-to-br from-ageis-yellow to-orange-500 flex items-center justify-center text-black font-black shadow-md text-base">
+                        {{ user.username|slice:":1"|upper }}
+                    </div>
+                    <div class="overflow-hidden">
+                        <p class="text-[11px] font-bold truncate text-white leading-tight">{{ user.username }}</p>
+                        <span class="text-[8px] bg-white/10 text-gray-400 px-2 py-0.5 rounded-full font-bold uppercase tracking-[0.18em] border border-white/5">
+                            {% if user.is_superuser %}Administrador{% else %}Operador{% endif %}
+                        </span>
+                    </div>
+                </div>
+                <form action="{% url 'accounts:logout' %}" method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="w-full flex items-center justify-center gap-2 py-3 text-[10px] font-black text-red-400 bg-red-400/10 hover:bg-red-500 hover:text-white rounded-2xl transition-all uppercase tracking-[0.18em]">
+                        <i data-lucide="power" class="w-3.5 h-3.5"></i> Sair do Sistema
+                    </button>
+                </form>
+            </div>
+            </div>
+        </div>
+    </aside>
+    {% endif %}
+
+    {% if user.is_authenticated %}
+    <form id="inactivityLogoutForm" action="{% url 'accounts:timeout-logout' %}" method="post" class="hidden">
+        {% csrf_token %}
+    </form>
+    {% endif %}
+
+    <div class="{% if user.is_authenticated %}md:ml-64{% endif %} min-h-screen flex flex-col transition-all duration-300">
+        {% if user.is_authenticated %}
+        <header class="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <button onclick="toggleSidebar()" class="p-2 text-gray-600 md:hidden hover:bg-gray-100 rounded-lg transition">
+                    <i data-lucide="menu"></i>
+                </button>
+                <div class="hidden md:block">
+                    <h2 class="text-xs font-bold text-gray-400 uppercase tracking-widest italic">Speed / <span class="text-gray-900">Controle de Automacoes</span></h2>
+                </div>
+            </div>
+            <div class="flex items-center gap-3 bg-green-50 px-3 py-1.5 rounded-full border border-green-100">
+                <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                <span class="text-[10px] font-black text-green-700 uppercase">Sistema Online</span>
+            </div>
+        </header>
+        {% endif %}
+
+        <main class="flex-grow {% if not user.is_authenticated %}flex items-center justify-center bg-ageis-black p-4{% else %}p-6 md:p-10{% endif %}">
+            <div class="{% if user.is_authenticated %}max-w-7xl mx-auto w-full{% else %}w-full{% endif %}">
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+
+        {% if user.is_authenticated %}
+        <footer class="p-6 text-center border-t border-gray-200 bg-white/50">
+            <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">&copy; 2026 Speed Systems - AutoControllers</p>
+        </footer>
+        {% endif %}
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        const SCROLL_STORAGE_PREFIX = 'autocontrollers:scroll:';
+        const INACTIVITY_TIMEOUT_MS = 20 * 60 * 1000;
+        let inactivityTimerId = null;
+
+        function currentScrollStorageKey() {
+            return `${SCROLL_STORAGE_PREFIX}${window.location.pathname}`;
+        }
+
+        function saveScrollPosition() {
+            try {
+                sessionStorage.setItem(currentScrollStorageKey(), String(window.scrollY || window.pageYOffset || 0));
+            } catch (error) {
+                // Se o navegador bloquear storage, apenas ignoramos sem afetar a página.
+            }
+        }
+
+        function restoreScrollPosition() {
+            if (window.location.hash) return;
+
+            try {
+                const savedScroll = sessionStorage.getItem(currentScrollStorageKey());
+                if (savedScroll === null) return;
+
+                const scrollTop = Number.parseInt(savedScroll, 10);
+                if (Number.isNaN(scrollTop)) return;
+
+                window.requestAnimationFrame(() => {
+                    window.scrollTo({ top: scrollTop, left: 0, behavior: 'auto' });
+                });
+            } catch (error) {
+                // Mantemos a navegação funcionando mesmo sem restaurar o scroll.
+            }
+        }
+
+        function scheduleInactivityLogout() {
+            const inactivityLogoutForm = document.getElementById('inactivityLogoutForm');
+            if (!inactivityLogoutForm) return;
+
+            if (inactivityTimerId) {
+                window.clearTimeout(inactivityTimerId);
+            }
+
+            inactivityTimerId = window.setTimeout(() => {
+                inactivityLogoutForm.submit();
+            }, INACTIVITY_TIMEOUT_MS);
+        }
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            if (sidebar && overlay) {
+                if (sidebar.classList.contains('-translate-x-full')) {
+                    sidebar.classList.remove('-translate-x-full');
+                    overlay.classList.remove('hidden');
+                    overlay.style.display = 'block';
+                } else {
+                    sidebar.classList.add('-translate-x-full');
+                    overlay.classList.add('hidden');
+                    overlay.style.display = 'none';
+                }
+            }
+        }
+
+        function toggleSubmenu(menuId, arrowId) {
+            const menu = document.getElementById(menuId);
+            const arrow = document.getElementById(arrowId);
+            if (!menu || !arrow) return;
+            const button = arrow.closest('button');
+            const parentSubmenu = menu.parentElement.closest('[id^="submenu-"]');
+            const scope = parentSubmenu || document.querySelector('#sidebar nav');
+            const allMenus = scope.querySelectorAll(':scope > .mb-1 > [id^="submenu-"], :scope > [id^="submenu-"]');
+            const allButtons = scope.querySelectorAll(':scope > .mb-1 > button[onclick^="toggleSubmenu"], :scope > button[onclick^="toggleSubmenu"]');
+            const isOpening = menu.classList.contains('sidebar-submenu-collapsed');
+
+            allMenus.forEach(function (currentMenu) {
+                if (currentMenu === menu) return;
+                currentMenu.classList.add('sidebar-submenu-collapsed');
+                currentMenu.classList.remove('sidebar-submenu-open');
+                currentMenu.classList.remove('sidebar-submenu-expanded');
+            });
+
+            allButtons.forEach(function (currentButton) {
+                if (currentButton === button) return;
+                currentButton.classList.remove('sidebar-toggle-open');
+                const currentArrow = currentButton.querySelector('[id^="seta-"]');
+                currentArrow?.classList.remove('rotate-180');
+            });
+
+            if (isOpening) {
+                menu.classList.remove('sidebar-submenu-collapsed');
+                menu.classList.add('sidebar-submenu-open');
+                menu.classList.add('sidebar-submenu-expanded');
+                button?.classList.add('sidebar-toggle-open');
+                arrow.classList.add('rotate-180');
+            } else {
+                menu.classList.add('sidebar-submenu-collapsed');
+                menu.classList.remove('sidebar-submenu-open');
+                menu.classList.remove('sidebar-submenu-expanded');
+                button?.classList.remove('sidebar-toggle-open');
+                arrow.classList.remove('rotate-180');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            if ('scrollRestoration' in history) {
+                history.scrollRestoration = 'manual';
+            }
+
+            restoreScrollPosition();
+            scheduleInactivityLogout();
+
+            const alerts = document.querySelectorAll('.messages-container > div');
+            alerts.forEach(alert => {
+                setTimeout(() => {
+                    alert.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+                    alert.style.opacity = '0';
+                    alert.style.transform = 'translateY(-20px)';
+                    setTimeout(() => { alert.remove(); }, 600);
+                }, 5000);
+            });
+
+            document.querySelectorAll('form').forEach(form => {
+                form.addEventListener('submit', saveScrollPosition);
+            });
+
+            document.querySelectorAll('a[href]').forEach(link => {
+                link.addEventListener('click', function () {
+                    const href = link.getAttribute('href');
+                    if (!href || href.startsWith('#') || link.hasAttribute('target') || link.hasAttribute('download')) {
+                        return;
+                    }
+                    saveScrollPosition();
+                });
+            });
+
+            ['click', 'keydown', 'mousemove', 'scroll', 'touchstart'].forEach(eventName => {
+                window.addEventListener(eventName, scheduleInactivityLogout, { passive: true });
+            });
+        });
+
+        window.addEventListener('pagehide', saveScrollPosition);
+    </script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

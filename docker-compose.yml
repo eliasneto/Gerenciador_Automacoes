@@ -1,0 +1,45 @@
+services:
+  db:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: autocontrollers
+      MYSQL_USER: autocontrollers
+      MYSQL_PASSWORD: autocontrollers
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  web:
+    build: .
+    env_file:
+      - .env.docker
+    ports:
+      - "8190:8190"
+    depends_on:
+      - db
+    environment:
+      APP_ROLE: "web"
+      AUTOMATION_SCHEDULER_ENABLED: "False"
+    volumes:
+      - media_data:/app/media
+      - static_data:/app/staticfiles
+
+  worker:
+    build: .
+    env_file:
+      - .env.docker
+    depends_on:
+      - db
+    command: ["python", "manage.py", "run_automation_worker"]
+    environment:
+      APP_ROLE: "worker"
+      AUTOMATION_SCHEDULER_ENABLED: "True"
+      AUTOMATION_WORKER_POLL_INTERVAL: "5"
+    volumes:
+      - media_data:/app/media
+      - static_data:/app/staticfiles
+
+volumes:
+  mysql_data:
+  media_data:
+  static_data:

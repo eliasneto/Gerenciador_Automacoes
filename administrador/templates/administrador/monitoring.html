@@ -1,0 +1,212 @@
+{% extends 'base.html' %}
+
+{% block title %}Monitoramento | Administração{% endblock %}
+
+{% block content %}
+<section class="mb-8">
+    <div class="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#111111] via-[#161616] to-[#222222] p-8 md:p-10 shadow-[0_30px_80px_rgba(15,15,15,0.28)]">
+        <div class="absolute -right-16 -top-16 h-56 w-56 rounded-full bg-ageis-yellow/10 blur-3xl"></div>
+        <div class="absolute bottom-0 right-0 h-40 w-40 rounded-full bg-white/5 blur-3xl"></div>
+
+        <div class="relative flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+            <div class="max-w-3xl">
+                <span class="inline-flex items-center gap-2 rounded-full border border-ageis-yellow/20 bg-white/5 px-4 py-2 text-[10px] font-black uppercase tracking-[0.25em] text-ageis-yellow">
+                    <i data-lucide="activity" class="h-3.5 w-3.5"></i>
+                    Saúde operacional
+                </span>
+                <h1 class="mt-5 text-3xl font-black italic uppercase leading-none text-white md:text-5xl">
+                    Monitoramento do ambiente
+                </h1>
+                <p class="mt-4 max-w-2xl text-sm leading-7 text-gray-300 md:text-base">
+                    Esta tela mostra os recursos visíveis para a aplicação no ambiente Linux/Docker e a telemetria das automações em execução. Ela foi pensada para suporte rápido e operação diária.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4 lg:min-w-[420px]">
+                <div class="rounded-[1.5rem] border border-white/10 bg-white/5 p-5 backdrop-blur-sm">
+                    <p class="text-[10px] font-black uppercase tracking-[0.25em] text-gray-400">Executando</p>
+                    <strong class="mt-3 block text-3xl font-black text-ageis-yellow">{{ execution_summary.running }}</strong>
+                    <p class="mt-2 text-xs text-gray-400">Automações em andamento</p>
+                </div>
+                <div class="rounded-[1.5rem] border border-white/10 bg-white/5 p-5 backdrop-blur-sm">
+                    <p class="text-[10px] font-black uppercase tracking-[0.25em] text-gray-400">Fila</p>
+                    <strong class="mt-3 block text-3xl font-black text-white">{{ execution_summary.pending }}</strong>
+                    <p class="mt-2 text-xs text-gray-400">Pendentes aguardando slot</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="mb-8 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+    <article class="rounded-[1.6rem] border border-gray-100 bg-white p-5 shadow-[0_18px_50px_rgba(15,23,42,0.08)]">
+        <p class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Memória RAM</p>
+        <strong class="mt-3 block text-3xl font-black text-gray-900">
+            {% if server_metrics.memory_usage_percent is not None %}{{ server_metrics.memory_usage_percent }}%{% else %}N/D{% endif %}
+        </strong>
+        <p class="mt-2 text-sm text-gray-500">
+            {% if server_metrics.memory_used_mb is not None %}
+                {{ server_metrics.memory_used_mb }} MB usados de {{ server_metrics.memory_total_mb }} MB
+            {% else %}
+                Métrica indisponível
+            {% endif %}
+        </p>
+    </article>
+
+    <article class="rounded-[1.6rem] border border-gray-100 bg-white p-5 shadow-[0_18px_50px_rgba(15,23,42,0.08)]">
+        <p class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Processamento</p>
+        <strong class="mt-3 block text-3xl font-black text-gray-900">{{ server_metrics.load_average.1min }}</strong>
+        <p class="mt-2 text-sm text-gray-500">Load average 1 min • {{ server_metrics.cpu_count }} CPUs lógicas</p>
+    </article>
+
+    <article class="rounded-[1.6rem] border border-gray-100 bg-white p-5 shadow-[0_18px_50px_rgba(15,23,42,0.08)]">
+        <p class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Storage raiz</p>
+        <strong class="mt-3 block text-3xl font-black text-gray-900">{{ server_metrics.root_disk_used_gb }} GB</strong>
+        <p class="mt-2 text-sm text-gray-500">Usados de {{ server_metrics.root_disk_total_gb }} GB</p>
+    </article>
+
+    <article class="rounded-[1.6rem] border border-gray-100 bg-white p-5 shadow-[0_18px_50px_rgba(15,23,42,0.08)]">
+        <p class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Volume media</p>
+        <strong class="mt-3 block text-3xl font-black text-gray-900">{{ server_metrics.media_disk_used_gb }} GB</strong>
+        <p class="mt-2 text-sm text-gray-500">Usados de {{ server_metrics.media_disk_total_gb }} GB</p>
+    </article>
+</section>
+
+<section class="mb-8 grid grid-cols-1 gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+    <article class="rounded-[2rem] border border-gray-100 bg-white p-6 shadow-[0_18px_50px_rgba(15,23,42,0.08)]">
+        <div class="flex items-center justify-between gap-4">
+            <div>
+                <p class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Indicadores do ambiente</p>
+                <h2 class="mt-2 text-2xl font-black text-gray-900">Leitura atual do servidor</h2>
+            </div>
+            <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-ageis-black text-ageis-yellow shadow-lg">
+                <i data-lucide="server-cog" class="h-5 w-5"></i>
+            </div>
+        </div>
+
+        <div class="mt-6 overflow-hidden rounded-[1.5rem] border border-gray-100">
+            <table class="min-w-full divide-y divide-gray-100">
+                <tbody class="divide-y divide-gray-100 bg-white text-sm">
+                    <tr>
+                        <td class="px-5 py-4 font-black text-gray-900">Load average</td>
+                        <td class="px-5 py-4 text-gray-600">1 min: {{ server_metrics.load_average.1min }} | 5 min: {{ server_metrics.load_average.5min }} | 15 min: {{ server_metrics.load_average.15min }}</td>
+                    </tr>
+                    <tr>
+                        <td class="px-5 py-4 font-black text-gray-900">RAM disponível</td>
+                        <td class="px-5 py-4 text-gray-600">
+                            {% if server_metrics.memory_available_mb is not None %}
+                                {{ server_metrics.memory_available_mb }} MB
+                            {% else %}
+                                N/D
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="px-5 py-4 font-black text-gray-900">Disco livre na raiz</td>
+                        <td class="px-5 py-4 text-gray-600">{{ server_metrics.root_disk_free_gb }} GB</td>
+                    </tr>
+                    <tr>
+                        <td class="px-5 py-4 font-black text-gray-900">Disco livre em media</td>
+                        <td class="px-5 py-4 text-gray-600">{{ server_metrics.media_disk_free_gb }} GB</td>
+                    </tr>
+                    <tr>
+                        <td class="px-5 py-4 font-black text-gray-900">Memória do container</td>
+                        <td class="px-5 py-4 text-gray-600">
+                            {% if server_metrics.cgroup_memory.current_mb %}
+                                {{ server_metrics.cgroup_memory.current_mb }} MB
+                                {% if server_metrics.cgroup_memory.max_mb %}
+                                    de {{ server_metrics.cgroup_memory.max_mb }} MB
+                                {% endif %}
+                            {% else %}
+                                N/D
+                            {% endif %}
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </article>
+
+    <article class="rounded-[2rem] border border-yellow-100 bg-yellow-50/70 p-6 shadow-[0_18px_50px_rgba(15,23,42,0.06)]">
+        <p class="text-[10px] font-black uppercase tracking-[0.2em] text-yellow-700">Leitura importante</p>
+        <h2 class="mt-2 text-2xl font-black text-gray-900">Escopo das métricas</h2>
+        <div class="mt-4 space-y-3 text-sm text-gray-700">
+            <p>Os cards desta tela mostram o ambiente visível para a aplicação em Linux/Docker.</p>
+            <p>Em produção, a leitura pode refletir o host, o container ou ambos, dependendo de como o Docker estiver configurado.</p>
+            <p>O consumo por automação é alimentado pelo próprio processo da execução e fica salvo no banco enquanto ela roda.</p>
+            <p>Se você quiser monitoramento ainda mais profundo por container, o próximo passo natural é integrar com ferramentas como cAdvisor, Prometheus ou métricas do Docker Engine.</p>
+        </div>
+    </article>
+</section>
+
+<section class="rounded-[2rem] border border-gray-100 bg-white p-6 shadow-[0_18px_50px_rgba(15,23,42,0.08)]">
+    <div class="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+        <div>
+            <p class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Execuções em andamento</p>
+            <h2 class="mt-2 text-2xl font-black text-gray-900">Uso por automação</h2>
+            <p class="mt-2 text-sm text-gray-500">As linhas abaixo mostram a telemetria da própria execução: memória atual, pico de memória, CPU acumulada e atualização mais recente.</p>
+        </div>
+    </div>
+
+    <div class="mt-6 overflow-hidden rounded-[1.6rem] border border-gray-100">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-100">
+                <thead class="bg-[#FAFBFC]">
+                    <tr class="text-left text-[10px] font-black uppercase tracking-[0.18em] text-gray-500">
+                        <th class="px-5 py-4">Automação</th>
+                        <th class="px-5 py-4">Usuário</th>
+                        <th class="px-5 py-4">PID</th>
+                        <th class="px-5 py-4">Memória atual</th>
+                        <th class="px-5 py-4">Pico de memória</th>
+                        <th class="px-5 py-4">CPU acumulada</th>
+                        <th class="px-5 py-4">Duração</th>
+                        <th class="px-5 py-4">Atualização</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 bg-white">
+                    {% for execution in running_executions %}
+                        <tr>
+                            <td class="px-5 py-5">
+                                <p class="text-sm font-black text-gray-900">{{ execution.automacao_nome }}</p>
+                                <p class="mt-1 text-xs text-gray-500">{{ execution.modulo|title }}</p>
+                            </td>
+                            <td class="px-5 py-5 text-sm font-semibold text-gray-800">{{ execution.usuario.username }}</td>
+                            <td class="px-5 py-5 text-sm text-gray-700">{{ execution.pid|default:"N/D" }}</td>
+                            <td class="px-5 py-5 text-sm text-gray-700">
+                                {% if execution.current_rss_mb %}{{ execution.current_rss_mb }} MB{% else %}N/D{% endif %}
+                            </td>
+                            <td class="px-5 py-5 text-sm text-gray-700">
+                                {% if execution.peak_rss_mb %}{{ execution.peak_rss_mb }} MB{% else %}N/D{% endif %}
+                            </td>
+                            <td class="px-5 py-5 text-sm text-gray-700">
+                                U: {{ execution.cpu_user_seconds|default:"0" }}s<br>
+                                S: {{ execution.cpu_system_seconds|default:"0" }}s
+                            </td>
+                            <td class="px-5 py-5 text-sm text-gray-700">{{ execution.duration_seconds }}s</td>
+                            <td class="px-5 py-5 text-sm text-gray-700">
+                                {% if execution.metrics_updated_em %}
+                                    {{ execution.metrics_updated_em|date:"d/m/Y H:i:s" }}
+                                {% else %}
+                                    N/D
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="8" class="px-5 py-16 text-center">
+                                <div class="mx-auto max-w-lg">
+                                    <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-[#F3F4F6] text-gray-400">
+                                        <i data-lucide="activity" class="h-7 w-7"></i>
+                                    </div>
+                                    <h3 class="mt-5 text-2xl font-black text-gray-900">Nenhuma automação em execução</h3>
+                                    <p class="mt-3 text-sm text-gray-500">Quando existir uma execução rodando, esta tabela passa a mostrar o consumo salvo pelo próprio processo da automação.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+{% endblock %}

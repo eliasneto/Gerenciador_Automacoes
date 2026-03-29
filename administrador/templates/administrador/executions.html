@@ -1,0 +1,226 @@
+{% extends 'base.html' %}
+
+{% block title %}Execuções | Administração{% endblock %}
+
+{% block content %}
+<section class="mb-8">
+    <div class="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#111111] via-[#161616] to-[#222222] p-8 md:p-10 shadow-[0_30px_80px_rgba(15,15,15,0.28)]">
+        <div class="absolute -right-16 -top-16 h-56 w-56 rounded-full bg-ageis-yellow/10 blur-3xl"></div>
+        <div class="absolute bottom-0 right-0 h-40 w-40 rounded-full bg-white/5 blur-3xl"></div>
+
+        <div class="relative flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+            <div class="max-w-3xl">
+                <span class="inline-flex items-center gap-2 rounded-full border border-ageis-yellow/20 bg-white/5 px-4 py-2 text-[10px] font-black uppercase tracking-[0.25em] text-ageis-yellow">
+                    <i data-lucide="history" class="h-3.5 w-3.5"></i>
+                    Operação central
+                </span>
+                <h1 class="mt-5 text-3xl font-black italic uppercase leading-none text-white md:text-5xl">
+                    Todas as execuções das automações
+                </h1>
+                <p class="mt-4 max-w-2xl text-sm leading-7 text-gray-300 md:text-base">
+                    Use esta tela para acompanhar o histórico completo, localizar falhas, filtrar por setor, status e usuário e abrir rapidamente os logs de cada execução.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4 lg:min-w-[420px]">
+                <div class="rounded-[1.5rem] border border-white/10 bg-white/5 p-5 backdrop-blur-sm">
+                    <p class="text-[10px] font-black uppercase tracking-[0.25em] text-gray-400">Total</p>
+                    <strong class="mt-3 block text-3xl font-black text-white">{{ summary.total }}</strong>
+                    <p class="mt-2 text-xs text-gray-400">Execuções registradas</p>
+                </div>
+                <div class="rounded-[1.5rem] border border-white/10 bg-white/5 p-5 backdrop-blur-sm">
+                    <p class="text-[10px] font-black uppercase tracking-[0.25em] text-gray-400">Em execução</p>
+                    <strong class="mt-3 block text-3xl font-black text-ageis-yellow">{{ summary.running }}</strong>
+                    <p class="mt-2 text-xs text-gray-400">Processando agora</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="mb-8 grid grid-cols-2 gap-4 xl:grid-cols-6">
+    <article class="rounded-[1.6rem] border border-gray-100 bg-white p-5 shadow-[0_18px_50px_rgba(15,23,42,0.08)]">
+        <p class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Pendentes</p>
+        <strong class="mt-3 block text-3xl font-black text-gray-900">{{ summary.pending }}</strong>
+    </article>
+    <article class="rounded-[1.6rem] border border-gray-100 bg-white p-5 shadow-[0_18px_50px_rgba(15,23,42,0.08)]">
+        <p class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Sucesso</p>
+        <strong class="mt-3 block text-3xl font-black text-emerald-600">{{ summary.success }}</strong>
+    </article>
+    <article class="rounded-[1.6rem] border border-gray-100 bg-white p-5 shadow-[0_18px_50px_rgba(15,23,42,0.08)]">
+        <p class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Erro</p>
+        <strong class="mt-3 block text-3xl font-black text-rose-600">{{ summary.error }}</strong>
+    </article>
+    <article class="rounded-[1.6rem] border border-gray-100 bg-white p-5 shadow-[0_18px_50px_rgba(15,23,42,0.08)]">
+        <p class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Interrompidas</p>
+        <strong class="mt-3 block text-3xl font-black text-gray-700">{{ summary.stopped }}</strong>
+    </article>
+    <article class="col-span-2 rounded-[1.6rem] border border-gray-100 bg-white p-5 shadow-[0_18px_50px_rgba(15,23,42,0.08)] xl:col-span-2">
+        <p class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Distribuição por módulo</p>
+        <div class="mt-4 flex flex-wrap gap-3">
+            {% for item in module_summary %}
+                <span class="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-[#FAFBFC] px-4 py-2 text-xs font-bold text-gray-700">
+                    {{ item.modulo|title }}
+                    <span class="rounded-full bg-black/5 px-2 py-0.5 text-[10px] uppercase tracking-[0.18em]">{{ item.total }}</span>
+                </span>
+            {% empty %}
+                <span class="text-sm text-gray-400">Nenhuma execução cadastrada ainda.</span>
+            {% endfor %}
+        </div>
+    </article>
+</section>
+
+<section class="rounded-[2rem] border border-gray-100 bg-white p-6 shadow-[0_18px_50px_rgba(15,23,42,0.08)]">
+    <form method="get" class="grid grid-cols-1 gap-4 lg:grid-cols-[1.5fr_0.9fr_0.9fr_1fr_auto]">
+        <div class="space-y-2">
+            <label class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">Buscar</label>
+            <input type="text" name="q" value="{{ filters.q }}" placeholder="Nome da automação, executor ou resumo" class="w-full rounded-[1.1rem] border border-gray-200 bg-[#FAFBFC] px-4 py-3 text-sm text-gray-800 outline-none transition-all focus:border-yellow-300 focus:ring-4 focus:ring-yellow-100">
+        </div>
+        <div class="space-y-2">
+            <label class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">Módulo</label>
+            <select name="module" class="w-full rounded-[1.1rem] border border-gray-200 bg-[#FAFBFC] px-4 py-3 text-sm text-gray-800 outline-none transition-all focus:border-yellow-300 focus:ring-4 focus:ring-yellow-100">
+                <option value="">Todos</option>
+                {% for key, registry in module_choices %}
+                    <option value="{{ key }}" {% if filters.module == key %}selected{% endif %}>{{ registry.label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="space-y-2">
+            <label class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">Status</label>
+            <select name="status" class="w-full rounded-[1.1rem] border border-gray-200 bg-[#FAFBFC] px-4 py-3 text-sm text-gray-800 outline-none transition-all focus:border-yellow-300 focus:ring-4 focus:ring-yellow-100">
+                <option value="">Todos</option>
+                {% for value, label in status_choices %}
+                    <option value="{{ value }}" {% if filters.status == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="space-y-2">
+            <label class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">Usuário</label>
+            <input type="text" name="user" value="{{ filters.user }}" placeholder="Username" class="w-full rounded-[1.1rem] border border-gray-200 bg-[#FAFBFC] px-4 py-3 text-sm text-gray-800 outline-none transition-all focus:border-yellow-300 focus:ring-4 focus:ring-yellow-100">
+        </div>
+        <div class="flex items-end gap-3">
+            <button type="submit" class="inline-flex items-center justify-center gap-2 rounded-2xl bg-ageis-yellow px-5 py-3 text-[10px] font-black uppercase tracking-[0.24em] text-black shadow-[0_18px_35px_rgba(255,193,7,0.28)] transition hover:brightness-95">
+                <i data-lucide="search" class="h-4 w-4"></i>
+                Filtrar
+            </button>
+            <a href="{% url 'administrador:execution-list' %}" class="inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-gray-700 transition hover:bg-gray-50">
+                Limpar
+            </a>
+        </div>
+    </form>
+
+    <div class="mt-6 overflow-hidden rounded-[1.6rem] border border-gray-100">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-100">
+                <thead class="bg-[#FAFBFC]">
+                    <tr class="text-left text-[10px] font-black uppercase tracking-[0.18em] text-gray-500">
+                        <th class="px-5 py-4">Automação</th>
+                        <th class="px-5 py-4">Módulo</th>
+                        <th class="px-5 py-4">Usuário</th>
+                        <th class="px-5 py-4">Status</th>
+                        <th class="px-5 py-4">Datas</th>
+                        <th class="px-5 py-4">Arquivos</th>
+                        <th class="px-5 py-4 text-right">Ações</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 bg-white">
+                    {% for execution in executions %}
+                        <tr class="align-top">
+                            <td class="px-5 py-5">
+                                <p class="text-sm font-black text-gray-900">{{ execution.automacao_nome }}</p>
+                                <p class="mt-1 max-w-md text-xs text-gray-500">{{ execution.executor_path }}</p>
+                                {% if execution.mensagem_resumo %}
+                                    <p class="mt-2 text-xs text-gray-400">{{ execution.mensagem_resumo|truncatechars:90 }}</p>
+                                {% endif %}
+                            </td>
+                            <td class="px-5 py-5">
+                                <span class="inline-flex rounded-full bg-black/5 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-gray-700">{{ execution.modulo|title }}</span>
+                            </td>
+                            <td class="px-5 py-5">
+                                <p class="text-sm font-semibold text-gray-800">{{ execution.usuario.username }}</p>
+                            </td>
+                            <td class="px-5 py-5">
+                                {% if execution.status == 'success' %}
+                                    <span class="inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-emerald-700">Sucesso</span>
+                                {% elif execution.status == 'error' %}
+                                    <span class="inline-flex rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-rose-700">Erro</span>
+                                {% elif execution.status == 'running' %}
+                                    <span class="inline-flex rounded-full border border-yellow-200 bg-yellow-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-yellow-700">Executando</span>
+                                {% elif execution.status == 'pending' %}
+                                    <span class="inline-flex rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-sky-700">Pendente</span>
+                                {% else %}
+                                    <span class="inline-flex rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-gray-700">Interrompida</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-5 py-5">
+                                <p class="text-xs font-black uppercase tracking-[0.18em] text-gray-400">Criação</p>
+                                <p class="mt-1 text-sm font-semibold text-gray-800">{{ execution.criado_em|date:"d/m/Y H:i" }}</p>
+                                {% if execution.iniciado_em %}
+                                    <p class="mt-3 text-xs font-black uppercase tracking-[0.18em] text-gray-400">Início</p>
+                                    <p class="mt-1 text-sm font-semibold text-gray-800">{{ execution.iniciado_em|date:"d/m/Y H:i" }}</p>
+                                {% endif %}
+                                {% if execution.finalizado_em %}
+                                    <p class="mt-3 text-xs font-black uppercase tracking-[0.18em] text-gray-400">Fim</p>
+                                    <p class="mt-1 text-sm font-semibold text-gray-800">{{ execution.finalizado_em|date:"d/m/Y H:i" }}</p>
+                                {% endif %}
+                            </td>
+                            <td class="px-5 py-5">
+                                {% if execution.has_output_files %}
+                                    <div class="space-y-2">
+                                        {% for file in execution.output_files %}
+                                            <a href="{{ file.arquivo.url }}" class="block text-xs font-semibold text-sky-700 hover:text-sky-900" target="_blank" rel="noreferrer">
+                                                {{ file.nome_original }}
+                                            </a>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    <span class="text-xs text-gray-400">Sem saída gerada</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-5 py-5">
+                                <div class="flex justify-end gap-2">
+                                    <a href="{{ execution.log_url }}" target="_blank" rel="noreferrer" class="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-gray-200 bg-white text-gray-700 transition hover:border-yellow-300 hover:text-yellow-700" title="Abrir logs">
+                                        <i data-lucide="terminal-square" class="h-4 w-4"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="7" class="px-5 py-16 text-center">
+                                <div class="mx-auto max-w-lg">
+                                    <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-[#F3F4F6] text-gray-400">
+                                        <i data-lucide="history" class="h-7 w-7"></i>
+                                    </div>
+                                    <h3 class="mt-5 text-2xl font-black text-gray-900">Nenhuma execução encontrada</h3>
+                                    <p class="mt-3 text-sm text-gray-500">Ajuste os filtros ou execute automações para começar a acompanhar o histórico centralizado.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {% if page_obj.paginator.num_pages > 1 %}
+        <div class="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <p class="text-sm text-gray-500">
+                Página <strong class="text-gray-900">{{ page_obj.number }}</strong> de <strong class="text-gray-900">{{ page_obj.paginator.num_pages }}</strong>
+            </p>
+            <div class="flex flex-wrap gap-2">
+                {% if page_obj.has_previous %}
+                    <a href="?page={{ page_obj.previous_page_number }}{% if filters.q %}&q={{ filters.q|urlencode }}{% endif %}{% if filters.module %}&module={{ filters.module|urlencode }}{% endif %}{% if filters.status %}&status={{ filters.status|urlencode }}{% endif %}{% if filters.user %}&user={{ filters.user|urlencode }}{% endif %}" class="inline-flex items-center justify-center rounded-2xl border border-gray-200 bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-gray-700 transition hover:bg-gray-50">
+                        Anterior
+                    </a>
+                {% endif %}
+                {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}{% if filters.q %}&q={{ filters.q|urlencode }}{% endif %}{% if filters.module %}&module={{ filters.module|urlencode }}{% endif %}{% if filters.status %}&status={{ filters.status|urlencode }}{% endif %}{% if filters.user %}&user={{ filters.user|urlencode }}{% endif %}" class="inline-flex items-center justify-center rounded-2xl bg-ageis-yellow px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-black transition hover:brightness-95">
+                        Próxima
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
+</section>
+{% endblock %}

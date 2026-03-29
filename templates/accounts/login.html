@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}Login | Speed AutoControllers{% endblock %}
+
+{% block content %}
+<div class="w-full max-w-[900px] mx-auto">
+    <div class="flex flex-col md:flex-row bg-white rounded-[2.5rem] overflow-hidden shadow-2xl">
+        <div class="w-full md:w-1/2 bg-ageis-black p-12 flex flex-col justify-between text-white">
+            <div>
+                <div class="flex items-center gap-2 mb-8">
+                    <div class="w-6 h-6 bg-ageis-yellow rounded-md"></div>
+                    <span class="text-xl font-bold italic">SPEED</span>
+                </div>
+                <h1 class="text-4xl font-black italic uppercase leading-none mb-4">Controle de Automacoes</h1>
+                <p class="text-gray-400 text-sm">Acesse de forma centralizada os modulos Comercial, Financeiro e TI para gerenciar automacoes da empresa.</p>
+            </div>
+            <div class="mt-8">
+                <span class="text-[10px] py-1 px-3 bg-white/10 rounded-full text-ageis-yellow font-bold uppercase tracking-widest border border-ageis-yellow/20">
+                    Ambiente Corporativo Autenticado
+                </span>
+            </div>
+        </div>
+
+        <div class="w-full md:w-1/2 p-12 bg-white">
+            <h2 class="text-2xl font-bold text-gray-900 mb-2">Entrar</h2>
+            <p class="text-sm text-gray-400 mb-8">Credenciais necessarias para acesso ao painel.</p>
+
+            {% if form.errors %}
+                <div class="p-4 mb-6 text-sm text-red-700 bg-red-50 border border-red-100 rounded-2xl flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                    </svg>
+                    <span>Usuario ou senha incorretos.</span>
+                </div>
+            {% endif %}
+
+            <form method="post" class="space-y-6">
+                {% csrf_token %}
+
+                <div class="space-y-1">
+                    <label for="id_username" class="text-xs font-bold text-gray-700 uppercase tracking-wider">Usuario</label>
+                    {{ form.username }}
+                </div>
+
+                <div class="space-y-1">
+                    <label for="id_password" class="text-xs font-bold text-gray-700 uppercase tracking-wider">Senha</label>
+                    <div class="relative">
+                        {{ form.password }}
+                        <button
+                            type="button"
+                            id="togglePasswordVisibility"
+                            class="absolute inset-y-0 right-3 flex items-center text-gray-400 transition hover:text-gray-700"
+                            aria-label="Mostrar ou ocultar senha"
+                            title="Mostrar ou ocultar senha"
+                        >
+                            <i data-lucide="eye" id="passwordVisibilityIcon" class="h-5 w-5"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full bg-ageis-yellow text-black font-black py-4 rounded-2xl shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all flex justify-center items-center gap-2">
+                    <span>Entrar no Painel</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+                    </svg>
+                </button>
+            </form>
+
+            <p class="mt-8 text-center text-[10px] text-gray-400 uppercase tracking-widest">
+                Desenvolvido para AutoControllers
+            </p>
+        </div>
+    </div>
+</div>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const passwordField = document.getElementById('id_password');
+        const toggleButton = document.getElementById('togglePasswordVisibility');
+        const icon = document.getElementById('passwordVisibilityIcon');
+
+        if (!passwordField || !toggleButton || !icon) {
+            return;
+        }
+
+        toggleButton.addEventListener('click', function () {
+            const isPassword = passwordField.getAttribute('type') === 'password';
+            passwordField.setAttribute('type', isPassword ? 'text' : 'password');
+            icon.setAttribute('data-lucide', isPassword ? 'eye-off' : 'eye');
+            if (window.lucide) {
+                lucide.createIcons();
+            }
+        });
+    });
+</script>
+{% endblock %}

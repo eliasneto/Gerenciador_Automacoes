@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+
+{% block title %}Editar Documentação | {{ automation.nome }}{% endblock %}
+
+{% block content %}
+<section class="mb-8">
+    <div class="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#111111] via-[#161616] to-[#222222] p-8 md:p-10 shadow-[0_30px_80px_rgba(15,15,15,0.28)]">
+        <div class="absolute -right-16 -top-16 h-56 w-56 rounded-full bg-ageis-yellow/10 blur-3xl"></div>
+        <div class="absolute bottom-0 right-0 h-40 w-40 rounded-full bg-white/5 blur-3xl"></div>
+
+        <div class="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div class="max-w-3xl">
+                <span class="inline-flex items-center gap-2 rounded-full border border-ageis-yellow/20 bg-white/5 px-4 py-2 text-[10px] font-black uppercase tracking-[0.25em] text-ageis-yellow">
+                    <i data-lucide="square-pen" class="h-3.5 w-3.5"></i>
+                    Editor de documentação
+                </span>
+                <h1 class="mt-5 text-3xl font-black italic uppercase leading-none text-white md:text-5xl">
+                    {{ automation.nome }}
+                </h1>
+                <p class="mt-4 max-w-2xl text-sm leading-7 text-gray-300 md:text-base">
+                    A mesma área ampla de criação agora também serve para edição, com mais espaço para escrever, revisar e publicar o documento.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="rounded-[2rem] border border-gray-100 bg-white p-8 shadow-[0_18px_50px_rgba(15,23,42,0.08)]">
+    <div class="mb-8 flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+            <p class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Edição</p>
+            <h2 class="mt-2 text-3xl font-black text-gray-900">Atualizar documentação</h2>
+        </div>
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:min-w-[520px]">
+            <div class="rounded-[1.25rem] bg-[#FAFBFC] px-4 py-4">
+                <p class="text-[10px] font-black uppercase tracking-[0.18em] text-gray-400">Setor</p>
+                <p class="mt-2 text-sm font-black text-gray-900">{{ sector.label }}</p>
+            </div>
+            <div class="rounded-[1.25rem] bg-[#FAFBFC] px-4 py-4">
+                <p class="text-[10px] font-black uppercase tracking-[0.18em] text-gray-400">Versão</p>
+                <p class="mt-2 text-sm font-black text-gray-900">v{{ documentation_page.versao }}</p>
+            </div>
+            <div class="rounded-[1.25rem] bg-[#FAFBFC] px-4 py-4">
+                <p class="text-[10px] font-black uppercase tracking-[0.18em] text-gray-400">Última atualização</p>
+                <p class="mt-2 text-sm font-black text-gray-900">{{ documentation_page.atualizado_em|date:'d/m/Y H:i' }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="mb-6 rounded-[1.5rem] border border-yellow-100 bg-yellow-50 px-5 py-4">
+        <div class="flex items-start gap-3">
+            <div class="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white text-yellow-700 shadow-sm">
+                <i data-lucide="shield-alert" class="h-4.5 w-4.5"></i>
+            </div>
+            <div>
+                <p class="text-[10px] font-black uppercase tracking-[0.2em] text-yellow-700">Fluxo de publicação</p>
+                <p class="mt-2 text-sm leading-6 text-yellow-900">
+                    Ao salvar qualquer alteração, este documento volta automaticamente para <strong>Rascunho</strong>. A publicação deve ser feita depois, direto no grid de documentação.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <form method="post" class="space-y-6">
+        {% csrf_token %}
+
+        <div class="grid grid-cols-1 gap-5">
+            <div class="space-y-2 md:col-span-2">
+                <label for="{{ form.titulo.id_for_label }}" class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">Título do documento</label>
+                <input type="text" name="{{ form.titulo.name }}" id="{{ form.titulo.id_for_label }}" value="{{ form.titulo.value|default:'' }}" class="w-full rounded-[1.25rem] border border-gray-200 bg-[#FAFBFC] px-5 py-4 text-sm text-gray-800 outline-none transition-all focus:border-yellow-300 focus:ring-4 focus:ring-yellow-100">
+                {% if form.titulo.errors %}<p class="text-sm text-red-600">{{ form.titulo.errors.0 }}</p>{% endif %}
+            </div>
+            <div class="space-y-2 md:col-span-2">
+                {% include 'documentacao/_automation_link_picker.html' with automation_picker_help='Clique para abrir o modal, pesquisar a automação e escolher um novo vínculo ou deixar o documento sem automação.' %}
+            </div>
+            <div class="space-y-2 md:col-span-2">
+                <label for="{{ form.publication_section.id_for_label }}" class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">Setor de publicação</label>
+                <select name="{{ form.publication_section.name }}" id="{{ form.publication_section.id_for_label }}" class="w-full rounded-[1.25rem] border border-gray-200 bg-[#FAFBFC] px-5 py-4 text-sm text-gray-800 outline-none transition-all focus:border-yellow-300 focus:ring-4 focus:ring-yellow-100">
+                    {% for value, label in form.fields.publication_section.choices %}
+                        <option value="{{ value }}" {% if form.publication_section.value == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+                <p class="text-xs leading-6 text-gray-500">Se este documento ficar sem vínculo com automação, ele será publicado no setor selecionado aqui. Ao salvar mudanças, ele volta para rascunho e precisa ser publicado novamente.</p>
+            </div>
+        </div>
+
+        {% include 'documentacao/_rich_editor.html' with editor_label='Conteúdo do documento' editor_placeholder='Descreva objetivo, regras, execução, imagens de apoio e links importantes.' %}
+
+        <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+            <a href="{% url 'documentacao:detail' sector.key automation.identificador %}" class="inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-gray-700 transition hover:bg-gray-50">
+                <i data-lucide="arrow-left" class="h-4 w-4"></i>
+                Voltar
+            </a>
+            <button type="submit" class="inline-flex items-center justify-center gap-2 rounded-2xl bg-ageis-yellow px-6 py-4 text-[10px] font-black uppercase tracking-[0.24em] text-black shadow-[0_18px_35px_rgba(255,193,7,0.28)] transition hover:brightness-95">
+                <i data-lucide="save" class="h-4 w-4"></i>
+                Salvar documento
+            </button>
+        </div>
+    </form>
+</section>
+{% endblock %}

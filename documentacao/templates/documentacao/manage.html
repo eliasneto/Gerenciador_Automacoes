@@ -1,0 +1,210 @@
+{% extends 'base.html' %}
+
+{% block title %}Criar Documentação | Speed AutoControllers{% endblock %}
+
+{% block content %}
+<section class="mb-8">
+    <div class="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#111111] via-[#161616] to-[#222222] p-8 md:p-10 shadow-[0_30px_80px_rgba(15,15,15,0.28)]">
+        <div class="absolute -right-16 -top-16 h-56 w-56 rounded-full bg-ageis-yellow/10 blur-3xl"></div>
+        <div class="absolute bottom-0 right-0 h-40 w-40 rounded-full bg-white/5 blur-3xl"></div>
+
+        <div class="relative flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+            <div class="max-w-3xl">
+                <span class="inline-flex items-center gap-2 rounded-full border border-ageis-yellow/20 bg-white/5 px-4 py-2 text-[10px] font-black uppercase tracking-[0.25em] text-ageis-yellow">
+                    <i data-lucide="files" class="h-3.5 w-3.5"></i>
+                    Gestão de documentação
+                </span>
+                <h1 class="mt-5 text-3xl font-black italic uppercase leading-none text-white md:text-5xl">
+                    Centralize os documentos do sistema
+                </h1>
+                <p class="mt-4 max-w-2xl text-sm leading-7 text-gray-300 md:text-base">
+                    Aqui você acompanha todas as documentações já criadas, identifica vínculos com automações e inicia a criação de novos documentos.
+                </p>
+            </div>
+
+            <div class="flex flex-wrap gap-3">
+                <a href="{% url 'documentacao:create' %}" class="inline-flex items-center justify-center gap-2 rounded-2xl bg-ageis-yellow px-6 py-4 text-[10px] font-black uppercase tracking-[0.24em] text-black shadow-[0_18px_35px_rgba(255,193,7,0.28)] transition hover:brightness-95">
+                    <i data-lucide="plus" class="h-4 w-4"></i>
+                    Nova documentação
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="grid grid-cols-1 gap-6 md:grid-cols-3 mb-8">
+    <article class="rounded-[1.75rem] border border-gray-100 bg-white p-6 shadow-[0_18px_50px_rgba(15,23,42,0.08)]">
+        <p class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Documentos</p>
+        <strong class="mt-3 block text-3xl font-black text-gray-900">{{ total_pages }}</strong>
+        <p class="mt-2 text-sm text-gray-500">Total de documentações cadastradas.</p>
+    </article>
+    <article class="rounded-[1.75rem] border border-gray-100 bg-white p-6 shadow-[0_18px_50px_rgba(15,23,42,0.08)]">
+        <p class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Publicados</p>
+        <strong class="mt-3 block text-3xl font-black text-gray-900">{{ published_pages }}</strong>
+        <p class="mt-2 text-sm text-gray-500">Documentos já disponíveis para consulta.</p>
+    </article>
+    <article class="rounded-[1.75rem] border border-gray-100 bg-white p-6 shadow-[0_18px_50px_rgba(15,23,42,0.08)]">
+        <p class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Rascunhos</p>
+        <strong class="mt-3 block text-3xl font-black text-gray-900">{{ draft_pages }}</strong>
+        <p class="mt-2 text-sm text-gray-500">Itens ainda em construção ou revisão.</p>
+    </article>
+</section>
+
+<section class="overflow-hidden rounded-[2rem] border border-gray-100 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.08)]">
+    <div class="hidden border-b border-gray-100 bg-[#FCFCFD] px-6 py-4 xl:grid xl:grid-cols-[minmax(0,2.8fr)_220px_170px_210px] xl:gap-6">
+        <div class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Documento</div>
+        <div class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Datas</div>
+        <div class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Status</div>
+        <div class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 text-center">Ações</div>
+    </div>
+
+    <div class="divide-y divide-gray-100">
+        {% for page in pages %}
+            <article class="px-6 py-5 transition hover:bg-[#FAFBFC]">
+                <div class="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,2.8fr)_220px_170px_210px] xl:items-center xl:gap-6">
+                    <div class="min-w-0 xl:min-h-[72px] flex items-center">
+                        <span class="mb-1 block text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 xl:hidden">Documento</span>
+                        <div class="flex items-start gap-3 min-w-0">
+                            <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-ageis-black text-ageis-yellow shadow-lg">
+                                <i data-lucide="file-text" class="h-4.5 w-4.5"></i>
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <p class="text-sm font-black uppercase tracking-[0.05em] text-gray-900 leading-6 break-words [display:-webkit-box] [-webkit-line-clamp:2] [-webkit-box-orient:vertical] overflow-hidden min-h-[48px]" title="{{ page.titulo }}">{{ page.titulo }}</p>
+                                <p class="mt-1 truncate text-xs text-gray-500">v{{ page.versao }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="xl:min-h-[72px] flex items-center">
+                        <span class="mb-1 block text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 xl:hidden">Datas</span>
+                        <div class="space-y-2 text-sm text-gray-700 w-full">
+                            <div class="grid grid-cols-[84px_1fr] items-center gap-x-3 gap-y-1">
+                                <span class="text-[10px] font-black uppercase tracking-[0.18em] text-gray-400">Criação</span>
+                                <span class="font-medium whitespace-nowrap">{{ page.criado_em|date:'d/m/Y H:i' }}</span>
+                            </div>
+                            <div class="grid grid-cols-[84px_1fr] items-center gap-x-3 gap-y-1">
+                                <span class="text-[10px] font-black uppercase tracking-[0.18em] text-gray-400">Atualização</span>
+                                <span class="font-medium whitespace-nowrap">{{ page.atualizado_em|date:'d/m/Y H:i' }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="xl:min-h-[72px] flex items-center xl:justify-center">
+                        <span class="mb-1 block text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 xl:hidden">Status</span>
+                        <details class="group relative inline-block">
+                            <summary class="flex cursor-pointer list-none items-center gap-2 rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em]
+                                {% if page.status == 'published' %}border border-green-100 bg-green-50 text-green-700
+                                {% elif page.status == 'archived' %}border border-gray-200 bg-gray-100 text-gray-700
+                                {% else %}border border-yellow-100 bg-yellow-50 text-yellow-700{% endif %}">
+                                <span class="h-2 w-2 rounded-full
+                                    {% if page.status == 'published' %}bg-green-500
+                                    {% elif page.status == 'archived' %}bg-gray-500
+                                    {% else %}bg-yellow-500{% endif %}"></span>
+                                {{ page.get_status_display }}
+                                <i data-lucide="chevrons-up-down" class="h-3.5 w-3.5 opacity-70"></i>
+                            </summary>
+                            <div class="absolute left-0 top-full z-20 mt-2 min-w-[190px] rounded-[1.25rem] border border-gray-200 bg-white p-2 shadow-[0_18px_40px_rgba(15,23,42,0.12)] group-open:block">
+                                <form method="post" action="{% url 'documentacao:update-status' page.id %}" class="space-y-1">
+                                    {% csrf_token %}
+                                    <button type="submit" name="status" value="draft" class="flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-xs font-semibold transition {% if page.status == 'draft' %}bg-yellow-50 text-yellow-700{% else %}text-gray-700 hover:bg-gray-50{% endif %}">
+                                        <span class="inline-flex items-center gap-2">
+                                            <span class="h-2 w-2 rounded-full bg-yellow-500"></span>
+                                            Rascunho
+                                        </span>
+                                        {% if page.status == 'draft' %}<i data-lucide="check" class="h-4 w-4"></i>{% endif %}
+                                    </button>
+                                    <button type="submit" name="status" value="published" class="flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-xs font-semibold transition {% if page.status == 'published' %}bg-green-50 text-green-700{% else %}text-gray-700 hover:bg-gray-50{% endif %}">
+                                        <span class="inline-flex items-center gap-2">
+                                            <span class="h-2 w-2 rounded-full bg-green-500"></span>
+                                            Publicado
+                                        </span>
+                                        {% if page.status == 'published' %}<i data-lucide="check" class="h-4 w-4"></i>{% endif %}
+                                    </button>
+                                    <button type="submit" name="status" value="archived" class="flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-xs font-semibold transition {% if page.status == 'archived' %}bg-gray-100 text-gray-700{% else %}text-gray-700 hover:bg-gray-50{% endif %}">
+                                        <span class="inline-flex items-center gap-2">
+                                            <span class="h-2 w-2 rounded-full bg-gray-500"></span>
+                                            Arquivado
+                                        </span>
+                                        {% if page.status == 'archived' %}<i data-lucide="check" class="h-4 w-4"></i>{% endif %}
+                                    </button>
+                                </form>
+                            </div>
+                        </details>
+                    </div>
+                    <div class="xl:min-h-[72px] flex items-center xl:justify-end">
+                        <span class="mb-1 block text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 xl:hidden">Ações</span>
+                        <div class="flex items-center gap-2.5 xl:justify-end w-full xl:w-auto">
+                            {% if page.has_link %}
+                                <span title="{{ page.linked_automation_name }}" aria-label="{{ page.linked_automation_name }}" class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-emerald-100 bg-emerald-50 text-emerald-700">
+                                    <i data-lucide="link-2" class="h-4 w-4"></i>
+                                </span>
+                            {% else %}
+                                <span title="Sem vínculo com automação" aria-label="Sem vínculo com automação" class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-gray-200 bg-gray-100 text-gray-500">
+                                    <i data-lucide="unlink-2" class="h-4 w-4"></i>
+                                </span>
+                            {% endif %}
+                            <span title="{{ page.responsavel_nome }}" aria-label="{{ page.responsavel_nome }}" class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-violet-100 bg-violet-50 text-violet-700">
+                                <i data-lucide="user-round" class="h-4 w-4"></i>
+                            </span>
+                            {% if page.automacao and page.sector_key %}
+                                <a href="{% url 'documentacao:detail' page.sector_key page.automacao.identificador %}" target="_blank" rel="noopener noreferrer" title="Pré-visualizar documento" aria-label="Pré-visualizar documento" class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-sky-100 bg-sky-50 text-sky-700 transition hover:bg-sky-100">
+                                    <i data-lucide="eye" class="h-4 w-4"></i>
+                                </a>
+                                <a href="{% url 'documentacao:edit' page.sector_key page.automacao.identificador %}" title="Editar documento" aria-label="Editar documento" class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-gray-200 bg-white text-gray-700 transition hover:bg-gray-50">
+                                    <i data-lucide="square-pen" class="h-4 w-4"></i>
+                                </a>
+                            {% else %}
+                                <a href="{% url 'documentacao:standalone-detail' page.id %}" target="_blank" rel="noopener noreferrer" title="Pré-visualizar documento" aria-label="Pré-visualizar documento" class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-sky-100 bg-sky-50 text-sky-700 transition hover:bg-sky-100">
+                                    <i data-lucide="eye" class="h-4 w-4"></i>
+                                </a>
+                                <a href="{% url 'documentacao:edit-page' page.id %}" title="Editar documento" aria-label="Editar documento" class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-gray-200 bg-white text-gray-700 transition hover:bg-gray-50">
+                                    <i data-lucide="square-pen" class="h-4 w-4"></i>
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </article>
+        {% empty %}
+            <div class="px-6 py-12 text-center">
+                <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-black/5 text-gray-500">
+                    <i data-lucide="file-stack" class="h-7 w-7"></i>
+                </div>
+                <h3 class="mt-5 text-xl font-black text-gray-900">Nenhuma documentação criada</h3>
+                <p class="mt-3 text-sm text-gray-500">Crie sua primeira documentação para começar a organizar o conhecimento do sistema.</p>
+            </div>
+        {% endfor %}
+    </div>
+
+    {% if page_obj.paginator.num_pages > 1 %}
+        <div class="border-t border-gray-100 bg-[#FCFCFD] px-6 py-4">
+            <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <p class="text-xs text-gray-500">
+                    Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                </p>
+                <div class="flex flex-wrap items-center gap-2">
+                    {% if page_obj.has_previous %}
+                        <a href="?documentos_page={{ page_obj.previous_page_number }}" class="inline-flex items-center justify-center rounded-2xl border border-gray-200 bg-white px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-gray-700 transition hover:bg-gray-50">
+                            Anterior
+                        </a>
+                    {% endif %}
+                    {% for page_num in page_obj.paginator.page_range %}
+                        {% if page_num == page_obj.number %}
+                            <span class="inline-flex h-10 min-w-10 items-center justify-center rounded-2xl bg-ageis-yellow px-3 text-[10px] font-black uppercase tracking-[0.18em] text-black">
+                                {{ page_num }}
+                            </span>
+                        {% elif page_num >= page_obj.number|add:'-2' and page_num <= page_obj.number|add:'2' %}
+                            <a href="?documentos_page={{ page_num }}" class="inline-flex h-10 min-w-10 items-center justify-center rounded-2xl border border-gray-200 bg-white px-3 text-[10px] font-black uppercase tracking-[0.18em] text-gray-700 transition hover:bg-gray-50">
+                                {{ page_num }}
+                            </a>
+                        {% endif %}
+                    {% endfor %}
+                    {% if page_obj.has_next %}
+                        <a href="?documentos_page={{ page_obj.next_page_number }}" class="inline-flex items-center justify-center rounded-2xl border border-gray-200 bg-white px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-gray-700 transition hover:bg-gray-50">
+                            Próxima
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</section>
+{% endblock %}
