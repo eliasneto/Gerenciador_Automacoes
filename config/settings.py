@@ -9,6 +9,7 @@ import dj_database_url
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+APP_VERSION = 'v1.0.0'
 
 
 def env_bool(name, default=False):

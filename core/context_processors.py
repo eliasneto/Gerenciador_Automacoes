@@ -1,3 +1,5 @@
+from django.conf import settings
+
 from .sector_registry import SECTOR_REGISTRY
 from .security import (
     EXTRA_ACCESS_GROUPS,
@@ -34,6 +36,7 @@ def module_access_context(request):
         'module_access': module_access,
         'dashboard_access': dashboard_access,
         'area_access': area_access,
+        'app_version': getattr(settings, 'APP_VERSION', ''),
         'visible_modules': visible_modules,
         'has_any_module_access': bool(visible_modules),
         'visible_dashboard_modules': visible_dashboard_modules,
