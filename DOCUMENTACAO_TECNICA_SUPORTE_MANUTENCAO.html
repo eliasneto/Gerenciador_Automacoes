@@ -34,6 +34,11 @@ li { margin-bottom: 6px; }
 O AutoControllers e um sistema Django com arquitetura <code>web + worker + MySQL</code>, executado em Docker na porta <code>8190</code>. A interface registra execucoes, a fila controla concorrencia, o worker processa automacoes em segundo plano, o modulo de documentacao centraliza consulta e publicacao de conhecimento operacional e uma camada separada de <code>API</code> expõe integracoes por token sem substituir o fluxo web atual.
 </div>
 
+<div class="note">
+<strong>Versao atual:</strong><br>
+A release atual publicada no Git esta identificada como <code>v1.0.0</code>. Essa mesma versao aparece no menu lateral abaixo das informacoes do usuario e tambem no rodape da interface autenticada.
+</div>
+
 <h2>1. Arquitetura geral do sistema</h2>
 
 <table class="table">
@@ -52,6 +57,14 @@ O AutoControllers e um sistema Django com arquitetura <code>web + worker + MySQL
 <strong>Fluxo tecnico de execucao:</strong><br>
 Usuario clica em executar -> Django valida formulario e arquivos -> cria registro em <code>AutomationExecution</code> -> fila decide se executa ou aguarda -> worker monitora pendencias -> comando <code>manage.py run_automation &lt;id&gt;</code> importa a funcao Python da automacao e executa -> arquivos gerados em <code>output_dir</code> sao registrados no banco para download.
 </div>
+
+<h3>1.1 Identificacao de release</h3>
+<ul>
+<li>A versao funcional exibida ao usuario vem de <code>config/settings.py</code>, pela constante <code>APP_VERSION</code>.</li>
+<li>Essa versao e entregue aos templates por <code>core/context_processors.py</code>.</li>
+<li>O menu lateral e o rodape leem essa informacao em <code>templates/base.html</code>.</li>
+<li>O Git usa tag anotada para marcar releases. A primeira tag oficial do projeto e <code>v1.0.0</code>.</li>
+</ul>
 
 <h2>2. Rotas principais</h2>
 
@@ -121,6 +134,7 @@ Quando um usuario disser que "o modulo sumiu", quase sempre a causa esta em grup
 <table class="table">
 <tr><th>Arquivo</th><th>Funcao</th><th>Observacoes de suporte</th></tr>
 <tr><td><code>config/settings.py</code></td><td>Configuracoes centrais: apps, middleware, banco, cookies, sessao, static, media, seguranca e worker.</td><td>Ler primeiro quando houver erro de ambiente, host, banco, sessao, csrf ou arquivos estaticos.</td></tr>
+<tr><td><code>APP_VERSION</code> em <code>config/settings.py</code></td><td>Define a versao funcional exibida na interface.</td><td>Deve acompanhar a release/tag oficial do Git.</td></tr>
 <tr><td><code>config/urls.py</code></td><td>Roteamento principal do projeto e configuracao do Django Admin.</td><td>Define as URLs base e o redirecionamento inicial para o dashboard.</td></tr>
 <tr><td><code>config/wsgi.py</code></td><td>Ponto de entrada WSGI para Gunicorn.</td><td>Usado no container <code>web</code>.</td></tr>
 <tr><td><code>config/asgi.py</code></td><td>Ponto de entrada ASGI.</td><td>Hoje nao e o caminho principal em producao.</td></tr>
@@ -218,6 +232,7 @@ Incidentes de API tendem a se concentrar em quatro pontos: token ausente/invalid
 <tr><td><code>core/models.py</code></td><td>Modelos centrais: base de automacao, fila, execucao, arquivos e ativos.</td><td>E o coracao do dominio tecnico.</td></tr>
 <tr><td><code>core/services.py</code></td><td>Disparo de automacoes, fila, parada, importacao do executor, coleta de saida e limpeza.</td><td>Primeiro lugar para investigar falhas de execucao.</td></tr>
 <tr><td><code>core/views.py</code></td><td>Dashboard principal.</td><td>Filtra metricas conforme grupos de dashboard.</td></tr>
+<tr><td><code>core/context_processors.py</code></td><td>Entrega acesso a modulos, dashboards, areas e versao da aplicacao para os templates.</td><td>Fundamental para menu lateral, liberacoes de modulo e badge de versao.</td></tr>
 <tr><td><code>core/module_views.py</code></td><td>Views base reutilizadas por Comercial, Financeiro e TI.</td><td>Controla home do modulo, start, stop e consulta de logs.</td></tr>
 <tr><td><code>core/security.py</code></td><td>Regras de acesso por grupo, superuser e sincronizacao de grupos.</td><td>Arquivo critico para permissao.</td></tr>
 <tr><td><code>core/sector_registry.py</code></td><td>Catalogo de setores, labels, modelos, icones, executores default e grupos.</td><td>Se novo modulo for criado, normalmente passa por aqui.</td></tr>
@@ -433,7 +448,7 @@ Incidentes de API tendem a se concentrar em quatro pontos: token ausente/invalid
 
 <table class="table">
 <tr><th>Arquivo</th><th>Funcao</th></tr>
-<tr><td><code>templates/base.html</code></td><td>Layout principal, menu lateral, scripts globais, persistencia de scroll e controle visual de grupos do menu.</td></tr>
+<tr><td><code>templates/base.html</code></td><td>Layout principal, menu lateral, scripts globais, persistencia de scroll, controle visual de grupos do menu e exibicao da versao atual no sidebar e no rodape.</td></tr>
 <tr><td><code>templates/module_base.html</code></td><td>Layout base dos modulos setoriais, grid de automacoes, historico e filtros.</td></tr>
 <tr><td><code>templates/core/dashboard.html</code></td><td>Painel principal com cards, filtros e grafico.</td></tr>
 <tr><td><code>templates/accounts/login.html</code></td><td>Tela de login com visual Speed e icone de olho no campo senha.</td></tr>
@@ -545,6 +560,6 @@ docker-compose down</pre>
 Para suporte e manutencao, os arquivos mais sensiveis do projeto hoje sao <code>config/settings.py</code>, <code>config/urls.py</code>, <code>core/services.py</code>, <code>core/security.py</code>, <code>core/sector_registry.py</code>, <code>documentacao/views.py</code>, <code>documentacao/services.py</code>, <code>api/auth.py</code>, <code>api/views.py</code>, <code>docker/entrypoint.sh</code> e <code>docker-compose.yml</code>. Se esses pontos estiverem entendidos, a maior parte dos incidentes do sistema fica muito mais facil de diagnosticar.
 </div>
 
-<p class="small">Documento tecnico interno do AutoControllers. Foco: suporte, manutencao, operacao, seguranca e entendimento modular da ferramenta.</p>
+<p class="small">Documento tecnico interno do AutoControllers. Foco: suporte, manutencao, operacao, seguranca, entendimento modular da ferramenta e identificacao de release. Revisado para a versao <code>v1.0.0</code>.</p>
 </body>
 </html>

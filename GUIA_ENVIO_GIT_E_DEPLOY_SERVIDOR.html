@@ -33,6 +33,11 @@ li { margin-bottom: 6px; }
 O fluxo recomendado e: preparar o repositório local, criar o repositório no GitHub, fazer o primeiro <code>push</code>, acessar o servidor Linux, instalar Docker e Docker Compose, configurar o arquivo de ambiente, clonar o projeto e subir os containers com <code>docker compose up --build -d</code> ou <code>docker-compose up --build -d</code>.
 </div>
 
+<div class="note">
+<strong>Versao atual da release:</strong><br>
+A release inicial publicada do AutoControllers esta marcada no Git como <code>v1.0.0</code>. Essa mesma versao aparece na interface do sistema, abaixo das informacoes de login no menu lateral e tambem no rodape.
+</div>
+
 <h2>1. O que este projeto usa hoje</h2>
 <table class="table">
 <tr><th>Componente</th><th>Uso atual</th></tr>
@@ -40,6 +45,7 @@ O fluxo recomendado e: preparar o repositório local, criar o repositório no Gi
 <tr><td>Banco</td><td>MySQL 8.4</td></tr>
 <tr><td>Execucao</td><td>Docker com <code>web + worker + db</code></td></tr>
 <tr><td>Porta da aplicacao</td><td><code>8190</code></td></tr>
+<tr><td>Release Git atual</td><td><code>v1.0.0</code></td></tr>
 <tr><td>Arquivos de apoio</td><td><code>Dockerfile</code>, <code>docker-compose.yml</code>, <code>.env.example</code>, <code>.env.server.example</code></td></tr>
 </table>
 
@@ -125,6 +131,38 @@ git push origin main</pre>
 git add .
 git commit -m "Descreva a alteracao"
 git push origin main</pre>
+
+<h2>6.1 Como criar e publicar uma tag de release</h2>
+<p>Quando voce quiser marcar uma versao oficial, use uma tag anotada. O ideal e que a tag do Git acompanhe a versao exibida no sistema.</p>
+
+<h3>Linux</h3>
+<pre>git tag -a v1.0.0 -m "Initial stable release"
+git push origin v1.0.0</pre>
+
+<h3>Windows PowerShell</h3>
+<pre>git tag -a v1.0.0 -m "Initial stable release"
+git push origin v1.0.0</pre>
+
+<div class="warn">
+<strong>Atencao:</strong> se voce alterar a versao exibida no sistema, atualize tambem a tag/release correspondente e publique a branch <code>main</code> antes ou junto da tag.
+</div>
+
+<h2>6.2 Problema comum: GitHub rejeitando arquivo grande</h2>
+<p>Se o GitHub recusar o <code>push</code> por arquivo acima de 100 MB, quase sempre a causa e algum arquivo local indevido no historico, como <code>.venv</code> ou binarios de dependencias.</p>
+
+<p>Sinais comuns:</p>
+<ul>
+<li>erro de arquivo acima de 100 MB</li>
+<li>mensagens citando <code>.venv</code>, <code>playwright/driver/node</code> ou artefatos locais</li>
+<li>push recusado mesmo apos apagar o arquivo do disco</li>
+</ul>
+
+<p>Nesse caso:</p>
+<ol>
+<li>corrija o <code>.gitignore</code></li>
+<li>remova o arquivo do rastreamento do Git</li>
+<li>se o blob ja entrou no historico, reescreva o historico antes de tentar novo <code>push</code></li>
+</ol>
 
 <h2>7. O que o servidor Linux precisa ter</h2>
 <p>Para rodar este projeto em producao, o servidor precisa de:</p>
@@ -395,9 +433,9 @@ git push origin main</pre>
 
 <div class="ok">
 <strong>Regra final para nao errar:</strong><br>
-Nunca envie arquivos sensiveis para o GitHub, mantenha o ambiente do servidor em <code>.env.server</code>, use <code>docker compose up --build -d</code> para subir o projeto e sempre valide <code>web</code>, <code>worker</code> e <code>db</code> apos cada deploy.
+Nunca envie arquivos sensiveis para o GitHub, mantenha o ambiente do servidor em <code>.env.server</code>, use <code>docker compose up --build -d</code> para subir o projeto, publique a branch <code>main</code> e a tag da release quando houver versao oficial, e sempre valide <code>web</code>, <code>worker</code> e <code>db</code> apos cada deploy.
 </div>
 
-<p class="small">Documento interno do AutoControllers. Guia tecnico para versionamento no Git, envio ao GitHub e deploy em servidor Linux com Docker.</p>
+<p class="small">Documento interno do AutoControllers. Guia tecnico para versionamento no Git, envio ao GitHub e deploy em servidor Linux com Docker. Revisado para a release <code>v1.0.0</code>.</p>
 </body>
 </html>

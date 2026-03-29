@@ -2,6 +2,10 @@
 
 Plataforma Django para gerenciamento de automacoes por setor, com execucao manual, controle de arquivos, logs, documentacao operacional e auditoria.
 
+## Versao atual
+
+- `v1.0.0`
+
 ## Visao geral
 
 O sistema foi organizado para separar claramente:
