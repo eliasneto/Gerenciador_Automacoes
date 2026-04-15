@@ -543,7 +543,7 @@
                         data-log-time-id="execution-log-time-{{ execucao.id }}"
                     >
                         <div class="automation-modal-close absolute inset-0"></div>
-                        <div class="relative z-10 flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-[2rem] border border-white/10 bg-[#0B1020] shadow-[0_30px_90px_rgba(0,0,0,0.45)]">
+                        <div class="relative z-10 flex h-[90vh] w-full max-w-5xl min-h-0 max-h-[90vh] flex-col overflow-hidden rounded-[2rem] border border-white/10 bg-[#0B1020] shadow-[0_30px_90px_rgba(0,0,0,0.45)]">
                             <div class="border-b border-white/10 bg-gradient-to-r from-[#0F172A] via-[#101827] to-[#111827] px-6 py-5">
                                 <div class="flex items-start justify-between gap-4">
                                     <div class="min-w-0">
@@ -567,8 +567,8 @@
                                 </div>
                             </div>
 
-                            <div class="flex-1 overflow-hidden bg-[#050816] p-5">
-                                <div class="flex h-full min-h-[68vh] flex-col overflow-hidden rounded-[1.5rem] border border-white/10 bg-[#020617]">
+                            <div class="flex flex-1 min-h-0 overflow-hidden bg-[#050816] p-5">
+                                <div class="flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-[1.5rem] border border-white/10 bg-[#020617]">
                                     <div class="flex items-center justify-between border-b border-white/10 bg-white/5 px-4 py-3">
                                         <div class="flex items-center gap-2">
                                             <span class="h-3 w-3 rounded-full bg-red-400"></span>
@@ -577,7 +577,7 @@
                                         </div>
                                         <span class="text-[10px] font-black uppercase tracking-[0.22em] text-slate-500">stdout / stderr</span>
                                     </div>
-                                    <pre id="execution-log-output-{{ execucao.id }}" class="flex-1 overflow-auto bg-[radial-gradient(circle_at_top,_rgba(34,197,94,0.08),_transparent_35%),linear-gradient(180deg,_#030712_0%,_#020617_100%)] px-5 py-4 font-mono text-[12px] leading-6 text-emerald-300">{{ execucao.log_saida|default:'Nenhum log disponível ainda. Os prints da automação aparecerão aqui.' }}</pre>
+                                    <pre id="execution-log-output-{{ execucao.id }}" class="flex-1 min-h-0 overflow-auto whitespace-pre-wrap break-words bg-[radial-gradient(circle_at_top,_rgba(34,197,94,0.08),_transparent_35%),linear-gradient(180deg,_#030712_0%,_#020617_100%)] px-5 py-4 font-mono text-[12px] leading-6 text-emerald-300">{{ execucao.log_saida|default:'Nenhum log disponível ainda. Os prints da automação aparecerão aqui.' }}</pre>
                                 </div>
                             </div>
                         </div>
@@ -639,6 +639,7 @@
         const modalCloseButtons = document.querySelectorAll('.automation-modal-close');
         const modals = document.querySelectorAll('.automation-modal');
         const previewInputs = document.querySelectorAll('[data-preview-target]');
+        const quickFilters = document.querySelectorAll('[data-quick-filter]');
         const previewState = new Map();
         let activeLogModal = null;
         let logPollingTimer = null;
@@ -678,6 +679,10 @@
                 document.body.classList.add('overflow-hidden');
                 if (modal.classList.contains('execution-log-modal')) {
                     activeLogModal = modal;
+                    const output = document.getElementById(modal.dataset.logOutputId);
+                    if (output) {
+                        output.scrollTop = output.scrollHeight;
+                    }
                     refreshExecutionLog(modal);
                     startExecutionLogPolling(modal);
                 }

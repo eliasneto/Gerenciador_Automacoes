@@ -20,8 +20,6 @@ logs/
 .env
 .env.local
 .env.*.local
-.env.docker
-.env.server
 
 # Tests and tooling
 .coverage

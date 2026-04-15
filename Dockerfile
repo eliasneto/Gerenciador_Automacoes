@@ -2,12 +2,15 @@ FROM python:3.12-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1
+    PIP_NO_CACHE_DIR=1 \
+    PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
+    chromium \
+    chromium-driver \
     curl \
     default-libmysqlclient-dev \
     pkg-config \
@@ -42,7 +45,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 COPY requirements.txt ./
 RUN pip install --upgrade pip && pip install -r requirements.txt
-RUN python -m playwright install chromium
 
 COPY . .
 

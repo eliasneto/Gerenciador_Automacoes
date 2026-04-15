@@ -309,7 +309,6 @@ Sim. O projeto agora possui base para rodar em container com:
 
 - `Dockerfile`
 - `docker-compose.yml`
-- `.env.docker`
 - `.env.server.example`
 - `gunicorn`
 - `whitenoise` para arquivos estaticos
@@ -367,7 +366,7 @@ No ambiente local Docker, o padrao atual e:
 - email: `admin@local.test`
 - senha: `admin123`
 
-Esses valores ficam em `.env.docker` e devem ser alterados depois do primeiro acesso.
+Esses valores ficam em `.env` e devem ser alterados depois do primeiro acesso.
 
 ### Variaveis importantes
 
@@ -578,7 +577,6 @@ Porque ele funciona muito bem em ambiente headless, e mais previsivel em contain
 - `docker-compose.yml`
 - `docker/entrypoint.sh`
 - `.env.example`
-- `.env.docker`
 - `.env.server.example`
 
 ## Observacao final

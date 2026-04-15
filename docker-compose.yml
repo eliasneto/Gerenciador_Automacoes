@@ -12,7 +12,7 @@ services:
   web:
     build: .
     env_file:
-      - .env.docker
+      - .env
     ports:
       - "8190:8190"
     depends_on:
@@ -27,7 +27,7 @@ services:
   worker:
     build: .
     env_file:
-      - .env.docker
+      - .env
     depends_on:
       - db
     command: ["python", "manage.py", "run_automation_worker"]
