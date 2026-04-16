@@ -22,6 +22,7 @@ from core.services import (
     import_executor,
     primary_input_paths,
     schedule_pending_executions,
+    should_persist_execution_inputs,
 )
 
 
@@ -206,8 +207,11 @@ class Command(BaseCommand):
                 ]
             )
 
-            if execution.status == AutomationExecution.Status.SUCCESS and not execution.interromper_solicitado:
-                automation = get_execution_automation(execution)
+            automation = get_execution_automation(execution)
+            if automation is not None and not should_persist_execution_inputs(automation):
+                clear_execution_inputs(execution)
+                clear_automation_assets(automation)
+            elif execution.status == AutomationExecution.Status.SUCCESS and not execution.interromper_solicitado:
                 if automation is not None:
                     clear_automation_assets(automation)
                 clear_execution_inputs(execution)

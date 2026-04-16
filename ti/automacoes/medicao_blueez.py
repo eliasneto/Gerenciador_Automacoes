@@ -5,13 +5,15 @@ import shutil
 import time
 import traceback
 import unicodedata
+from decimal import Decimal, InvalidOperation
 from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
 from openpyxl import load_workbook
+from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from selenium import webdriver
-from selenium.common.exceptions import TimeoutException
+from selenium.common.exceptions import ElementClickInterceptedException, TimeoutException
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
@@ -21,6 +23,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 
 
 BASE_URL = "https://app.blueez.com.br"
+VERSAO_AUTOMACAO = "1.0.0"
 COLUNAS_OBRIGATORIAS = [
     "empresa",
     "estabelecimento",
@@ -60,6 +63,9 @@ def executar(
     parametros_json=None,
 ):
     logger = log or (lambda message: None)
+    logger(f"Medicao BlueEZ - Versao {VERSAO_AUTOMACAO}")
+    inicio_rotina = datetime.now()
+    inicio_monotonic = time.perf_counter()
     arquivos_principais = [Path(path) for path in (input_paths or ([] if input_path is None else [input_path]))]
     anexos = [Path(path) for path in (attachments or [])]
     pasta_saida = Path(output_dir or Path.cwd())
@@ -92,6 +98,7 @@ def executar(
         "erro": 0,
         "teste": 0,
         "pulado_ok": 0,
+        "tempo_total_registros_segundos": 0.0,
     }
     driver = None
     wait = None
@@ -118,6 +125,7 @@ def executar(
         login_blueez(driver, wait, pause, credenciais, logger, parametros_execucao)
         for idx, registro in enumerate(df.to_dict(orient="records")):
             checkpoint()
+            inicio_registro = time.perf_counter()
             linha_excel = idx + 2
             status_atual = ler_status(df, idx).strip().upper()
             if deve_pular_registro(status_atual):
@@ -161,6 +169,11 @@ def executar(
                 resumo_execucao["erro"] += 1
                 logger(f"Linha {linha_excel}: ERRO | {mensagem}")
                 logger(traceback.format_exc().strip())
+            finally:
+                resumo_execucao["tempo_total_registros_segundos"] += max(
+                    0.0,
+                    time.perf_counter() - inicio_registro,
+                )
     except Exception as exc:
         logger(f"Falha antes ou durante a fase inicial da automacao: {exc}")
         logger(traceback.format_exc().strip())
@@ -177,6 +190,21 @@ def executar(
         except Exception:
             pass
 
+    fim_rotina = datetime.now()
+    resumo_execucao["inicio_rotina"] = inicio_rotina.strftime("%d/%m/%Y %H:%M:%S")
+    resumo_execucao["fim_rotina"] = fim_rotina.strftime("%d/%m/%Y %H:%M:%S")
+    resumo_execucao["tempo_total_rotina_segundos"] = max(0.0, time.perf_counter() - inicio_monotonic)
+    resumo_execucao["total_processado"] = (
+        resumo_execucao.get("ok", 0)
+        + resumo_execucao.get("erro", 0)
+        + resumo_execucao.get("teste", 0)
+    )
+    resumo_execucao["tempo_medio_registro_segundos"] = (
+        resumo_execucao["tempo_total_registros_segundos"] / resumo_execucao["total_processado"]
+        if resumo_execucao["total_processado"]
+        else 0.0
+    )
+
     atualizar_status_mensagem_no_excel(planilha_trabalho, updates_excel)
     atualizar_numero_solicitacao_no_excel(planilha_trabalho, updates_solicitacao)
     salvar_resumo(
@@ -191,7 +219,9 @@ def executar(
         f"OK={resumo_execucao['ok']}, "
         f"ERRO={resumo_execucao['erro']}, "
         f"TESTE={resumo_execucao['teste']}, "
-        f"PULADO_OK={resumo_execucao['pulado_ok']}."
+        f"PULADO_OK={resumo_execucao['pulado_ok']}, "
+        f"TEMPO_TOTAL={formatar_duracao(resumo_execucao['tempo_total_rotina_segundos'])}, "
+        f"TEMPO_MEDIO={formatar_duracao(resumo_execucao['tempo_medio_registro_segundos'])}."
     )
     modo_envio = "habilitado" if envio_final_habilitado(parametros_execucao) else "bloqueado"
     return {
@@ -199,7 +229,9 @@ def executar(
             f"Medicao BlueEZ concluida. Arquivo gerado: {planilha_trabalho.name}. "
             f"Envio final estava {modo_envio}. "
             f"Resumo: OK={resumo_execucao['ok']}, ERRO={resumo_execucao['erro']}, "
-            f"TESTE={resumo_execucao['teste']}, PULADO_OK={resumo_execucao['pulado_ok']}."
+            f"TESTE={resumo_execucao['teste']}, PULADO_OK={resumo_execucao['pulado_ok']}, "
+            f"TEMPO_TOTAL={formatar_duracao(resumo_execucao['tempo_total_rotina_segundos'])}, "
+            f"TEMPO_MEDIO={formatar_duracao(resumo_execucao['tempo_medio_registro_segundos'])}."
         )
     }
 
@@ -451,17 +483,26 @@ def processar_registro(
         f"competencia={formatar_competencia(registro['competencia'])})."
     )
     logger(f"Preenchendo numero da NF: {registro['id_nf']}")
-    preencher_input_tab(wait, "#id_nf_medicao", str(registro["id_nf"]), pause)
+    preencher_input_tab(driver, wait, "#id_nf_medicao", str(registro["id_nf"]), pause)
     logger("Numero da NF preenchido com sucesso.")
     logger(
         "Preenchendo item medido "
         f"(item={registro['item_medido']}, valor={registro['valor_item']})."
     )
-    preencher_item_medido(driver, wait, pause, registro["item_medido"], registro["valor_item"])
+    preencher_item_medido(
+        driver,
+        wait,
+        pause,
+        registro["item_medido"],
+        registro["valor_item"],
+        logger,
+    )
     logger("Item medido preenchido com sucesso.")
     logger("Preenchendo observacao.")
     preencher_observacao(wait, pause, registro["observacao"])
     logger("Observacao preenchida com sucesso.")
+    observacao_aplicada = capturar_valor_observacao(wait)
+    logger(f"Observacao registrada no BlueEZ: {observacao_aplicada or 'vazio'}")
     nomes_esperados = listar_nomes_anexos_registro(registro)
     if nomes_esperados:
         logger("Resolvendo anexos do registro: " + ", ".join(nomes_esperados))
@@ -473,7 +514,7 @@ def processar_registro(
             "Anexos localizados para upload: "
             + ", ".join(arquivo.name for arquivo in arquivos_upload)
         )
-    fazer_upload(wait, pause, arquivos_upload, logger)
+    fazer_upload(driver, wait, pause, arquivos_upload, logger)
     if not envio_final_habilitado(parametros_execucao):
         logger("Teste seguro: clique final de envio bloqueado por configuracao.")
         return {"enviado": False, "numero_solicitacao": ""}
@@ -642,17 +683,28 @@ def preencher_datas(driver, wait, pause, registro):
         "#id_data_emissao": formatar_data(registro["emissao_nf"]),
         "#id_data_vencimento": formatar_data(registro["vencimento_nf"]),
     }.items():
-        preencher_input_tab(wait, seletor, valor, pause)
+        preencher_input_tab(driver, wait, seletor, valor, pause)
 
 
-def preencher_item_medido(driver, wait, pause, item_medido, valor_item):
+def preencher_item_medido(driver, wait, pause, item_medido, valor_item, logger=None):
     campos = driver.find_elements(By.CSS_SELECTOR, 'div[class^="linha_valor_"] input.form-control.input-blueez')
     indice = int(float(item_medido)) - 1
     if indice < 0 or indice >= len(campos):
         raise ValueError(f"item_medido invalido: {item_medido}")
     valor = f"{float(valor_item):.2f}".replace(".", ",")
     for posicao, campo in enumerate(campos):
-        preencher_elemento_tab(campo, valor if posicao == indice else "0,00", pause)
+        valor_esperado = valor if posicao == indice else "0,00"
+        valor_lido = preencher_campo_monetario(
+            driver,
+            campo,
+            valor_esperado,
+            pause,
+            logger,
+        )
+        if logger:
+            logger(
+                f"Auditoria item {posicao + 1}: esperado={valor_esperado} | exibido={valor_lido or 'vazio'}"
+            )
 
 
 def preencher_observacao(wait, pause, observacao):
@@ -663,18 +715,42 @@ def preencher_observacao(wait, pause, observacao):
     pause()
 
 
-def fazer_upload(wait, pause, arquivos, logger=None):
+def capturar_valor_observacao(wait):
+    campo = wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, "#id_observacao_medicao")))
+    return (campo.get_attribute("value") or "").strip()
+
+
+def capturar_valores_itens(driver):
+    campos = driver.find_elements(By.CSS_SELECTOR, 'div[class^="linha_valor_"] input.form-control.input-blueez')
+    return [(campo.get_attribute("value") or "").strip() for campo in campos]
+
+
+def fazer_upload(driver, wait, pause, arquivos, logger=None):
     if not arquivos:
         if logger:
             logger("Nenhum anexo para enviar neste registro.")
         return
     if logger:
         logger("Abrindo aba de anexos.")
-    wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, 'a[href="#content_tab_1_50"]'))).click()
+    clicar_elemento_seguro(
+        driver,
+        wait,
+        (By.CSS_SELECTOR, 'a[href="#content_tab_1_50"]'),
+        pause,
+        logger,
+        "aba de anexos",
+    )
     pause()
     if logger:
         logger("Aba de anexos aberta. Clicando em novo anexo.")
-    wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "button.btn-orange-componente"))).click()
+    clicar_elemento_seguro(
+        driver,
+        wait,
+        (By.CSS_SELECTOR, "button.btn-orange-componente"),
+        pause,
+        logger,
+        "botao novo anexo",
+    )
     pause()
     if logger:
         logger("Campo de upload localizado. Enviando arquivos para o navegador.")
@@ -682,7 +758,14 @@ def fazer_upload(wait, pause, arquivos, logger=None):
     pause()
     if logger:
         logger("Arquivos enviados ao input. Acionando upload no BlueEZ.")
-    wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "button.btn-upload-files"))).click()
+    clicar_elemento_seguro(
+        driver,
+        wait,
+        (By.CSS_SELECTOR, "button.btn-upload-files"),
+        pause,
+        logger,
+        "botao upload",
+    )
     pause(2)
     if logger:
         logger("Comando de upload executado. Prosseguindo para a proxima etapa.")
@@ -707,10 +790,36 @@ def clicar_enviar(driver, wait, pause):
 
 
 def capturar_numero_solicitacao(driver, wait, pause):
-    reentrar_iframe(driver, wait, pause)
-    linha = wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, "#DataTables_Table_0 tbody tr")))
-    colunas = linha.find_elements(By.TAG_NAME, "td")
-    return (colunas[0].text or "").strip() if colunas else ""
+    try:
+        driver.switch_to.default_content()
+    except Exception:
+        return ""
+
+    pause(0.2)
+    iframes = driver.find_elements(By.CSS_SELECTOR, "iframe#iframeContent")
+    if not iframes:
+        return ""
+
+    try:
+        driver.switch_to.frame(iframes[0])
+    except Exception:
+        return ""
+
+    remover_overlays_interativos(driver)
+    linhas = driver.find_elements(By.CSS_SELECTOR, "#DataTables_Table_0 tbody tr")
+    for linha in linhas:
+        try:
+            if not linha.is_displayed():
+                continue
+            colunas = linha.find_elements(By.TAG_NAME, "td")
+            if not colunas:
+                continue
+            numero = (colunas[0].text or "").strip()
+            if numero and numero.isdigit():
+                return numero
+        except Exception:
+            continue
+    return ""
 
 
 def capturar_numero_topo_grid_atual(driver):
@@ -747,10 +856,19 @@ def validar_e_capturar_nova_solicitacao(
         ultimo_numero_lido = numero_atual
 
         if not numero_atual:
+            logger(
+                "Aguardando atualizacao do grid apos o envio. "
+                + diagnostico_pos_envio(driver)
+            )
             time.sleep(1)
             continue
 
         if numero_topo_anterior and numero_atual == numero_topo_anterior:
+            logger(
+                "Grid ainda exibe o numero anterior apos o envio. "
+                f"numero_atual={numero_atual}. "
+                + diagnostico_pos_envio(driver)
+            )
             time.sleep(1)
             continue
 
@@ -770,8 +888,75 @@ def validar_e_capturar_nova_solicitacao(
         )
 
     raise ValueError(
-        "Nao foi possivel confirmar a criacao de um novo registro no grid do BlueEZ apos o envio."
+        "Nao foi possivel confirmar a criacao de um novo registro no grid do BlueEZ apos o envio. "
+        + diagnostico_pos_envio(driver)
     )
+
+
+def diagnostico_pos_envio(driver):
+    try:
+        driver.switch_to.default_content()
+    except Exception:
+        return "Diagnostico indisponivel."
+
+    toasts = []
+    for seletor in [
+        ".toast-error",
+        ".toast-success",
+        ".alert-danger",
+        ".alert-success",
+        "div.toast",
+        'div[role=\"alert\"]',
+        ".swal2-popup",
+    ]:
+        for el in driver.find_elements(By.CSS_SELECTOR, seletor):
+            try:
+                if el.is_displayed():
+                    texto = (el.text or "").strip()
+                    if texto and texto not in toasts:
+                        toasts.append(texto)
+            except Exception:
+                continue
+
+    iframes = driver.find_elements(By.CSS_SELECTOR, "iframe#iframeContent")
+    if not iframes:
+        return "Nenhum iframe de conteudo foi encontrado apos o envio."
+
+    try:
+        driver.switch_to.frame(iframes[0])
+    except Exception:
+        return "O iframe de conteudo existe, mas nao foi possivel acessa-lo apos o envio."
+
+    remover_overlays_interativos(driver)
+    linhas = driver.find_elements(By.CSS_SELECTOR, "#DataTables_Table_0 tbody tr")
+    grid_count = sum(1 for linha in linhas if linha.is_displayed())
+    primeiro_numero = ""
+    for linha in linhas:
+        try:
+            if not linha.is_displayed():
+                continue
+            colunas = linha.find_elements(By.TAG_NAME, "td")
+            if colunas:
+                primeiro_numero = (colunas[0].text or "").strip()
+                break
+        except Exception:
+            continue
+
+    modais_visiveis = 0
+    for modal in driver.find_elements(By.CSS_SELECTOR, ".modal.fade.show, .modal.show"):
+        try:
+            if modal.is_displayed():
+                modais_visiveis += 1
+        except Exception:
+            continue
+
+    partes = [
+        f"toast={' | '.join(toasts) if toasts else 'nenhum'}",
+        f"grid_linhas={grid_count}",
+        f"primeiro_numero={primeiro_numero or 'nenhum'}",
+        f"modais_visiveis={modais_visiveis}",
+    ]
+    return "Diagnostico pos-envio: " + ", ".join(partes) + "."
 
 
 def preencher_input(wait, seletor, valor, pause):
@@ -782,22 +967,283 @@ def preencher_input(wait, seletor, valor, pause):
     pause()
 
 
-def preencher_input_tab(wait, seletor, valor, pause):
+def preencher_input_tab(driver, wait, seletor, valor, pause):
     campo = wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, seletor)))
-    preencher_elemento_tab(campo, valor, pause)
+    preencher_elemento_tab(driver, campo, valor, pause)
 
 
-def preencher_elemento_tab(campo, valor, pause):
-    campo.click()
+def preencher_campo_monetario(driver, campo, valor, pause, logger=None):
+    preparar_campo_para_digitacao(driver, campo)
     pause()
-    campo.send_keys(Keys.CONTROL, "a")
+    input_type = (campo.get_attribute("type") or "").strip().lower()
+    if input_type == "number":
+        valor_number = valor_para_input_number(valor)
+        tentativas = [
+            ("number_com_ponto", valor_number, False),
+            ("number_set_value", valor_number, True),
+        ]
+    else:
+        tentativas = [
+            ("literal_com_virgula", valor, False),
+            ("mascara_por_digitos", digitos_monetarios(valor), False),
+            ("set_value_nativo", valor, True),
+        ]
+
+    for nome_tentativa, valor_digitado, usar_set_value in tentativas:
+        focar_campo(driver, campo)
+        pause()
+        limpar_campo_monetario(driver, campo, pause)
+        pause()
+
+        if usar_set_value:
+            set_value_native(driver, campo, valor_digitado)
+            pause()
+        else:
+            campo.send_keys(valor_digitado)
+            pause()
+
+        driver.execute_script(
+            """
+            arguments[0].dispatchEvent(new KeyboardEvent('keyup', { bubbles: true }));
+            arguments[0].dispatchEvent(new Event('input', { bubbles: true }));
+            arguments[0].dispatchEvent(new Event('change', { bubbles: true }));
+            arguments[0].dispatchEvent(new Event('blur', { bubbles: true }));
+            """,
+            campo,
+        )
+        pause()
+        try:
+            campo.send_keys(Keys.TAB)
+            pause()
+        except Exception:
+            pass
+
+        valor_tela = (campo.get_attribute("value") or "").strip()
+        if logger:
+            logger(
+                f"Auditoria campo monetario ({nome_tentativa}): enviado={valor_digitado} | exibido={valor_tela or 'vazio'}"
+            )
+        if valor_monetario_valido_na_tela(valor_tela, valor):
+            return valor_tela
+
+    raise ValueError(
+        "O campo monetario do item nao refletiu o valor esperado no BlueEZ. "
+        f"Esperado: {valor}. Exibido na tela: {valor_tela or 'vazio'}."
+    )
+
+
+def preencher_elemento_tab(driver, campo, valor, pause):
+    preparar_campo_para_digitacao(driver, campo)
     pause()
-    campo.send_keys(Keys.BACKSPACE)
+    set_value_native(driver, campo, valor)
     pause()
-    campo.send_keys(valor)
+
+    try:
+        driver.execute_script("arguments[0].focus();", campo)
+    except Exception:
+        pass
+
+    try:
+        campo.send_keys(Keys.CONTROL, "a")
+        pause()
+        campo.send_keys(valor)
+        pause()
+        campo.send_keys(Keys.TAB)
+        pause()
+    except Exception:
+        driver.execute_script("arguments[0].dispatchEvent(new Event('blur', { bubbles: true }));", campo)
+        pause()
+
+
+def preparar_campo_para_digitacao(driver, campo):
+    remover_overlays_interativos(driver)
+    driver.execute_script(
+        """
+        const el = arguments[0];
+        const footer = document.querySelector('#icones-footer');
+        if (footer) {
+            footer.style.pointerEvents = 'none';
+            footer.style.opacity = '0';
+        }
+        el.scrollIntoView({block: 'center', inline: 'nearest'});
+        """,
+        campo,
+    )
+
+
+def focar_campo(driver, campo):
+    driver.execute_script(
+        """
+        arguments[0].focus();
+        arguments[0].click();
+        """,
+        campo,
+    )
+
+
+def remover_overlays_interativos(driver):
+    driver.execute_script(
+        """
+        const selectors = [
+            '#icones-footer',
+            '#nps-toast',
+            '.nps-toast',
+            '.nps-container',
+            '.nps-overlay',
+            '[class*="nps"]'
+        ];
+        selectors.forEach((selector) => {
+            document.querySelectorAll(selector).forEach((el) => {
+                el.style.pointerEvents = 'none';
+                el.style.opacity = '0';
+                el.style.visibility = 'hidden';
+            });
+        });
+        """
+    )
+
+
+def clicar_elemento_seguro(driver, wait, locator, pause, logger=None, descricao="elemento"):
+    ultimo_erro = None
+    for tentativa in range(1, 4):
+        pause()
+        remover_overlays_interativos(driver)
+        elemento = wait.until(EC.presence_of_element_located(locator))
+        driver.execute_script(
+            "arguments[0].scrollIntoView({block:'center', inline:'nearest'});",
+            elemento,
+        )
+        pause(0.3)
+        try:
+            wait.until(EC.element_to_be_clickable(locator)).click()
+            return
+        except ElementClickInterceptedException as exc:
+            ultimo_erro = exc
+            remover_overlays_interativos(driver)
+            pause(0.2)
+            try:
+                driver.execute_script("arguments[0].click();", elemento)
+                return
+            except Exception as js_exc:
+                ultimo_erro = js_exc
+                if logger:
+                    logger(
+                        f"Clique interceptado em {descricao} na tentativa {tentativa}/3. "
+                        "Aplicando limpeza de overlay e retry."
+                    )
+                pause(0.5)
+        except Exception as exc:
+            ultimo_erro = exc
+            remover_overlays_interativos(driver)
+            pause(0.3)
+            try:
+                driver.execute_script("arguments[0].click();", elemento)
+                return
+            except Exception as js_exc:
+                ultimo_erro = js_exc
+                pause(0.5)
+    raise ultimo_erro
+
+
+def set_value_native(driver, campo, valor):
+    driver.execute_script(
+        """
+        const el = arguments[0];
+        const value = arguments[1];
+        el.removeAttribute('readonly');
+        el.removeAttribute('disabled');
+        const proto = el instanceof HTMLInputElement ? HTMLInputElement.prototype : el.__proto__;
+        const descriptor = Object.getOwnPropertyDescriptor(proto, 'value');
+        if (descriptor && descriptor.set) {
+            descriptor.set.call(el, value);
+        } else {
+            el.value = value;
+        }
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+        """,
+        campo,
+        valor,
+    )
+
+
+def limpar_campo(driver, campo):
+    driver.execute_script(
+        """
+        arguments[0].focus();
+        arguments[0].value = '';
+        arguments[0].dispatchEvent(new Event('input', { bubbles: true }));
+        arguments[0].dispatchEvent(new Event('change', { bubbles: true }));
+        """,
+        campo,
+    )
+
+
+def limpar_campo_monetario(driver, campo, pause):
+    limpar_campo(driver, campo)
     pause()
-    campo.send_keys(Keys.TAB)
-    pause()
+    try:
+        campo.send_keys(Keys.CONTROL, "a")
+        pause()
+        campo.send_keys(Keys.BACKSPACE)
+        pause()
+        campo.send_keys(Keys.DELETE)
+        pause()
+        valor_tela = (campo.get_attribute("value") or "").strip()
+        if valor_tela in {"0", "0,00", "0.00"}:
+            campo.send_keys(Keys.BACKSPACE)
+            pause()
+            campo.send_keys(Keys.DELETE)
+            pause()
+    except Exception:
+        pass
+
+
+def parse_decimal_br(valor):
+    texto = str(valor or "").strip()
+    if not texto:
+        raise InvalidOperation("valor vazio")
+
+    texto = texto.replace("R$", "").replace(" ", "")
+    texto = re.sub(r"[^0-9,.\-]", "", texto)
+    if not texto:
+        raise InvalidOperation("valor invalido")
+
+    if "," in texto:
+        texto = texto.replace(".", "").replace(",", ".")
+    elif texto.count(".") > 1:
+        texto = texto.replace(".", "")
+
+    return Decimal(texto).quantize(Decimal("0.01"))
+
+
+def digitos_monetarios(valor):
+    decimal = parse_decimal_br(valor)
+    centavos = int((decimal * 100).quantize(Decimal("1")))
+    return str(centavos)
+
+
+def valor_para_input_number(valor):
+    decimal = parse_decimal_br(valor)
+    if decimal == Decimal("0.00"):
+        return "0"
+    return format(decimal, ".2f")
+
+
+def valores_monetarios_equivalentes(valor_tela, valor_esperado):
+    try:
+        return parse_decimal_br(valor_tela) == parse_decimal_br(valor_esperado)
+    except (InvalidOperation, ValueError):
+        return False
+
+
+def valor_monetario_valido_na_tela(valor_tela, valor_esperado):
+    valor_tela = str(valor_tela or "").strip()
+
+    if not valor_tela:
+        return False
+
+    return valores_monetarios_equivalentes(valor_tela, valor_esperado)
 
 
 def indexar_anexos(anexos, logger=None):
@@ -1030,12 +1476,19 @@ def garantir_coluna(ws, nome):
 
 
 def envio_final_habilitado(parametros_execucao):
-    valor = parametros_execucao.get("confirm_submission")
-    if valor is None:
+    if "confirm_submission" in parametros_execucao:
+        valor = parametros_execucao.get("confirm_submission")
+        return str(valor).strip().lower() in {"1", "true", "t", "yes", "y", "on"}
+
+    if "submit" in parametros_execucao:
         valor = parametros_execucao.get("submit")
-    if valor is None:
+        return str(valor).strip().lower() in {"1", "true", "t", "yes", "y", "on"}
+
+    if "modo_producao" in parametros_execucao:
         valor = parametros_execucao.get("modo_producao")
-    return str(valor).strip().lower() in {"1", "true", "t", "yes", "y", "on"}
+        return str(valor).strip().lower() in {"1", "true", "t", "yes", "y", "on"}
+
+    return True
 
 
 def salvar_resumo(pasta_saida, planilha_trabalho, updates_excel, updates_solicitacao, resumo_execucao):
@@ -1047,21 +1500,23 @@ def salvar_resumo(pasta_saida, planilha_trabalho, updates_excel, updates_solicit
             "erro": resumo_execucao.get("erro", 0),
             "teste": resumo_execucao.get("teste", 0),
             "pulado_ok": resumo_execucao.get("pulado_ok", 0),
-            "total_processado": (
-                resumo_execucao.get("ok", 0)
-                + resumo_execucao.get("erro", 0)
-                + resumo_execucao.get("teste", 0)
-            ),
+            "total_processado": resumo_execucao.get("total_processado", 0),
+            "inicio_rotina": resumo_execucao.get("inicio_rotina", ""),
+            "fim_rotina": resumo_execucao.get("fim_rotina", ""),
+            "tempo_total_rotina_segundos": round(resumo_execucao.get("tempo_total_rotina_segundos", 0.0), 2),
+            "tempo_total_rotina_formatado": formatar_duracao(resumo_execucao.get("tempo_total_rotina_segundos", 0.0)),
+            "tempo_medio_registro_segundos": round(resumo_execucao.get("tempo_medio_registro_segundos", 0.0), 2),
+            "tempo_medio_registro_formatado": formatar_duracao(resumo_execucao.get("tempo_medio_registro_segundos", 0.0)),
         },
         "status": updates_excel,
         "solicitacoes": updates_solicitacao,
     }
-    (pasta_saida / "resumo_execucao.json").write_text(json.dumps(resumo, ensure_ascii=True, indent=2), encoding="utf-8")
-    salvar_resumo_em_aba_planilha(planilha_trabalho, resumo, updates_excel, updates_solicitacao)
+    salvar_resumo_em_aba_planilha(planilha_trabalho, resumo)
 
 
-def salvar_resumo_em_aba_planilha(planilha_trabalho, resumo, updates_excel, updates_solicitacao):
+def salvar_resumo_em_aba_planilha(planilha_trabalho, resumo):
     wb = load_workbook(planilha_trabalho)
+    remover_abas_credenciais(wb)
     nome_aba = "Resumo_Execucao"
     if nome_aba in wb.sheetnames:
         ws = wb[nome_aba]
@@ -1070,39 +1525,136 @@ def salvar_resumo_em_aba_planilha(planilha_trabalho, resumo, updates_excel, upda
         ws = wb.create_sheet(nome_aba)
 
     resumo_execucao = resumo.get("resumo_execucao", {})
-    linhas = [
-        ("planilha_saida", resumo.get("planilha_saida", "")),
-        ("gerado_em", resumo.get("gerado_em", "")),
-        ("ok", resumo_execucao.get("ok", 0)),
-        ("erro", resumo_execucao.get("erro", 0)),
-        ("teste", resumo_execucao.get("teste", 0)),
-        ("pulado_ok", resumo_execucao.get("pulado_ok", 0)),
-        ("total_processado", resumo_execucao.get("total_processado", 0)),
-    ]
-
-    ws["A1"] = "campo"
-    ws["B1"] = "valor"
-    for indice, (campo, valor) in enumerate(linhas, start=2):
-        ws.cell(row=indice, column=1).value = campo
-        ws.cell(row=indice, column=2).value = valor
-
-    inicio_status = len(linhas) + 4
-    ws.cell(row=inicio_status, column=1).value = "linha_planilha"
-    ws.cell(row=inicio_status, column=2).value = "status"
-    ws.cell(row=inicio_status, column=3).value = "mensagem"
-    for offset, (linha, status, mensagem) in enumerate(updates_excel, start=1):
-        ws.cell(row=inicio_status + offset, column=1).value = linha
-        ws.cell(row=inicio_status + offset, column=2).value = status
-        ws.cell(row=inicio_status + offset, column=3).value = mensagem
-
-    inicio_solic = inicio_status + len(updates_excel) + 3
-    ws.cell(row=inicio_solic, column=1).value = "linha_planilha"
-    ws.cell(row=inicio_solic, column=2).value = "numero_solicitacao"
-    for offset, (linha, numero) in enumerate(updates_solicitacao, start=1):
-        ws.cell(row=inicio_solic + offset, column=1).value = linha
-        ws.cell(row=inicio_solic + offset, column=2).value = numero
+    preencher_resumo_visual(ws, resumo_execucao, resumo.get("planilha_saida", ""))
 
     wb.save(planilha_trabalho)
+
+
+def remover_abas_credenciais(workbook):
+    nomes_alvo = {"credenciais", "login", "acesso", "usuario"}
+    abas_para_remover = []
+
+    for nome_aba in list(workbook.sheetnames):
+        aba_normalizada = normalizar_chave_excel(nome_aba)
+        if aba_normalizada in nomes_alvo:
+            abas_para_remover.append(nome_aba)
+            continue
+
+        worksheet = workbook[nome_aba]
+        header_row = next(worksheet.iter_rows(min_row=1, max_row=1, values_only=True), None)
+        if not header_row:
+            continue
+
+        headers = {normalizar_chave_excel(valor) for valor in header_row if valor is not None}
+        if {"usuario", "senha"}.issubset(headers) or {"username", "password"}.issubset(headers):
+            abas_para_remover.append(nome_aba)
+
+    for nome_aba in abas_para_remover:
+        if nome_aba in workbook.sheetnames and len(workbook.sheetnames) > 1:
+            del workbook[nome_aba]
+
+
+def preencher_resumo_visual(ws, resumo_execucao, planilha_saida):
+    cor_fundo = "F8FAFC"
+    cor_titulo = "0F172A"
+    cor_texto_claro = "FFFFFF"
+    cor_borda = "CBD5E1"
+    cor_label = "475569"
+    cor_ok = "DCFCE7"
+    cor_ok_texto = "166534"
+    cor_erro = "FEE2E2"
+    cor_erro_texto = "991B1B"
+    cor_teste = "FEF3C7"
+    cor_teste_texto = "92400E"
+    cor_pulado = "DBEAFE"
+    cor_pulado_texto = "1D4ED8"
+    cor_neutra = "E2E8F0"
+    cor_neutra_texto = "334155"
+
+    thin = Side(border_style="thin", color=cor_borda)
+    border = Border(left=thin, right=thin, top=thin, bottom=thin)
+
+    ws.sheet_view.showGridLines = False
+    ws.freeze_panes = "A4"
+    ws.column_dimensions["A"].width = 24
+    ws.column_dimensions["B"].width = 22
+    ws.column_dimensions["C"].width = 24
+    ws.column_dimensions["D"].width = 22
+
+    for row in range(1, 20):
+        for col in range(1, 5):
+            cell = ws.cell(row=row, column=col)
+            cell.fill = PatternFill("solid", fgColor=cor_fundo)
+
+    ws.merge_cells("A1:D1")
+    titulo = ws["A1"]
+    titulo.value = "Resumo da Execucao"
+    titulo.fill = PatternFill("solid", fgColor=cor_titulo)
+    titulo.font = Font(color=cor_texto_claro, bold=True, size=16)
+    titulo.alignment = Alignment(horizontal="center", vertical="center")
+    titulo.border = border
+    ws.row_dimensions[1].height = 28
+
+    ws.merge_cells("A2:D2")
+    subtitulo = ws["A2"]
+    subtitulo.value = f"Arquivo gerado: {planilha_saida}"
+    subtitulo.fill = PatternFill("solid", fgColor="E2E8F0")
+    subtitulo.font = Font(color="0F172A", italic=True, size=10)
+    subtitulo.alignment = Alignment(horizontal="left", vertical="center")
+    subtitulo.border = border
+
+    cards = [
+        ("A4", "OK", resumo_execucao.get("ok", 0), cor_ok, cor_ok_texto),
+        ("B4", "ERRO", resumo_execucao.get("erro", 0), cor_erro, cor_erro_texto),
+        ("C4", "TESTE", resumo_execucao.get("teste", 0), cor_teste, cor_teste_texto),
+        ("D4", "PULADO OK", resumo_execucao.get("pulado_ok", 0), cor_pulado, cor_pulado_texto),
+    ]
+
+    for ref, label, valor, cor_bg, cor_texto in cards:
+        cell = ws[ref]
+        cell.value = f"{label}\n{valor}"
+        cell.fill = PatternFill("solid", fgColor=cor_bg)
+        cell.font = Font(color=cor_texto, bold=True, size=13)
+        cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+        cell.border = border
+        ws.row_dimensions[cell.row].height = 40
+
+    metricas = [
+        (7, "Inicio da rotina", resumo_execucao.get("inicio_rotina", "")),
+        (8, "Fim da rotina", resumo_execucao.get("fim_rotina", "")),
+        (9, "Tempo total da rotina", resumo_execucao.get("tempo_total_rotina_formatado", "00:00:00")),
+        (10, "Tempo medio por registro", resumo_execucao.get("tempo_medio_registro_formatado", "00:00:00")),
+        (11, "Total processado", resumo_execucao.get("total_processado", 0)),
+    ]
+
+    for row, label, valor in metricas:
+        label_cell = ws.cell(row=row, column=1)
+        value_cell = ws.cell(row=row, column=2)
+        label_cell.value = label
+        value_cell.value = valor
+        label_cell.fill = PatternFill("solid", fgColor=cor_neutra)
+        value_cell.fill = PatternFill("solid", fgColor="FFFFFF")
+        label_cell.font = Font(color=cor_label, bold=True)
+        value_cell.font = Font(color=cor_neutra_texto, bold=True)
+        label_cell.alignment = Alignment(horizontal="left", vertical="center")
+        value_cell.alignment = Alignment(horizontal="left", vertical="center")
+        label_cell.border = border
+        value_cell.border = border
+
+    ws.merge_cells("A13:D13")
+    rodape = ws["A13"]
+    rodape.value = "Os detalhes de erro e mensagem continuam disponiveis na aba principal da planilha."
+    rodape.fill = PatternFill("solid", fgColor="E0F2FE")
+    rodape.font = Font(color="0C4A6E", italic=True, size=10)
+    rodape.alignment = Alignment(horizontal="left", vertical="center")
+    rodape.border = border
+
+
+def formatar_duracao(total_segundos):
+    total_segundos = int(round(float(total_segundos or 0)))
+    horas, resto = divmod(total_segundos, 3600)
+    minutos, segundos = divmod(resto, 60)
+    return f"{horas:02d}:{minutos:02d}:{segundos:02d}"
 
 
 def coletar_amostra_modal(driver, modal_id, limite=5):

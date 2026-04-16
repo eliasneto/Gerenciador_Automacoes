@@ -95,6 +95,11 @@ def save_automation_assets(automation, cleaned_data):
         )
 
 
+def should_persist_execution_inputs(automation):
+    identificador = (getattr(automation, 'identificador', '') or '').strip().lower()
+    return identificador != 'medicao-blueez'
+
+
 def spawn_execution_process(execution):
     command = [sys.executable, 'manage.py', 'run_automation', str(execution.pk)]
     process = subprocess.Popen(command, cwd=settings.BASE_DIR)
@@ -170,7 +175,10 @@ def start_automation_request(request, automation, module_name, namespace):
         messages.error(request, 'Esta automacao nao aceita anexos.')
         return None
 
-    save_automation_assets(automation, form.cleaned_data)
+    if should_persist_execution_inputs(automation):
+        save_automation_assets(automation, form.cleaned_data)
+    else:
+        clear_automation_assets(automation)
     execution = create_execution(automation, request.user, form.cleaned_data, module_name)
     schedule_pending_executions()
     execution.refresh_from_db(fields=['status', 'pid', 'iniciado_em'])

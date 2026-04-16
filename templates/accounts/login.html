@@ -3,33 +3,63 @@
 {% block title %}Login | Speed AutoControllers{% endblock %}
 
 {% block content %}
-<div class="w-full max-w-[900px] mx-auto">
-    <div class="flex flex-col md:flex-row bg-white rounded-[2.5rem] overflow-hidden shadow-2xl">
-        <div class="w-full md:w-1/2 bg-ageis-black p-12 flex flex-col justify-between text-white">
-            <div>
-                <div class="flex items-center gap-2 mb-8">
-                    <div class="w-6 h-6 bg-ageis-yellow rounded-md"></div>
-                    <span class="text-xl font-bold italic">SPEED</span>
+<div class="mx-auto w-full max-w-[950px] animate-in fade-in zoom-in duration-700">
+    <div class="flex flex-col overflow-hidden rounded-[3rem] border border-white/10 bg-white shadow-[0_20px_50px_rgba(0,0,0,0.3)] md:flex-row">
+        <div class="relative flex w-full flex-col justify-between overflow-hidden bg-ageis-black p-10 text-white md:w-1/2 md:p-12">
+            <div class="absolute -left-24 -top-24 h-64 w-64 rounded-full bg-ageis-yellow/10 blur-[100px]"></div>
+
+            <div class="relative z-10">
+                <div class="mb-10 inline-flex items-center gap-4 rounded-[1.8rem] border border-white/10 bg-white/5 p-4 shadow-2xl backdrop-blur-md">
+                    <div class="flex min-w-[64px] items-center justify-center">
+                        <span class="text-[1.15rem] font-black tracking-[-0.06em] text-white">how<span class="text-[#ff2a2a]">BE</span></span>
+                    </div>
+                    <div class="h-5 w-px bg-white/20"></div>
+                    <div class="flex min-w-[56px] items-center justify-center">
+                        <span class="text-[0.72rem] font-black uppercase tracking-[0.26em] text-ageis-yellow">speed</span>
+                    </div>
+                    <div class="h-5 w-px bg-white/20"></div>
+                    <div class="flex min-w-[40px] items-center justify-center">
+                        <span class="rounded-xl bg-[#ff2a2a] px-3 py-1.5 text-[0.7rem] font-black uppercase tracking-[0.12em] text-white">LK</span>
+                    </div>
                 </div>
-                <h1 class="text-4xl font-black italic uppercase leading-none mb-4">Controle de Automacoes</h1>
-                <p class="text-gray-400 text-sm">Acesse de forma centralizada os modulos Comercial, Financeiro e TI para gerenciar automacoes da empresa.</p>
+
+                <div class="space-y-4">
+                    <div class="flex items-center gap-3">
+                        <div class="h-1 w-8 rounded-full bg-ageis-yellow"></div>
+                        <span class="text-[11px] font-black uppercase italic tracking-[0.3em] text-ageis-yellow">Sistema Integrado</span>
+                    </div>
+                    <h1 class="text-4xl font-black uppercase italic leading-[0.9] tracking-tighter sm:text-5xl">
+                        <span class="text-3xl text-white/50">Controle de</span><br>
+                        Automações
+                    </h1>
+                    <p class="max-w-[280px] pt-4 text-sm leading-relaxed text-gray-400">
+                        Acesse de forma centralizada os módulos Comercial, Financeiro e TI para gerenciar automações da empresa.
+                    </p>
+                </div>
             </div>
-            <div class="mt-8">
-                <span class="text-[10px] py-1 px-3 bg-white/10 rounded-full text-ageis-yellow font-bold uppercase tracking-widest border border-ageis-yellow/20">
-                    Ambiente Corporativo Autenticado
-                </span>
+
+            <div class="relative z-10 mt-10">
+                <div class="flex items-center gap-2">
+                    <span class="relative flex h-2 w-2">
+                        <span class="absolute inline-flex h-2 w-2 animate-ping rounded-full bg-ageis-yellow opacity-75"></span>
+                        <span class="relative inline-flex h-2 w-2 rounded-full bg-ageis-yellow"></span>
+                    </span>
+                    <span class="text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                        Ambiente Corporativo Autenticado
+                    </span>
+                </div>
             </div>
         </div>
 
-        <div class="w-full md:w-1/2 p-12 bg-white">
-            <h2 class="text-2xl font-bold text-gray-900 mb-2">Entrar</h2>
-            <p class="text-sm text-gray-400 mb-8">Credenciais necessarias para acesso ao painel.</p>
+        <div class="flex w-full flex-col justify-center bg-white p-10 md:w-1/2 md:p-12">
+            <div class="mb-8 text-center md:text-left">
+                <h2 class="text-3xl font-black tracking-tight text-gray-900">Entrar</h2>
+                <p class="mt-1 text-sm text-gray-400">Credenciais necessárias para acesso ao painel.</p>
+            </div>
 
             {% if form.errors %}
-                <div class="p-4 mb-6 text-sm text-red-700 bg-red-50 border border-red-100 rounded-2xl flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-                    </svg>
+                <div class="animate-shake mb-8 flex items-center gap-3 rounded-2xl border border-red-100 bg-red-50 p-4 text-xs font-bold text-red-700">
+                    <i data-lucide="alert-circle" class="h-5 w-5"></i>
                     <span>Usuario ou senha incorretos.</span>
                 </div>
             {% endif %}
@@ -37,19 +67,31 @@
             <form method="post" class="space-y-6">
                 {% csrf_token %}
 
-                <div class="space-y-1">
-                    <label for="id_username" class="text-xs font-bold text-gray-700 uppercase tracking-wider">Usuario</label>
-                    {{ form.username }}
+                <div class="space-y-2">
+                    <label for="id_username" class="ml-1 block text-[10px] font-black uppercase tracking-widest text-gray-400">
+                        Usuario
+                    </label>
+                    <div class="group relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400 transition-colors group-focus-within:text-ageis-yellow">
+                            <i data-lucide="user" class="h-5 w-5"></i>
+                        </span>
+                        {{ form.username }}
+                    </div>
                 </div>
 
-                <div class="space-y-1">
-                    <label for="id_password" class="text-xs font-bold text-gray-700 uppercase tracking-wider">Senha</label>
-                    <div class="relative">
+                <div class="space-y-2">
+                    <label for="id_password" class="ml-1 block text-[10px] font-black uppercase tracking-widest text-gray-400">
+                        Senha
+                    </label>
+                    <div class="group relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400 transition-colors group-focus-within:text-ageis-yellow">
+                            <i data-lucide="lock" class="h-5 w-5"></i>
+                        </span>
                         {{ form.password }}
                         <button
                             type="button"
                             id="togglePasswordVisibility"
-                            class="absolute inset-y-0 right-3 flex items-center text-gray-400 transition hover:text-gray-700"
+                            class="absolute inset-y-0 right-0 flex items-center pr-4 text-gray-400 transition hover:text-ageis-yellow"
                             aria-label="Mostrar ou ocultar senha"
                             title="Mostrar ou ocultar senha"
                         >
@@ -58,20 +100,35 @@
                     </div>
                 </div>
 
-                <button type="submit" class="w-full bg-ageis-yellow text-black font-black py-4 rounded-2xl shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all flex justify-center items-center gap-2">
-                    <span>Entrar no Painel</span>
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
-                    </svg>
+                <button type="submit" class="group flex w-full items-center justify-center gap-3 rounded-2xl bg-ageis-yellow py-5 text-black shadow-[0_10px_30px_rgba(255,193,7,0.3)] transition-all hover:scale-[1.02] active:scale-[0.98]">
+                    <span class="text-xs font-black uppercase tracking-widest">Entrar no Painel</span>
+                    <i data-lucide="arrow-right" class="h-4 w-4 transition-transform group-hover:translate-x-1"></i>
                 </button>
             </form>
 
-            <p class="mt-8 text-center text-[10px] text-gray-400 uppercase tracking-widest">
-                Desenvolvido para AutoControllers
-            </p>
+            <div class="mt-10 flex items-center justify-center gap-4">
+                <div class="h-px w-8 bg-gray-100"></div>
+                <p class="text-[9px] font-bold uppercase tracking-[0.3em] text-gray-300">
+                    Desenvolvido para AutoControllers
+                </p>
+                <div class="h-px w-8 bg-gray-100"></div>
+            </div>
         </div>
     </div>
 </div>
+
+<style>
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-5px); }
+        75% { transform: translateX(5px); }
+    }
+
+    .animate-shake {
+        animation: shake 0.4s ease-in-out;
+    }
+</style>
+
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const passwordField = document.getElementById('id_password');
