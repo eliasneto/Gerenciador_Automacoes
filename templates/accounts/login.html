@@ -3,131 +3,117 @@
 {% block title %}Login | Speed AutoControllers{% endblock %}
 
 {% block content %}
-<div class="mx-auto w-full max-w-[950px] animate-in fade-in zoom-in duration-700">
-    <div class="flex flex-col overflow-hidden rounded-[3rem] border border-white/10 bg-white shadow-[0_20px_50px_rgba(0,0,0,0.3)] md:flex-row">
-        <div class="relative flex w-full flex-col justify-between overflow-hidden bg-ageis-black p-10 text-white md:w-1/2 md:p-12">
-            <div class="absolute -left-24 -top-24 h-64 w-64 rounded-full bg-ageis-yellow/10 blur-[100px]"></div>
+<div class="mx-auto w-full max-w-[940px]">
+    <div class="overflow-hidden rounded-[2.9rem] border border-white/70 bg-white shadow-[0_28px_80px_rgba(0,0,0,0.38)] md:grid md:grid-cols-[1.02fr_1fr]">
+        <section class="relative flex min-h-[560px] flex-col justify-between bg-[#111111] px-12 py-12 text-white">
+            <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,193,7,0.08),transparent_32%)]"></div>
 
             <div class="relative z-10">
-                <div class="mb-10 inline-flex items-center gap-4 rounded-[1.8rem] border border-white/10 bg-white/5 p-4 shadow-2xl backdrop-blur-md">
-                    <div class="flex min-w-[64px] items-center justify-center">
-                        <span class="text-[1.15rem] font-black tracking-[-0.06em] text-white">how<span class="text-[#ff2a2a]">BE</span></span>
-                    </div>
-                    <div class="h-5 w-px bg-white/20"></div>
-                    <div class="flex min-w-[56px] items-center justify-center">
-                        <span class="text-[0.72rem] font-black uppercase tracking-[0.26em] text-ageis-yellow">speed</span>
-                    </div>
-                    <div class="h-5 w-px bg-white/20"></div>
-                    <div class="flex min-w-[40px] items-center justify-center">
-                        <span class="rounded-xl bg-[#ff2a2a] px-3 py-1.5 text-[0.7rem] font-black uppercase tracking-[0.12em] text-white">LK</span>
+                <div class="inline-flex items-center rounded-[1.75rem] border border-white/10 bg-[#1d1d1d] px-7 py-4 shadow-[0_18px_38px_rgba(0,0,0,0.28)]">
+                    <div class="brand-logos brand-logos-login">
+                        <span class="logo-howbe" aria-label="howBE">how<span>BE</span></span>
+                        <span class="brand-divider" aria-hidden="true"></span>
+                        <span class="logo-speed" aria-label="speed">
+                            <span class="logo-speed-mark" aria-hidden="true"><i></i></span>
+                            <span class="logo-speed-text">speed</span>
+                        </span>
+                        <span class="brand-divider" aria-hidden="true"></span>
+                        <span class="logo-lk" aria-label="LK tecnologia">LK</span>
                     </div>
                 </div>
 
-                <div class="space-y-4">
+                <div class="mt-12">
                     <div class="flex items-center gap-3">
-                        <div class="h-1 w-8 rounded-full bg-ageis-yellow"></div>
-                        <span class="text-[11px] font-black uppercase italic tracking-[0.3em] text-ageis-yellow">Sistema Integrado</span>
+                        <span class="h-[4px] w-8 rounded-full bg-[#ffc107]"></span>
+                        <span class="text-[0.9rem] font-black uppercase italic tracking-[0.28em] text-[#ffc107]">Sistema Integrado</span>
                     </div>
-                    <h1 class="text-4xl font-black uppercase italic leading-[0.9] tracking-tighter sm:text-5xl">
-                        <span class="text-3xl text-white/50">Controle de</span><br>
-                        Automações
+
+                    <h1 class="mt-9 uppercase italic leading-[0.9] tracking-[-0.06em]">
+                        <span class="block text-[2.9rem] font-black text-white/45">Controle de</span>
+                        <span class="block text-[3.95rem] font-black text-white">Automacoes</span>
                     </h1>
-                    <p class="max-w-[280px] pt-4 text-sm leading-relaxed text-gray-400">
-                        Acesse de forma centralizada os módulos Comercial, Financeiro e TI para gerenciar automações da empresa.
+
+                    <p class="mt-10 max-w-[360px] text-[0.98rem] leading-9 text-[#aab4c7]">
+                        Acesse de forma centralizada os modulos Comercial, Financeiro e TI para gerenciar automacoes da empresa.
                     </p>
                 </div>
             </div>
 
-            <div class="relative z-10 mt-10">
-                <div class="flex items-center gap-2">
-                    <span class="relative flex h-2 w-2">
-                        <span class="absolute inline-flex h-2 w-2 animate-ping rounded-full bg-ageis-yellow opacity-75"></span>
-                        <span class="relative inline-flex h-2 w-2 rounded-full bg-ageis-yellow"></span>
-                    </span>
-                    <span class="text-[10px] font-bold uppercase tracking-widest text-gray-400">
-                        Ambiente Corporativo Autenticado
-                    </span>
+            <div class="relative z-10 flex items-center gap-3">
+                <span class="h-3 w-3 rounded-full bg-[#ffc107] shadow-[0_0_0_5px_rgba(255,193,7,0.12)]"></span>
+                <span class="text-[0.78rem] font-black uppercase tracking-[0.28em] text-[#93a0b6]">
+                    Ambiente Corporativo Autenticado
+                </span>
+            </div>
+        </section>
+
+        <section class="flex min-h-[560px] flex-col justify-center bg-[#fbfbfc] px-12 py-12">
+            <div class="mx-auto w-full max-w-[380px]">
+                <div class="mb-10">
+                    <h2 class="text-[2.9rem] font-black tracking-[-0.05em] text-[#081a45]">Entrar</h2>
+                    <p class="mt-2 text-[0.98rem] text-[#9aa6c1]">Credenciais necessarias para acesso ao painel.</p>
                 </div>
-            </div>
-        </div>
 
-        <div class="flex w-full flex-col justify-center bg-white p-10 md:w-1/2 md:p-12">
-            <div class="mb-8 text-center md:text-left">
-                <h2 class="text-3xl font-black tracking-tight text-gray-900">Entrar</h2>
-                <p class="mt-1 text-sm text-gray-400">Credenciais necessárias para acesso ao painel.</p>
-            </div>
-
-            {% if form.errors %}
-                <div class="animate-shake mb-8 flex items-center gap-3 rounded-2xl border border-red-100 bg-red-50 p-4 text-xs font-bold text-red-700">
+                {% if form.errors %}
+                <div class="mb-7 flex items-center gap-3 rounded-[1.6rem] border border-red-100 bg-red-50 px-5 py-4 text-sm font-bold text-red-700">
                     <i data-lucide="alert-circle" class="h-5 w-5"></i>
                     <span>Usuario ou senha incorretos.</span>
                 </div>
-            {% endif %}
+                {% endif %}
 
-            <form method="post" class="space-y-6">
-                {% csrf_token %}
+                <form method="post" class="space-y-6">
+                    {% csrf_token %}
 
-                <div class="space-y-2">
-                    <label for="id_username" class="ml-1 block text-[10px] font-black uppercase tracking-widest text-gray-400">
-                        Usuario
-                    </label>
-                    <div class="group relative">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400 transition-colors group-focus-within:text-ageis-yellow">
-                            <i data-lucide="user" class="h-5 w-5"></i>
-                        </span>
-                        {{ form.username }}
+                    <div class="space-y-2">
+                        <label for="id_username" class="ml-1 block text-[0.8rem] font-black uppercase tracking-[0.18em] text-[#98a4bc]">
+                            Usuario
+                        </label>
+                        <div class="relative">
+                            <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-5 text-[#98a4bc]">
+                                <i data-lucide="user" class="h-5 w-5"></i>
+                            </span>
+                            {{ form.username }}
+                        </div>
                     </div>
-                </div>
 
-                <div class="space-y-2">
-                    <label for="id_password" class="ml-1 block text-[10px] font-black uppercase tracking-widest text-gray-400">
-                        Senha
-                    </label>
-                    <div class="group relative">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400 transition-colors group-focus-within:text-ageis-yellow">
-                            <i data-lucide="lock" class="h-5 w-5"></i>
-                        </span>
-                        {{ form.password }}
-                        <button
-                            type="button"
-                            id="togglePasswordVisibility"
-                            class="absolute inset-y-0 right-0 flex items-center pr-4 text-gray-400 transition hover:text-ageis-yellow"
-                            aria-label="Mostrar ou ocultar senha"
-                            title="Mostrar ou ocultar senha"
-                        >
-                            <i data-lucide="eye" id="passwordVisibilityIcon" class="h-5 w-5"></i>
-                        </button>
+                    <div class="space-y-2">
+                        <label for="id_password" class="ml-1 block text-[0.8rem] font-black uppercase tracking-[0.18em] text-[#98a4bc]">
+                            Senha
+                        </label>
+                        <div class="relative">
+                            <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-5 text-[#98a4bc]">
+                                <i data-lucide="lock" class="h-5 w-5"></i>
+                            </span>
+                            {{ form.password }}
+                            <button
+                                type="button"
+                                id="togglePasswordVisibility"
+                                class="absolute inset-y-0 right-0 flex items-center pr-5 text-[#98a4bc] transition hover:text-[#ffc107]"
+                                aria-label="Mostrar ou ocultar senha"
+                                title="Mostrar ou ocultar senha"
+                            >
+                                <i data-lucide="eye" id="passwordVisibilityIcon" class="h-5 w-5"></i>
+                            </button>
+                        </div>
                     </div>
+
+                    <button type="submit" class="group mt-3 flex h-[56px] w-full items-center justify-center gap-3 rounded-[1.25rem] bg-[#ffc107] text-black shadow-[0_16px_34px_rgba(255,193,7,0.34)] transition hover:brightness-95">
+                        <span class="text-[0.84rem] font-black uppercase tracking-[0.18em]">Entrar no Painel</span>
+                        <i data-lucide="arrow-right" class="h-4 w-4 transition-transform group-hover:translate-x-1"></i>
+                    </button>
+                </form>
+
+                <div class="mt-12 flex items-center gap-4">
+                    <span class="h-px flex-1 bg-[#ebedf2]"></span>
+                    <span class="text-[0.72rem] font-black uppercase tracking-[0.28em] text-[#d2d8e4]">
+                        Speed Engine v3.0
+                    </span>
+                    <span class="h-px flex-1 bg-[#ebedf2]"></span>
                 </div>
-
-                <button type="submit" class="group flex w-full items-center justify-center gap-3 rounded-2xl bg-ageis-yellow py-5 text-black shadow-[0_10px_30px_rgba(255,193,7,0.3)] transition-all hover:scale-[1.02] active:scale-[0.98]">
-                    <span class="text-xs font-black uppercase tracking-widest">Entrar no Painel</span>
-                    <i data-lucide="arrow-right" class="h-4 w-4 transition-transform group-hover:translate-x-1"></i>
-                </button>
-            </form>
-
-            <div class="mt-10 flex items-center justify-center gap-4">
-                <div class="h-px w-8 bg-gray-100"></div>
-                <p class="text-[9px] font-bold uppercase tracking-[0.3em] text-gray-300">
-                    Desenvolvido para AutoControllers
-                </p>
-                <div class="h-px w-8 bg-gray-100"></div>
             </div>
-        </div>
+        </section>
     </div>
 </div>
-
-<style>
-    @keyframes shake {
-        0%, 100% { transform: translateX(0); }
-        25% { transform: translateX(-5px); }
-        75% { transform: translateX(5px); }
-    }
-
-    .animate-shake {
-        animation: shake 0.4s ease-in-out;
-    }
-</style>
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {

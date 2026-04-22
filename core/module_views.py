@@ -3,8 +3,11 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.paginator import Paginator
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect
+from django.urls import reverse
 from django.views import View
 from django.views.generic import TemplateView
+
+from .sector_registry import SECTOR_REGISTRY
 
 from .models import AutomationExecution, AutomationExecutionFile
 from .security import user_has_module_access
@@ -37,6 +40,7 @@ class ModuleHomeView(LoginRequiredMixin, ModuleAccessMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         automacoes_queryset = self.automation_model.objects.all()
+        registry = SECTOR_REGISTRY.get(self.module_key, {})
         automacoes_page_obj = Paginator(automacoes_queryset, self.paginate_by).get_page(
             self.request.GET.get('automacoes_page')
         )
@@ -45,6 +49,8 @@ class ModuleHomeView(LoginRequiredMixin, ModuleAccessMixin, TemplateView):
             automacao.execucao_ativa = automacao.execucoes.filter(status=AutomationExecution.Status.RUNNING).first()
             automacao.ultima_execucao = automacao.execucoes.first()
             automacao.arquivos_modal = list(automacao.arquivos_salvos.all())
+            automacao.display_icon = getattr(automacao, 'icone', '') or registry.get('icon', 'sparkles')
+            automacao.edit_url = reverse('administrador:automation-edit', kwargs={'setor': self.module_key, 'pk': automacao.pk})
 
         context['modulo'] = {
             'nome': self.module_name,
@@ -52,6 +58,7 @@ class ModuleHomeView(LoginRequiredMixin, ModuleAccessMixin, TemplateView):
             'contador': automacoes_queryset.count(),
             'status_label': self.module_status_label,
             'namespace': self.request.resolver_match.namespace,
+            'icon': registry.get('icon', 'sparkles'),
         }
         context['automacoes'] = automacoes
         execucoes_queryset = AutomationExecution.objects.filter(modulo=self.module_key).prefetch_related('arquivos')

@@ -1,3 +1,4 @@
+﻿{% load static %}
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -5,109 +6,404 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Speed | AutoControllers{% endblock %}</title>
 
+    <script>
+        window.tailwind = window.tailwind || {};
+        window.tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'ageis-black': '#0f0f0f',
+                        'ageis-yellow': '#ffc107',
+                    }
+                }
+            }
+        };
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; }
-        .bg-ageis-black { background-color: #0F0F0F; }
-        .bg-ageis-yellow { background-color: #FFC107; }
-        .text-ageis-yellow { color: #FFC107; }
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background:
+                radial-gradient(circle at top, rgba(255, 193, 7, 0.08), transparent 28%),
+                linear-gradient(180deg, #0a0a0a 0%, #0e0e0e 100%);
+        }
 
-        .sidebar-link-active {
-            background-color: rgba(255, 193, 7, 0.1);
-            color: #FFC107 !important;
-            border-left: 4px solid #FFC107;
-            border-radius: 0 12px 12px 0 !important;
+        .sidebar-card {
+            background: #101010;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 22px 60px rgba(0, 0, 0, 0.34);
         }
 
         .sidebar-section-title {
-            color: #7c8798;
-            font-size: 10px;
-            font-weight: 900;
-            letter-spacing: 0.22em;
+            color: #7f8aa0;
+            font-size: 9px;
+            font-weight: 800;
+            letter-spacing: 0.24em;
             text-transform: uppercase;
-            padding: 0.75rem 1rem;
+        }
+
+        .sidebar-nav-card {
+            background: transparent;
+            border: 1px solid transparent;
+            border-radius: 1rem;
+            transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+        }
+
+        .sidebar-nav-card:hover {
+            background: rgba(255, 255, 255, 0.025);
+            border-color: rgba(255, 255, 255, 0.05);
+        }
+
+        .sidebar-toggle-open {
+            background: rgba(255, 193, 7, 0.12);
+            border-color: rgba(255, 193, 7, 0.18);
+            color: #ffc107 !important;
+            box-shadow: inset 5px 0 0 #ffc107;
+        }
+
+        .sidebar-toggle-indicator {
+            width: 7px;
+            height: 7px;
+            border-radius: 9999px;
+            background: rgba(255, 193, 7, 0.28);
+            box-shadow: 0 0 0 3px rgba(255, 193, 7, 0.08);
+            transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+        }
+
+        .sidebar-toggle-open .sidebar-toggle-indicator {
+            background: #ffc107;
+            box-shadow: 0 0 0 3px rgba(255, 193, 7, 0.18);
+            transform: scale(1.05);
         }
 
         .sidebar-submenu {
-            background: linear-gradient(180deg, rgba(255,255,255,0.035) 0%, rgba(255,255,255,0.015) 100%);
+            background: rgba(255,255,255,0.025);
             border: 1px solid rgba(255,255,255,0.04);
             border-radius: 1rem;
-            margin-top: 0.35rem;
-            padding: 0.45rem 0;
             overflow: hidden;
             transform-origin: top;
-            transition: max-height 0.28s ease, opacity 0.24s ease, transform 0.24s ease, margin-top 0.24s ease, padding 0.24s ease;
-        }
-
-        .sidebar-submenu-open {
-            box-shadow: inset 0 1px 0 rgba(255,255,255,0.03), 0 10px 24px rgba(0,0,0,0.14);
+            transition: max-height 0.3s ease, opacity 0.25s ease, transform 0.25s ease, margin-top 0.25s ease;
         }
 
         .sidebar-submenu-expanded {
-            max-height: 720px;
+            max-height: 620px;
             opacity: 1;
-            transform: translateY(0) scaleY(1);
+            transform: translateY(0);
             pointer-events: auto;
         }
 
         .sidebar-submenu-collapsed {
             max-height: 0;
             opacity: 0;
-            transform: translateY(-6px) scaleY(0.98);
+            transform: translateY(-8px);
             pointer-events: none;
-            margin-top: 0;
-            padding-top: 0;
-            padding-bottom: 0;
+            margin-top: 0 !important;
             border-color: transparent;
         }
 
         .sidebar-submenu-link {
             display: flex;
             align-items: center;
-            gap: 0.5rem;
-            padding: 0.55rem 1rem 0.55rem 3.25rem;
-            font-size: 0.875rem;
+            gap: 0.55rem;
+            padding: 0.65rem 0.95rem 0.65rem 2.55rem;
+            color: #9aa4b6;
+            font-size: 0.86rem;
             font-weight: 600;
             transition: color 0.2s ease, transform 0.2s ease;
         }
 
         .sidebar-submenu-link:hover {
+            color: #dde4ef;
             transform: translateX(2px);
         }
 
-        .sidebar-toggle-open {
-            color: #FFC107 !important;
-            background: linear-gradient(90deg, rgba(255,193,7,0.14) 0%, rgba(255,255,255,0.03) 100%);
-            box-shadow: inset 3px 0 0 #FFC107;
+        .sidebar-submenu-link-active {
+            color: #ffc107 !important;
         }
 
-        .sidebar-toggle-indicator {
-            width: 6px;
-            height: 6px;
+        .sidebar-submenu-dot {
+            width: 0.32rem;
+            height: 0.32rem;
             border-radius: 9999px;
-            background: rgba(255, 193, 7, 0.24);
-            box-shadow: 0 0 0 4px rgba(255, 193, 7, 0.08);
-            transition: background 0.24s ease, box-shadow 0.24s ease, transform 0.24s ease;
+            background: #627089;
+            flex-shrink: 0;
         }
 
-        .sidebar-toggle-open .sidebar-toggle-indicator {
-            background: #FFC107;
-            box-shadow: 0 0 0 4px rgba(255, 193, 7, 0.18);
-            transform: scale(1.08);
+        .sidebar-submenu-link-active .sidebar-submenu-dot {
+            background: #ffc107;
         }
 
-        #sidebar::-webkit-scrollbar { width: 4px; }
-        #sidebar::-webkit-scrollbar-thumb { background: #2d2d2d; border-radius: 10px; }
+        #sidebar::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        #sidebar::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.14);
+            border-radius: 999px;
+        }
+
+        .brand-strip {
+            background: rgba(255,255,255,0.045);
+            border: 1px solid rgba(255,255,255,0.06);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.02);
+        }
+
+        .brand-logos {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: nowrap;
+            justify-content: center;
+            white-space: nowrap;
+        }
+
+        .brand-divider {
+            width: 1px;
+            height: 1.55rem;
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        .logo-howbe {
+            display: inline-flex;
+            align-items: baseline;
+            font-weight: 900;
+            letter-spacing: -0.05em;
+            color: #ffffff;
+            line-height: 1;
+        }
+
+        .logo-howbe span:last-child {
+            color: #f40016;
+        }
+
+        .logo-speed {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.38rem;
+            color: #ffffff;
+            line-height: 1;
+        }
+
+        .logo-speed-text {
+            font-weight: 800;
+            letter-spacing: -0.04em;
+        }
+
+        .logo-speed-mark {
+            position: relative;
+            width: 1.45rem;
+            height: 1.45rem;
+            flex-shrink: 0;
+        }
+
+        .logo-speed-mark::before,
+        .logo-speed-mark::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            border-radius: 0.18rem;
+            transform: skewX(-28deg) rotate(28deg);
+        }
+
+        .logo-speed-mark::before {
+            background: linear-gradient(180deg, #d89a00 0%, #b07c00 100%);
+            clip-path: polygon(0 0, 100% 0, 68% 44%, 0 44%);
+        }
+
+        .logo-speed-mark::after {
+            background: linear-gradient(180deg, #d89a00 0%, #b07c00 100%);
+            clip-path: polygon(34% 56%, 100% 56%, 100% 100%, 0 100%);
+        }
+
+        .logo-speed-mark i {
+            position: absolute;
+            inset: 0.42rem 0.34rem;
+            background: #2e274a;
+            transform: skewX(-28deg) rotate(28deg);
+            display: block;
+            border-radius: 0.14rem;
+            clip-path: polygon(0 0, 100% 0, 74% 100%, 0 100%);
+        }
+
+        .logo-lk {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 1.9rem;
+            height: 1.65rem;
+            padding: 0 0.45rem;
+            border-radius: 0.55rem;
+            background: #f40016;
+            color: #ffffff;
+            font-size: 0.72rem;
+            font-weight: 900;
+            letter-spacing: -0.04em;
+            line-height: 1;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.12);
+        }
+
+        .logo-lk small {
+            display: none;
+        }
+
+        .brand-logos-login .logo-howbe {
+            font-size: 1.08rem;
+        }
+
+        .brand-logos-login .logo-speed-text {
+            font-size: 1rem;
+        }
+
+        .brand-title {
+            margin-top: 0.9rem;
+            font-style: italic;
+            text-transform: uppercase;
+            line-height: 0.9;
+            letter-spacing: -0.05em;
+        }
+
+        .brand-title-main {
+            display: flex;
+            flex-direction: column;
+            color: #ffffff;
+            font-size: 1.35rem;
+            font-weight: 900;
+            text-shadow: 0 2px 0 rgba(255,255,255,0.02);
+        }
+
+        .brand-title-main span {
+            color: #ffc107;
+        }
+
+        .brand-title-sub {
+            display: block;
+            margin-top: 0.35rem;
+            color: #ffc107;
+            font-size: 0.68rem;
+            font-weight: 900;
+            letter-spacing: 0.22em;
+        }
+
+        .menu-section-label {
+            color: #60718d;
+            font-size: 0.66rem;
+            font-weight: 800;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            margin: 0.75rem 0 0.55rem;
+        }
+
+        .nav-main-link {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            padding: 0.85rem 0.95rem;
+            border-radius: 1rem;
+            color: #a7b0bf;
+            font-size: 0.92rem;
+            font-weight: 700;
+            transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+        }
+
+        .nav-main-link:hover {
+            background: rgba(255,255,255,0.03);
+            color: #ffffff;
+        }
+
+        .nav-main-link-active {
+            background: rgba(255, 193, 7, 0.15);
+            color: #ffc107 !important;
+            box-shadow: inset 5px 0 0 #ffc107;
+        }
+
+        .nav-main-link .nav-icon-box {
+            width: 2rem;
+            display: inline-flex;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .nav-main-link .nav-arrow {
+            margin-left: auto;
+            color: #8f98a8;
+            transition: transform 0.2s ease, color 0.2s ease;
+        }
+
+        .nav-main-link-active .nav-arrow {
+            color: #ffc107;
+        }
+
+        .nav-submenu-card {
+            margin-top: 0.55rem;
+            padding: 0.45rem 0.38rem 0.45rem;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.04);
+            border-radius: 1rem;
+        }
+
+        .nav-submenu-link {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            padding: 0.62rem 0.8rem 0.62rem 1.7rem;
+            color: #9aa4b6;
+            font-size: 0.82rem;
+            font-weight: 600;
+            border-radius: 0.8rem;
+            transition: background 0.2s ease, color 0.2s ease;
+        }
+
+        .nav-submenu-link:hover {
+            background: rgba(255,255,255,0.025);
+            color: #ffffff;
+        }
+
+        .nav-submenu-link-active {
+            color: #ffc107 !important;
+        }
+
+        .nav-submenu-link .nav-submenu-dot {
+            width: 0.32rem;
+            height: 0.32rem;
+            border-radius: 999px;
+            background: #667286;
+            flex-shrink: 0;
+        }
+
+        .nav-submenu-link-active .nav-submenu-dot {
+            background: #ffc107;
+        }
+
+        .brand-logos-menu .logo-howbe {
+            font-size: 0.72rem;
+        }
+
+        .brand-logos-menu .logo-speed-text {
+            font-size: 0.66rem;
+        }
+
+        .brand-logos-menu .logo-speed-mark {
+            width: 0.88rem;
+            height: 0.88rem;
+        }
+
+        .brand-logos-menu .logo-lk {
+            min-width: 1.7rem;
+            height: 1.45rem;
+            padding: 0 0.35rem;
+            border-radius: 0.5rem;
+            font-size: 0.62rem;
+        }
     </style>
 </head>
-<body class="bg-[#F8F9FA] text-gray-900 antialiased">
-    <div class="messages-container fixed top-6 right-6 z-[100] flex flex-col gap-3">
+<body class="text-white antialiased">
+    <div class="messages-container fixed top-5 right-5 z-[100] flex flex-col gap-3">
         {% if messages %}
             {% for message in messages %}
-                <div class="px-6 py-4 rounded-2xl shadow-2xl border flex items-center gap-3 min-w-[300px]
+                <div class="px-5 py-4 rounded-2xl shadow-2xl border flex items-center gap-3 min-w-[300px]
                     {% if message.tags == 'success' %} bg-green-50 border-green-100 text-green-800 {% else %} bg-red-50 border-red-100 text-red-800 {% endif %}">
                     <i data-lucide="{% if message.tags == 'success' %}check-circle{% else %}alert-circle{% endif %}" class="w-5 h-5"></i>
                     <span class="text-xs font-bold uppercase tracking-tight">{{ message }}</span>
@@ -117,158 +413,177 @@
     </div>
 
     {% if user.is_authenticated %}
-    <div id="sidebarOverlay"
-         class="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 hidden md:hidden transition-opacity"
-         onclick="toggleSidebar()">
-    </div>
+    <div id="sidebarOverlay" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 hidden md:hidden" onclick="toggleSidebar()"></div>
 
-    <aside id="sidebar" class="fixed top-0 left-0 h-full w-64 bg-ageis-black text-white z-50 transform -translate-x-full transition-all duration-300 ease-in-out md:translate-x-0 border-r border-white/5 shadow-2xl flex flex-col overflow-y-auto">
-        <div class="p-8 mb-4">
-            <div class="flex items-center gap-3">
-                <div class="w-8 h-8 bg-ageis-yellow rounded-lg flex items-center justify-center shadow-[0_0_15px_rgba(255,193,7,0.3)]">
-                    <i data-lucide="zap" class="w-5 h-5 text-black fill-black"></i>
+    <aside id="sidebar" class="fixed top-3 left-3 bottom-3 z-50 w-[252px] rounded-[1.75rem] sidebar-card flex flex-col overflow-y-auto transform -translate-x-[110%] md:translate-x-0 transition-transform duration-300">
+        <div class="p-3 pb-2">
+            <div class="brand-strip rounded-[1.2rem] px-3 py-3">
+                <div class="brand-logos brand-logos-menu">
+                    <span class="logo-howbe" aria-label="howBE">how<span>BE</span></span>
+                    <span class="brand-divider" aria-hidden="true"></span>
+                    <span class="logo-speed" aria-label="speed">
+                        <span class="logo-speed-mark" aria-hidden="true"><i></i></span>
+                        <span class="logo-speed-text">speed</span>
+                    </span>
+                    <span class="brand-divider" aria-hidden="true"></span>
+                    <span class="logo-lk" aria-label="LK tecnologia">LK</span>
                 </div>
-                <span class="text-2xl font-black italic uppercase tracking-tighter leading-none">Speed</span>
             </div>
-            <p class="text-[10px] text-gray-500 font-bold tracking-[0.2em] mt-2 ml-1 uppercase">AutoControllers Hub</p>
+
+            <div class="mt-3 px-2">
+                <p class="brand-title">
+                    <span class="brand-title-main">
+                        <span style="color:#ffffff;">AutoControllers Hub</span>
+                    </span>
+                </p>
+            </div>
         </div>
 
-        <nav class="px-4 space-y-1 flex-grow">
-            <div class="mb-4 relative">
-                <button onclick="toggleSubmenu('submenu-menu-principal', 'seta-menu-principal')"
-                        class="w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 group {% if request.resolver_match.namespace == 'core' or request.resolver_match.namespace == 'comercial' or request.resolver_match.namespace == 'financeiro' or request.resolver_match.namespace == 'ti' or request.resolver_match.namespace == 'documentacao' and request.resolver_match.url_name == 'home' %}sidebar-toggle-open{% else %}text-gray-400 hover:text-white hover:bg-white/5{% endif %}">
-                    <div class="flex items-center gap-3">
-                        <i data-lucide="panel-top-open" class="w-5 h-5 group-hover:scale-110 transition-transform"></i>
-                        <span class="text-sm font-semibold">Menu Principal</span>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <span class="sidebar-toggle-indicator"></span>
-                        <i data-lucide="chevron-down" id="seta-menu-principal" class="w-4 h-4 transition-transform duration-300 {% if request.resolver_match.namespace == 'core' or request.resolver_match.namespace == 'comercial' or request.resolver_match.namespace == 'financeiro' or request.resolver_match.namespace == 'ti' or request.resolver_match.namespace == 'documentacao' and request.resolver_match.url_name == 'home' %} rotate-180 {% endif %}"></i>
-                    </div>
-                </button>
-                <div id="submenu-menu-principal" class="sidebar-submenu {% if request.resolver_match.namespace == 'core' or request.resolver_match.namespace == 'comercial' or request.resolver_match.namespace == 'financeiro' or request.resolver_match.namespace == 'ti' or request.resolver_match.namespace == 'documentacao' and request.resolver_match.url_name == 'home' %}sidebar-submenu-open sidebar-submenu-expanded{% else %}sidebar-submenu-collapsed{% endif %} flex flex-col gap-1">
-                    <a href="{% url 'core:dashboard' %}" class="sidebar-submenu-link {% if request.resolver_match.namespace == 'core' and request.resolver_match.url_name == 'dashboard' %} text-ageis-yellow {% else %} text-gray-500 hover:text-gray-300 {% endif %}">
-                        <div class="w-1.5 h-1.5 rounded-full {% if request.resolver_match.namespace == 'core' and request.resolver_match.url_name == 'dashboard' %} bg-ageis-yellow {% else %} bg-gray-500 {% endif %}"></div> Dashboard
-                    </a>
-                    <a href="{% url 'documentacao:home' %}" class="sidebar-submenu-link {% if request.resolver_match.namespace == 'documentacao' and request.resolver_match.url_name == 'home' %} text-ageis-yellow {% else %} text-gray-500 hover:text-gray-300 {% endif %}">
-                        <div class="w-1.5 h-1.5 rounded-full {% if request.resolver_match.namespace == 'documentacao' and request.resolver_match.url_name == 'home' %} bg-ageis-yellow {% else %} bg-gray-500 {% endif %}"></div> Documentação Sistema
-                    </a>
-                </div>
-            </div>
+        <nav class="px-3 pt-1 pb-4 flex-1">
+            <div class="space-y-4">
+                <div>
+                    <p class="menu-section-label px-3">Menu Principal</p>
+                    <button type="button"
+                            onclick="toggleSubmenu('submenu-menu-principal', 'arrow-menu-principal')"
+                            class="nav-main-link w-full {% if request.resolver_match and request.resolver_match.namespace == 'core' or request.resolver_match and request.resolver_match.namespace == 'documentacao' and request.resolver_match.url_name == 'home' %}nav-main-link-active{% endif %}">
+                        <div class="flex items-center gap-3">
+                            <span class="nav-icon-box"><i data-lucide="layout-grid" class="w-[18px] h-[18px]"></i></span>
+                            <span>Dashboard</span>
+                        </div>
+                        <i data-lucide="chevron-down" id="arrow-menu-principal" class="nav-arrow w-4 h-4 {% if request.resolver_match and request.resolver_match.namespace == 'core' or request.resolver_match and request.resolver_match.namespace == 'documentacao' and request.resolver_match.url_name == 'home' %}rotate-180{% endif %}"></i>
+                    </button>
 
-            {% if has_any_module_access %}
-            <div class="pt-5 mt-5 border-t border-white/5"></div>
-            <div class="mb-4 relative">
-                <button onclick="toggleSubmenu('submenu-modulos', 'seta-modulos')"
-                        class="w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 group {% if request.resolver_match.namespace == 'comercial' or request.resolver_match.namespace == 'financeiro' or request.resolver_match.namespace == 'ti' %}sidebar-toggle-open{% else %}text-gray-400 hover:text-white hover:bg-white/5{% endif %}">
-                    <div class="flex items-center gap-3">
-                        <i data-lucide="layers-3" class="w-5 h-5 group-hover:scale-110 transition-transform"></i>
-                        <span class="text-sm font-semibold">Módulos</span>
+                    <div id="submenu-menu-principal" class="nav-submenu-card {% if request.resolver_match and request.resolver_match.namespace == 'core' or request.resolver_match and request.resolver_match.namespace == 'documentacao' and request.resolver_match.url_name == 'home' %}sidebar-submenu-expanded{% else %}sidebar-submenu-collapsed{% endif %}">
+                        <a href="{% url 'core:dashboard' %}" class="nav-submenu-link {% if request.resolver_match and request.resolver_match.namespace == 'core' and request.resolver_match.url_name == 'dashboard' %}nav-submenu-link-active{% endif %}">
+                            <span class="nav-submenu-dot"></span>
+                            Dashboard
+                        </a>
+                        <a href="{% url 'documentacao:home' %}" class="nav-submenu-link {% if request.resolver_match and request.resolver_match.namespace == 'documentacao' and request.resolver_match.url_name == 'home' %}nav-submenu-link-active{% endif %}">
+                            <span class="nav-submenu-dot"></span>
+                            Documentação Sistema
+                        </a>
                     </div>
-                    <div class="flex items-center gap-3">
-                        <span class="sidebar-toggle-indicator"></span>
-                        <i data-lucide="chevron-down" id="seta-modulos" class="w-4 h-4 transition-transform duration-300 {% if request.resolver_match.namespace == 'comercial' or request.resolver_match.namespace == 'financeiro' or request.resolver_match.namespace == 'ti' %} rotate-180 {% endif %}"></i>
-                    </div>
-                </button>
-                <div id="submenu-modulos" class="sidebar-submenu {% if request.resolver_match.namespace == 'comercial' or request.resolver_match.namespace == 'financeiro' or request.resolver_match.namespace == 'ti' %}sidebar-submenu-open sidebar-submenu-expanded{% else %}sidebar-submenu-collapsed{% endif %} flex flex-col gap-1">
-                    {% if module_access.comercial %}
-                    <a href="{% url 'comercial:home' %}" class="sidebar-submenu-link {% if request.resolver_match.namespace == 'comercial' %} text-ageis-yellow {% else %} text-gray-500 hover:text-gray-300 {% endif %}">
-                        <div class="w-1.5 h-1.5 rounded-full {% if request.resolver_match.namespace == 'comercial' %} bg-ageis-yellow {% else %} bg-gray-500 {% endif %}"></div> Comercial
-                    </a>
-                    {% endif %}
-                    {% if module_access.financeiro %}
-                    <a href="{% url 'financeiro:home' %}" class="sidebar-submenu-link {% if request.resolver_match.namespace == 'financeiro' %} text-ageis-yellow {% else %} text-gray-500 hover:text-gray-300 {% endif %}">
-                        <div class="w-1.5 h-1.5 rounded-full {% if request.resolver_match.namespace == 'financeiro' %} bg-ageis-yellow {% else %} bg-gray-500 {% endif %}"></div> Financeiro
-                    </a>
-                    {% endif %}
-                    {% if module_access.ti %}
-                    <a href="{% url 'ti:home' %}" class="sidebar-submenu-link {% if request.resolver_match.namespace == 'ti' %} text-ageis-yellow {% else %} text-gray-500 hover:text-gray-300 {% endif %}">
-                        <div class="w-1.5 h-1.5 rounded-full {% if request.resolver_match.namespace == 'ti' %} bg-ageis-yellow {% else %} bg-gray-500 {% endif %}"></div> TI
-                    </a>
-                    {% endif %}
                 </div>
-            </div>
-            {% endif %}
 
-            <div class="pt-5 mt-5 border-t border-white/5"></div>
-            <div class="mb-4 relative">
-                <button onclick="toggleSubmenu('submenu-documentacao', 'seta-documentacao')"
-                        class="w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 group {% if request.resolver_match.namespace == 'documentacao' %}sidebar-toggle-open{% else %}text-gray-400 hover:text-white hover:bg-white/5{% endif %}">
-                    <div class="flex items-center gap-3">
-                        <i data-lucide="book-open-text" class="w-5 h-5 group-hover:scale-110 transition-transform"></i>
-                        <span class="text-sm font-semibold">Documentação</span>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <span class="sidebar-toggle-indicator"></span>
-                        <i data-lucide="chevron-down" id="seta-documentacao" class="w-4 h-4 transition-transform duration-300 {% if request.resolver_match.namespace == 'documentacao' %} rotate-180 {% endif %}"></i>
-                    </div>
-                </button>
-                <div id="submenu-documentacao" class="sidebar-submenu {% if request.resolver_match.namespace == 'documentacao' %}sidebar-submenu-open sidebar-submenu-expanded{% else %}sidebar-submenu-collapsed{% endif %} flex flex-col gap-1">
-                    {% if area_access.documentacao %}
-                    <a href="{% url 'documentacao:manage' %}" class="sidebar-submenu-link {% if request.resolver_match.namespace == 'documentacao' and request.resolver_match.url_name == 'manage' or request.resolver_match.namespace == 'documentacao' and request.resolver_match.url_name == 'create' or request.resolver_match.namespace == 'documentacao' and request.resolver_match.url_name == 'edit-page' %} text-ageis-yellow {% else %} text-gray-500 hover:text-gray-300 {% endif %}">
-                        <div class="w-1.5 h-1.5 rounded-full {% if request.resolver_match.namespace == 'documentacao' and request.resolver_match.url_name == 'manage' or request.resolver_match.namespace == 'documentacao' and request.resolver_match.url_name == 'create' or request.resolver_match.namespace == 'documentacao' and request.resolver_match.url_name == 'edit-page' %} bg-ageis-yellow {% else %} bg-gray-500 {% endif %}"></div> Criar Documentação
-                    </a>
-                    {% endif %}
-                </div>
-            </div>
+                {% if has_any_module_access %}
+                <div>
+                    <p class="menu-section-label px-3">Operações</p>
+                    <button type="button"
+                            onclick="toggleSubmenu('submenu-modulos', 'arrow-modulos')"
+                            class="nav-main-link w-full {% if request.resolver_match and request.resolver_match.namespace == 'comercial' or request.resolver_match and request.resolver_match.namespace == 'financeiro' or request.resolver_match and request.resolver_match.namespace == 'ti' %}nav-main-link-active{% endif %}">
+                        <div class="flex items-center gap-3">
+                            <span class="nav-icon-box"><i data-lucide="layers" class="w-[18px] h-[18px]"></i></span>
+                            <span>Módulos</span>
+                        </div>
+                        <i data-lucide="chevron-down" id="arrow-modulos" class="nav-arrow w-4 h-4 {% if request.resolver_match and request.resolver_match.namespace == 'comercial' or request.resolver_match and request.resolver_match.namespace == 'financeiro' or request.resolver_match and request.resolver_match.namespace == 'ti' %}rotate-180{% endif %}"></i>
+                    </button>
 
-            {% if area_access.administrador %}
-            <div class="pt-5 mt-5 border-t border-white/5"></div>
-            <div class="mb-4 relative">
-                <button onclick="toggleSubmenu('submenu-admin', 'seta-admin')"
-                        class="w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 group {% if request.resolver_match.namespace == 'administrador' %}sidebar-toggle-open{% else %}text-gray-400 hover:text-white hover:bg-white/5{% endif %}">
-                    <div class="flex items-center gap-3">
-                        <i data-lucide="shield-plus" class="w-5 h-5 group-hover:scale-110 transition-transform"></i>
-                        <span class="text-sm font-semibold">Administração</span>
+                    <div id="submenu-modulos" class="nav-submenu-card {% if request.resolver_match and request.resolver_match.namespace == 'comercial' or request.resolver_match and request.resolver_match.namespace == 'financeiro' or request.resolver_match and request.resolver_match.namespace == 'ti' %}sidebar-submenu-expanded{% else %}sidebar-submenu-collapsed{% endif %}">
+                        {% if module_access.comercial %}
+                        <a href="{% url 'comercial:home' %}" class="nav-submenu-link {% if request.resolver_match and request.resolver_match.namespace == 'comercial' %}nav-submenu-link-active{% endif %}">
+                            <span class="nav-submenu-dot"></span>
+                            Comercial
+                        </a>
+                        {% endif %}
+                        {% if module_access.financeiro %}
+                        <a href="{% url 'financeiro:home' %}" class="nav-submenu-link {% if request.resolver_match and request.resolver_match.namespace == 'financeiro' %}nav-submenu-link-active{% endif %}">
+                            <span class="nav-submenu-dot"></span>
+                            Financeiro
+                        </a>
+                        {% endif %}
+                        {% if module_access.ti %}
+                        <a href="{% url 'ti:home' %}" class="nav-submenu-link {% if request.resolver_match and request.resolver_match.namespace == 'ti' %}nav-submenu-link-active{% endif %}">
+                            <span class="nav-submenu-dot"></span>
+                            TI
+                        </a>
+                        {% endif %}
                     </div>
-                    <div class="flex items-center gap-3">
-                        <span class="sidebar-toggle-indicator"></span>
-                        <i data-lucide="chevron-down" id="seta-admin" class="w-4 h-4 transition-transform duration-300 {% if request.resolver_match.namespace == 'administrador' %} rotate-180 {% endif %}"></i>
-                    </div>
-                </button>
-                <div id="submenu-admin" class="sidebar-submenu {% if request.resolver_match.namespace == 'administrador' %}sidebar-submenu-open sidebar-submenu-expanded{% else %}sidebar-submenu-collapsed{% endif %} flex flex-col gap-1">
-                    <a href="{% url 'administrador:hub' %}" class="sidebar-submenu-link {% if request.resolver_match.namespace == 'administrador' and request.resolver_match.url_name == 'hub' %} text-ageis-yellow {% else %} text-gray-500 hover:text-gray-300 {% endif %}">
-                        <div class="w-1.5 h-1.5 rounded-full {% if request.resolver_match.namespace == 'administrador' and request.resolver_match.url_name == 'hub' %} bg-ageis-yellow {% else %} bg-gray-500 {% endif %}"></div> Painel Admin
-                    </a>
-                    <a href="{% url 'administrador:monitoring' %}" class="sidebar-submenu-link {% if request.resolver_match.namespace == 'administrador' and request.resolver_match.url_name == 'monitoring' %} text-ageis-yellow {% else %} text-gray-500 hover:text-gray-300 {% endif %}">
-                        <div class="w-1.5 h-1.5 rounded-full {% if request.resolver_match.namespace == 'administrador' and request.resolver_match.url_name == 'monitoring' %} bg-ageis-yellow {% else %} bg-gray-500 {% endif %}"></div> Monitoramento
-                    </a>
-                    <a href="{% url 'administrador:execution-list' %}" class="sidebar-submenu-link {% if request.resolver_match.namespace == 'administrador' and request.resolver_match.url_name == 'execution-list' %} text-ageis-yellow {% else %} text-gray-500 hover:text-gray-300 {% endif %}">
-                        <div class="w-1.5 h-1.5 rounded-full {% if request.resolver_match.namespace == 'administrador' and request.resolver_match.url_name == 'execution-list' %} bg-ageis-yellow {% else %} bg-gray-500 {% endif %}"></div> Execuções
-                    </a>
-                    <a href="{% url 'administrador:automation-create' %}" class="sidebar-submenu-link {% if request.resolver_match.namespace == 'administrador' and request.resolver_match.url_name == 'automation-create' %} text-ageis-yellow {% else %} text-gray-500 hover:text-gray-300 {% endif %}">
-                        <div class="w-1.5 h-1.5 rounded-full {% if request.resolver_match.namespace == 'administrador' and request.resolver_match.url_name == 'automation-create' %} bg-ageis-yellow {% else %} bg-gray-500 {% endif %}"></div> Criar Automacao
-                    </a>
                 </div>
+                {% endif %}
+
+                <div>
+                    <p class="menu-section-label px-3">Gestão</p>
+                    <button type="button"
+                            onclick="toggleSubmenu('submenu-documentacao', 'arrow-documentacao')"
+                            class="nav-main-link w-full {% if request.resolver_match and request.resolver_match.namespace == 'documentacao' and request.resolver_match.url_name != 'home' %}nav-main-link-active{% endif %}">
+                        <div class="flex items-center gap-3">
+                            <span class="nav-icon-box"><i data-lucide="line-chart" class="w-[18px] h-[18px]"></i></span>
+                            <span>Gestão</span>
+                        </div>
+                        <i data-lucide="chevron-down" id="arrow-documentacao" class="nav-arrow w-4 h-4 {% if request.resolver_match and request.resolver_match.namespace == 'documentacao' and request.resolver_match.url_name != 'home' %}rotate-180{% endif %}"></i>
+                    </button>
+
+                    <div id="submenu-documentacao" class="nav-submenu-card {% if request.resolver_match and request.resolver_match.namespace == 'documentacao' and request.resolver_match.url_name != 'home' %}sidebar-submenu-expanded{% else %}sidebar-submenu-collapsed{% endif %}">
+                        {% if area_access.documentacao %}
+                        <a href="{% url 'documentacao:manage' %}" class="nav-submenu-link {% if request.resolver_match and request.resolver_match.namespace == 'documentacao' and request.resolver_match.url_name == 'manage' or request.resolver_match and request.resolver_match.namespace == 'documentacao' and request.resolver_match.url_name == 'create' or request.resolver_match and request.resolver_match.namespace == 'documentacao' and request.resolver_match.url_name == 'edit-page' %}nav-submenu-link-active{% endif %}">
+                            <span class="nav-submenu-dot"></span>
+                            Documentação Sistema
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if area_access.administrador %}
+                <div>
+                    <p class="menu-section-label px-3">Administração</p>
+                    <button type="button"
+                            onclick="toggleSubmenu('submenu-admin', 'arrow-admin')"
+                            class="nav-main-link w-full {% if request.resolver_match and request.resolver_match.namespace == 'administrador' %}nav-main-link-active{% endif %}">
+                        <div class="flex items-center gap-3">
+                            <span class="nav-icon-box"><i data-lucide="shield" class="w-[18px] h-[18px]"></i></span>
+                            <span>Administração</span>
+                        </div>
+                        <i data-lucide="chevron-down" id="arrow-admin" class="nav-arrow w-4 h-4 {% if request.resolver_match and request.resolver_match.namespace == 'administrador' %}rotate-180{% endif %}"></i>
+                    </button>
+
+                    <div id="submenu-admin" class="nav-submenu-card {% if request.resolver_match and request.resolver_match.namespace == 'administrador' %}sidebar-submenu-expanded{% else %}sidebar-submenu-collapsed{% endif %}">
+                        <a href="{% url 'administrador:hub' %}" class="nav-submenu-link {% if request.resolver_match and request.resolver_match.namespace == 'administrador' and request.resolver_match.url_name == 'hub' %}nav-submenu-link-active{% endif %}">
+                            <span class="nav-submenu-dot"></span>
+                            Painel Admin
+                        </a>
+                        <a href="{% url 'administrador:monitoring' %}" class="nav-submenu-link {% if request.resolver_match and request.resolver_match.namespace == 'administrador' and request.resolver_match.url_name == 'monitoring' %}nav-submenu-link-active{% endif %}">
+                            <span class="nav-submenu-dot"></span>
+                            Monitoramento
+                        </a>
+                        <a href="{% url 'administrador:execution-list' %}" class="nav-submenu-link {% if request.resolver_match and request.resolver_match.namespace == 'administrador' and request.resolver_match.url_name == 'execution-list' %}nav-submenu-link-active{% endif %}">
+                            <span class="nav-submenu-dot"></span>
+                            Execuções
+                        </a>
+                        <a href="{% url 'administrador:automation-create' %}" class="nav-submenu-link {% if request.resolver_match and request.resolver_match.namespace == 'administrador' and request.resolver_match.url_name == 'automation-create' %}nav-submenu-link-active{% endif %}">
+                            <span class="nav-submenu-dot"></span>
+                            Criar Automação
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
             </div>
-            {% endif %}
         </nav>
 
-        <div class="mt-auto mb-8 px-6 pt-6">
-            <div class="border-t border-white/5 pt-6">
-                <div class="bg-white/[0.04] rounded-[1.6rem] p-4 border border-white/5 shadow-[0_10px_30px_rgba(0,0,0,0.18)]">
-                <div class="flex items-center gap-3 mb-5">
-                    <div class="w-9 h-9 rounded-2xl bg-gradient-to-br from-ageis-yellow to-orange-500 flex items-center justify-center text-black font-black shadow-md text-base">
+        <div class="sticky bottom-3 mt-auto p-3 pt-0 pb-3">
+            <div class="rounded-[1.45rem] border border-white/20 bg-[#171717] p-3 shadow-[0_14px_24px_rgba(0,0,0,0.26)]">
+                <div class="flex items-center gap-3 mb-3">
+                    <div class="w-10 h-10 rounded-full bg-[#ffb000] text-black font-black flex items-center justify-center text-[0.95rem]">
                         {{ user.username|slice:":1"|upper }}
                     </div>
-                    <div class="overflow-hidden">
-                        <p class="text-[11px] font-bold truncate text-white leading-tight">{{ user.username }}</p>
-                        <span class="text-[8px] bg-white/10 text-gray-400 px-2 py-0.5 rounded-full font-bold uppercase tracking-[0.18em] border border-white/5">
-                            {% if user.is_superuser %}Administrador{% else %}Operador{% endif %}
+                    <div class="min-w-0">
+                        <p class="text-[0.95rem] font-black truncate leading-tight text-white">{{ user.username }}</p>
+                        <span class="mt-1 inline-flex text-[8px] font-bold uppercase tracking-[0.16em] px-2 py-1 rounded-full bg-[#2b3036] border border-white/8 text-[#98a4b4]">
+                            {% if user.is_superuser %}Diretor{% else %}Operador{% endif %}
                         </span>
                     </div>
                 </div>
+
                 <form action="{% url 'accounts:logout' %}" method="post">
                     {% csrf_token %}
-                    <button type="submit" class="w-full flex items-center justify-center gap-2 py-3 text-[10px] font-black text-red-400 bg-red-400/10 hover:bg-red-500 hover:text-white rounded-2xl transition-all uppercase tracking-[0.18em]">
-                        <i data-lucide="power" class="w-3.5 h-3.5"></i> Sair do Sistema
+                    <button type="submit" class="w-full rounded-[1rem] bg-[#3a2222] hover:bg-[#4b2b2b] border border-red-500/10 text-[#ff7575] hover:text-white py-2.5 flex items-center justify-center gap-2 text-[9px] font-black uppercase tracking-[0.18em] transition-all">
+                        <i data-lucide="power" class="w-[14px] h-[14px]"></i>
+                        Sair do Sistema
                     </button>
                 </form>
-                <div class="mt-4 pt-4 border-t border-white/5 text-center">
-                    <p class="text-[9px] font-bold uppercase tracking-[0.22em] text-gray-500">Versão</p>
-                    <p class="mt-1 text-[11px] font-black text-ageis-yellow">{{ app_version }}</p>
+
+                <div class="mt-3.5 pt-3.5 border-t border-white/8 text-center">
+                    <p class="text-[9px] font-black uppercase tracking-[0.28em] text-[#5d6e86]">Speed OS • {{ app_version }}</p>
                 </div>
-            </div>
             </div>
         </div>
     </aside>
@@ -280,34 +595,35 @@
     </form>
     {% endif %}
 
-    <div class="{% if user.is_authenticated %}md:ml-64{% endif %} min-h-screen flex flex-col transition-all duration-300">
+    <div class="{% if user.is_authenticated %}md:pl-[282px]{% endif %} min-h-screen flex flex-col">
         {% if user.is_authenticated %}
-        <header class="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-            <div class="flex items-center gap-4">
-                <button onclick="toggleSidebar()" class="p-2 text-gray-600 md:hidden hover:bg-gray-100 rounded-lg transition">
-                    <i data-lucide="menu"></i>
+        <header class="sticky top-0 z-30 bg-black/25 backdrop-blur-lg border-b border-white/6 px-5 md:px-8 py-4">
+            <div class="flex items-center justify-between gap-4">
+                <button onclick="toggleSidebar()" class="md:hidden inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-white/6 border border-white/8 text-white">
+                    <i data-lucide="menu" class="w-5 h-5"></i>
                 </button>
                 <div class="hidden md:block">
-                    <h2 class="text-xs font-bold text-gray-400 uppercase tracking-widest italic">Speed / <span class="text-gray-900">Controle de Automacoes</span></h2>
+                    <p class="text-[10px] font-black uppercase tracking-[0.28em] text-[#7f8aa0]">Speed AutoControllers Hub</p>
+                    <h1 class="text-sm font-extrabold text-white/90">Gestão centralizada de automações</h1>
                 </div>
-            </div>
-            <div class="flex items-center gap-3 bg-green-50 px-3 py-1.5 rounded-full border border-green-100">
-                <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                <span class="text-[10px] font-black text-green-700 uppercase">Sistema Online</span>
+                <div class="flex items-center gap-2 rounded-full border border-green-500/20 bg-green-500/10 px-3 py-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-green-400 animate-pulse"></span>
+                    <span class="text-[10px] font-black uppercase tracking-[0.2em] text-green-200">Sistema Online</span>
+                </div>
             </div>
         </header>
         {% endif %}
 
-        <main class="flex-grow {% if not user.is_authenticated %}flex items-center justify-center bg-ageis-black p-4{% else %}p-6 md:p-10{% endif %}">
-            <div class="{% if user.is_authenticated %}max-w-7xl mx-auto w-full{% else %}w-full{% endif %}">
+        <main class="flex-1 {% if not user.is_authenticated %}flex items-center justify-center min-h-screen p-4{% else %}p-4 md:p-7{% endif %}">
+            <div class="{% if user.is_authenticated %}w-full max-w-[1600px] mx-auto{% else %}w-full{% endif %}">
                 {% block content %}{% endblock %}
             </div>
         </main>
 
         {% if user.is_authenticated %}
-        <footer class="p-6 text-center border-t border-gray-200 bg-white/50">
-            <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">&copy; 2026 Speed Systems - AutoControllers</p>
-            <p class="mt-2 text-[10px] text-gray-500 font-bold uppercase tracking-[0.2em]">Versao {{ app_version }}</p>
+        <footer class="px-6 py-5 border-t border-white/6 bg-black/15 text-center">
+            <p class="text-[10px] uppercase tracking-[0.22em] font-bold text-[#7b869b]">&copy; 2026 Speed Systems - AutoControllers</p>
+            <p class="mt-1 text-[10px] uppercase tracking-[0.24em] font-bold text-[#9aa5b8]">Versão {{ app_version }}</p>
         </footer>
         {% endif %}
     </div>
@@ -326,37 +642,26 @@
         function saveScrollPosition() {
             try {
                 sessionStorage.setItem(currentScrollStorageKey(), String(window.scrollY || window.pageYOffset || 0));
-            } catch (error) {
-                // Se o navegador bloquear storage, apenas ignoramos sem afetar a página.
-            }
+            } catch (error) {}
         }
 
         function restoreScrollPosition() {
             if (window.location.hash) return;
-
             try {
                 const savedScroll = sessionStorage.getItem(currentScrollStorageKey());
                 if (savedScroll === null) return;
-
                 const scrollTop = Number.parseInt(savedScroll, 10);
                 if (Number.isNaN(scrollTop)) return;
-
                 window.requestAnimationFrame(() => {
                     window.scrollTo({ top: scrollTop, left: 0, behavior: 'auto' });
                 });
-            } catch (error) {
-                // Mantemos a navegação funcionando mesmo sem restaurar o scroll.
-            }
+            } catch (error) {}
         }
 
         function scheduleInactivityLogout() {
             const inactivityLogoutForm = document.getElementById('inactivityLogoutForm');
             if (!inactivityLogoutForm) return;
-
-            if (inactivityTimerId) {
-                window.clearTimeout(inactivityTimerId);
-            }
-
+            if (inactivityTimerId) window.clearTimeout(inactivityTimerId);
             inactivityTimerId = window.setTimeout(() => {
                 inactivityLogoutForm.submit();
             }, INACTIVITY_TIMEOUT_MS);
@@ -365,16 +670,17 @@
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebarOverlay');
-            if (sidebar && overlay) {
-                if (sidebar.classList.contains('-translate-x-full')) {
-                    sidebar.classList.remove('-translate-x-full');
-                    overlay.classList.remove('hidden');
-                    overlay.style.display = 'block';
-                } else {
-                    sidebar.classList.add('-translate-x-full');
-                    overlay.classList.add('hidden');
-                    overlay.style.display = 'none';
-                }
+            if (!sidebar || !overlay) return;
+
+            const isHidden = sidebar.classList.contains('-translate-x-[110%]');
+            if (isHidden) {
+                sidebar.classList.remove('-translate-x-[110%]');
+                overlay.classList.remove('hidden');
+                overlay.style.display = 'block';
+            } else {
+                sidebar.classList.add('-translate-x-[110%]');
+                overlay.classList.add('hidden');
+                overlay.style.display = 'none';
             }
         }
 
@@ -382,36 +688,30 @@
             const menu = document.getElementById(menuId);
             const arrow = document.getElementById(arrowId);
             if (!menu || !arrow) return;
+
             const button = arrow.closest('button');
-            const parentSubmenu = menu.parentElement.closest('[id^="submenu-"]');
-            const scope = parentSubmenu || document.querySelector('#sidebar nav');
-            const allMenus = scope.querySelectorAll(':scope > .mb-1 > [id^="submenu-"], :scope > [id^="submenu-"]');
-            const allButtons = scope.querySelectorAll(':scope > .mb-1 > button[onclick^="toggleSubmenu"], :scope > button[onclick^="toggleSubmenu"]');
             const isOpening = menu.classList.contains('sidebar-submenu-collapsed');
 
-            allMenus.forEach(function (currentMenu) {
+            document.querySelectorAll('#sidebar .sidebar-submenu').forEach((currentMenu) => {
                 if (currentMenu === menu) return;
                 currentMenu.classList.add('sidebar-submenu-collapsed');
-                currentMenu.classList.remove('sidebar-submenu-open');
                 currentMenu.classList.remove('sidebar-submenu-expanded');
             });
 
-            allButtons.forEach(function (currentButton) {
+            document.querySelectorAll('#sidebar button[onclick^="toggleSubmenu"]').forEach((currentButton) => {
                 if (currentButton === button) return;
                 currentButton.classList.remove('sidebar-toggle-open');
-                const currentArrow = currentButton.querySelector('[id^="seta-"]');
+                const currentArrow = currentButton.querySelector('[id^="arrow-"]');
                 currentArrow?.classList.remove('rotate-180');
             });
 
             if (isOpening) {
                 menu.classList.remove('sidebar-submenu-collapsed');
-                menu.classList.add('sidebar-submenu-open');
                 menu.classList.add('sidebar-submenu-expanded');
                 button?.classList.add('sidebar-toggle-open');
                 arrow.classList.add('rotate-180');
             } else {
                 menu.classList.add('sidebar-submenu-collapsed');
-                menu.classList.remove('sidebar-submenu-open');
                 menu.classList.remove('sidebar-submenu-expanded');
                 button?.classList.remove('sidebar-toggle-open');
                 arrow.classList.remove('rotate-180');
@@ -426,8 +726,7 @@
             restoreScrollPosition();
             scheduleInactivityLogout();
 
-            const alerts = document.querySelectorAll('.messages-container > div');
-            alerts.forEach(alert => {
+            document.querySelectorAll('.messages-container > div').forEach(alert => {
                 setTimeout(() => {
                     alert.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
                     alert.style.opacity = '0';
@@ -460,3 +759,8 @@
     {% block extra_scripts %}{% endblock %}
 </body>
 </html>
+
+
+
+
+

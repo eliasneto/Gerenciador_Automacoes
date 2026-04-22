@@ -8,7 +8,7 @@ SECTOR_REGISTRY = {
         'label': 'Comercial',
         'model': AutomacaoComercial,
         'default_executor': 'comercial.automacoes.processar_leads.executar',
-        'icon': 'briefcase-business',
+        'icon': 'briefcase',
         'group_name': 'Modulo Comercial',
         'dashboard_group_name': 'Dashboard Comercial',
     },

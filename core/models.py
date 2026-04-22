@@ -12,6 +12,7 @@ User = get_user_model()
 class AutomationBaseModel(models.Model):
     nome = models.CharField(max_length=120)
     identificador = models.SlugField(max_length=120)
+    icone = models.CharField(max_length=80, blank=True, default='sparkles')
     descricao = models.TextField(blank=True)
     executor_path = models.CharField(max_length=255)
     aceita_arquivo_entrada = models.BooleanField(default=True)
@@ -38,6 +39,10 @@ class AutomationBaseModel(models.Model):
 
     def __str__(self):
         return self.nome
+
+    @property
+    def icone_exibicao(self):
+        return self.icone or 'sparkles'
 
     @property
     def em_execucao(self):

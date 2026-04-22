@@ -136,6 +136,10 @@ MEDIA_ROOT = BASE_DIR / 'media'
 LOGIN_URL = 'accounts:login'
 LOGIN_REDIRECT_URL = 'core:dashboard'
 LOGOUT_REDIRECT_URL = 'accounts:login'
+AUTHENTICATION_BACKENDS = [
+    'accounts.auth_backends.ActiveDirectoryBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
 SESSION_COOKIE_AGE = 20 * 60
 SESSION_SAVE_EVERY_REQUEST = True
 SESSION_COOKIE_SECURE = env_bool('DJANGO_SESSION_COOKIE_SECURE', not DEBUG)
@@ -144,6 +148,27 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 AUTOMATION_SCHEDULER_ENABLED = env_bool('AUTOMATION_SCHEDULER_ENABLED', True)
 AUTOMATION_WORKER_POLL_INTERVAL = env_int('AUTOMATION_WORKER_POLL_INTERVAL', 5)
+
+USE_AD_AUTH = env_bool('USE_AD_AUTH', False)
+AD_SERVER_URI = os.getenv('AD_SERVER_URI', '').strip()
+AD_BIND_DN = os.getenv('AD_BIND_DN', '').strip()
+AD_BIND_PASSWORD = os.getenv('AD_BIND_PASSWORD', '')
+AD_USER_SEARCH_BASE = os.getenv('AD_USER_SEARCH_BASE', '').strip()
+AD_DEFAULT_DOMAIN = os.getenv('AD_DEFAULT_DOMAIN', '').strip()
+AD_DEFAULT_DOMAIN_FQDN = os.getenv('AD_DEFAULT_DOMAIN_FQDN', '').strip()
+
+if not AD_DEFAULT_DOMAIN_FQDN and AD_BIND_DN and '@' in AD_BIND_DN:
+    AD_DEFAULT_DOMAIN_FQDN = AD_BIND_DN.split('@', 1)[1].strip().lower()
+
+if not AD_DEFAULT_DOMAIN_FQDN and AD_USER_SEARCH_BASE:
+    ad_parts = []
+    for item in AD_USER_SEARCH_BASE.split(','):
+        item = item.strip()
+        if item.upper().startswith('DC='):
+            ad_parts.append(item.split('=', 1)[1].strip())
+    AD_DEFAULT_DOMAIN_FQDN = '.'.join(ad_parts).lower()
+
+DJANGO_SUPERUSER_USERNAME = os.getenv('DJANGO_SUPERUSER_USERNAME', 'admin').strip()
 
 if not DEBUG:
     SECURE_CONTENT_TYPE_NOSNIFF = True

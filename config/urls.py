@@ -11,6 +11,7 @@ admin.site.index_title = 'Painel administrativo'
 
 urlpatterns = [
     path('', RedirectView.as_view(pattern_name='core:dashboard', permanent=False)),
+    path('login/', RedirectView.as_view(pattern_name='accounts:login', permanent=False)),
     path('admin/', admin.site.urls),
     path('api/', include('api.urls')),
     path('contas/', include('accounts.urls')),

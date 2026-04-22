@@ -2,7 +2,8 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.core.paginator import Paginator
 from django.db.models import Count, Q
-from django.shortcuts import redirect
+from django.shortcuts import get_object_or_404, redirect
+from django.urls import reverse
 from django.utils import timezone
 from django.views.generic import FormView, TemplateView
 import os
@@ -12,8 +13,8 @@ from core.models import AutomationExecution
 from core.security import user_has_area_access
 
 from .catalog import SECTOR_REGISTRY
-from .forms import AutomationCreateForm
-from .services import create_automation_for_sectors
+from .forms import AutomationCreateForm, AutomationUpdateForm
+from .services import create_automation_for_sectors, update_automation
 
 
 class AdminRequiredMixin(UserPassesTestMixin):
@@ -25,32 +26,47 @@ class AdminRequiredMixin(UserPassesTestMixin):
         return redirect('core:dashboard')
 
 
+def _build_sector_cards(recent_limit=4, include_edit_urls=False):
+    sector_cards = []
+
+    for key, registry in SECTOR_REGISTRY.items():
+        model = registry['model']
+        recent = list(model.objects.order_by('-criado_em')[:recent_limit])
+        for automacao in recent:
+            automacao.display_icon = getattr(automacao, 'icone', '') or registry['icon']
+            if include_edit_urls:
+                automacao.edit_url = reverse('administrador:automation-edit', kwargs={'setor': key, 'pk': automacao.pk})
+
+        sector_cards.append(
+            {
+                'key': key,
+                'label': registry['label'],
+                'icon': registry['icon'],
+                'count': model.objects.count(),
+                'recent': recent,
+            }
+        )
+
+    return sector_cards
+
+
 class AdminHubView(LoginRequiredMixin, AdminRequiredMixin, TemplateView):
     template_name = 'administrador/hub.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        sector_cards = []
-
-        for key, registry in SECTOR_REGISTRY.items():
-            model = registry['model']
-            sector_cards.append(
-                {
-                    'key': key,
-                    'label': registry['label'],
-                    'icon': registry['icon'],
-                    'count': model.objects.count(),
-                    'recent': list(model.objects.order_by('-criado_em')[:4]),
-                }
-            )
-
-        context['sector_cards'] = sector_cards
+        context['sector_cards'] = _build_sector_cards(recent_limit=4, include_edit_urls=True)
         return context
 
 
 class AutomationCreateView(LoginRequiredMixin, AdminRequiredMixin, FormView):
     template_name = 'administrador/automation_form.html'
     form_class = AutomationCreateForm
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['allow_setores'] = True
+        return kwargs
 
     def get_initial(self):
         initial = super().get_initial()
@@ -60,6 +76,7 @@ class AutomationCreateView(LoginRequiredMixin, AdminRequiredMixin, FormView):
                 'aceita_anexos': True,
                 'ativa': True,
                 'executor_path': 'comercial.automacoes.minha_automacao.executar',
+                'icone': 'sparkles',
             }
         )
         return initial
@@ -75,22 +92,74 @@ class AutomationCreateView(LoginRequiredMixin, AdminRequiredMixin, FormView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        sector_cards = []
+        context['sector_cards'] = _build_sector_cards(recent_limit=5, include_edit_urls=True)
+        context['sector_total'] = sum(card['count'] for card in context['sector_cards'])
+        context['form_mode'] = 'create'
+        context['page_title'] = 'Criar Automação'
+        context['page_subtitle'] = 'Cadastro central'
+        return context
 
+
+class AutomationEditView(LoginRequiredMixin, AdminRequiredMixin, FormView):
+    template_name = 'administrador/automation_form.html'
+    form_class = AutomationUpdateForm
+
+    def dispatch(self, request, *args, **kwargs):
+        self.sector_key = kwargs.get('setor')
+        self.registry = SECTOR_REGISTRY.get(self.sector_key)
+        if not self.registry:
+            return redirect('administrador:hub')
+        self.automation_model = self.registry['model']
+        self.automation = get_object_or_404(self.automation_model, pk=kwargs.get('pk'))
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['instance'] = self.automation
+        kwargs['sector_key'] = self.sector_key
+        kwargs['allow_setores'] = True
+        return kwargs
+
+    def get_initial(self):
+        initial = super().get_initial()
+        selected_sectors = []
         for key, registry in SECTOR_REGISTRY.items():
             model = registry['model']
-            sector_cards.append(
-                {
-                    'key': key,
-                    'label': registry['label'],
-                    'icon': registry['icon'],
-                    'count': model.objects.count(),
-                    'recent': list(model.objects.order_by('-criado_em')[:5]),
-                }
-            )
+            if model.objects.filter(identificador=self.automation.identificador).exists():
+                selected_sectors.append(key)
+        initial.update(
+            {
+                'nome': self.automation.nome,
+                'identificador': self.automation.identificador,
+                'icone': getattr(self.automation, 'icone', '') or 'sparkles',
+                'descricao': self.automation.descricao,
+                'executor_path': self.automation.executor_path,
+                'aceita_arquivo_entrada': self.automation.aceita_arquivo_entrada,
+                'aceita_anexos': self.automation.aceita_anexos,
+                'ativa': self.automation.ativa,
+                'setores': selected_sectors or [self.sector_key],
+            }
+        )
+        return initial
 
-        context['sector_cards'] = sector_cards
-        context['sector_total'] = sum(card['count'] for card in sector_cards)
+    def form_valid(self, form):
+        result = update_automation(self.automation, self.sector_key, form.cleaned_data)
+        sectors = ', '.join(item['label'] for item in result)
+        messages.success(
+            self.request,
+            f'Automacao "{self.automation.nome}" atualizada com sucesso em: {sectors}.',
+        )
+        return redirect('administrador:automation-edit', setor=self.sector_key, pk=self.automation.pk)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['sector_cards'] = _build_sector_cards(recent_limit=5, include_edit_urls=True)
+        context['sector_total'] = sum(card['count'] for card in context['sector_cards'])
+        context['form_mode'] = 'edit'
+        context['page_title'] = 'Editar Automação'
+        context['page_subtitle'] = self.registry['label']
+        context['sector_label'] = self.registry['label']
+        context['automation_instance'] = self.automation
         return context
 
 
@@ -129,6 +198,9 @@ class ExecutionListView(LoginRequiredMixin, AdminRequiredMixin, TemplateView):
         executions = list(page_obj.object_list)
 
         for execution in executions:
+            registry = SECTOR_REGISTRY.get(execution.modulo, {})
+            automation = execution.automacao
+            execution.display_icon = getattr(automation, 'icone', '') or registry.get('icon', 'sparkles')
             execution.output_files = [file for file in execution.arquivos.all() if file.tipo == 'output']
             execution.has_output_files = bool(execution.output_files)
             execution.log_url = f'/{execution.modulo}/execucoes/{execution.pk}/logs/'
