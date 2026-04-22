@@ -1,5 +1,5 @@
-{% extends 'base.html' %}
-
+﻿{% extends 'base.html' %}
+{% load ui_icons %}
 {% block title %}Dashboard | Speed AutoControllers{% endblock %}
 
 {% block content %}
@@ -8,9 +8,9 @@
         <span class="text-[10px] py-1 px-3 bg-ageis-yellow/10 rounded-full text-yellow-700 font-bold uppercase tracking-widest border border-ageis-yellow/20">
             Painel Principal
         </span>
-        <h1 class="text-3xl md:text-5xl font-black italic uppercase text-gray-900 mt-5 leading-none">Seu centro de controle das automacoes</h1>
+        <h1 class="text-3xl md:text-5xl font-black italic uppercase text-gray-900 mt-5 leading-none">Seu painel de automações</h1>
         <p class="text-gray-500 mt-4 max-w-3xl">
-            O sistema esta organizado por modulos independentes para facilitar crescimento, manutencao e separacao de responsabilidades entre as areas liberadas para o seu usuario.
+            Aqui você acompanha suas automações em áreas independentes, com acesso organizado por módulo para facilitar uso, manutenção e crescimento do sistema.
         </p>
     </div>
 </section>
@@ -19,17 +19,17 @@
     <article class="bg-ageis-black text-white rounded-[2rem] p-8 shadow-xl">
         <p class="text-[10px] uppercase tracking-widest text-ageis-yellow font-black">Automações ativas</p>
         <strong class="block text-5xl font-black mt-4">{{ total_active_automations }}</strong>
-        <p class="text-gray-400 mt-3 text-sm">Total de automações ativas dentro dos módulos liberados para o seu usuário.</p>
+        <p class="text-gray-400 mt-3 text-sm">Automações prontas para uso nos módulos liberados para o seu acesso.</p>
     </article>
     <article class="bg-white rounded-[2rem] p-8 shadow-xl border border-gray-100">
         <p class="text-[10px] uppercase tracking-widest text-gray-400 font-black">Automações por setor</p>
         <strong class="block text-3xl font-black mt-4 text-gray-900">{{ total_automations }}</strong>
-        <p class="text-gray-500 mt-3 text-sm">Quantidade total de automações cadastradas nos setores disponíveis para este usuário.</p>
+        <p class="text-gray-500 mt-3 text-sm">Automações que fazem parte das áreas que você pode acessar no sistema.</p>
     </article>
     <article class="bg-white rounded-[2rem] p-8 shadow-xl border border-gray-100">
         <p class="text-[10px] uppercase tracking-widest text-gray-400 font-black">Execuções por setor</p>
         <strong class="block text-3xl font-black mt-4 text-gray-900">{{ total_executions }}</strong>
-        <p class="text-gray-500 mt-3 text-sm">Quantidade total de execuções registradas nas automações dos setores liberados.</p>
+        <p class="text-gray-500 mt-3 text-sm">Histórico de execuções geradas pelas automações acessíveis para o seu perfil.</p>
     </article>
 </section>
 
@@ -38,12 +38,12 @@
         <div>
             <p class="text-[10px] uppercase tracking-widest text-gray-400 font-black">Execuções diárias</p>
             <h2 class="text-2xl md:text-3xl font-black text-gray-900 mt-2">Últimos 5 dias de operação</h2>
-            <p class="text-sm text-gray-500 mt-3 max-w-2xl">Acompanhe o volume diário de execuções e use os filtros para isolar uma área ou uma automação específica.</p>
+            <p class="text-sm text-gray-500 mt-3 max-w-2xl">Acompanhe o volume diário de execuções e use os filtros para localizar uma área ou uma automação específica.</p>
         </div>
         <div class="rounded-[1.5rem] border border-gray-100 bg-[#F8F9FA] px-5 py-4 min-w-[220px]">
             <p class="text-[10px] uppercase tracking-[0.2em] text-gray-400 font-black">Total filtrado</p>
             <strong class="block text-3xl font-black text-gray-900 mt-2">{{ chart_total }}</strong>
-            <p class="text-xs text-gray-500 mt-2">Execuções registradas no período selecionado</p>
+            <p class="text-xs text-gray-500 mt-2">ExecuÃ§Ãµes registradas no perÃ­odo selecionado</p>
         </div>
     </div>
 
@@ -92,20 +92,19 @@
             <p class="text-[10px] uppercase tracking-widest text-gray-400 font-black">Resumo por setor</p>
             <h2 class="text-2xl md:text-3xl font-black text-gray-900 mt-2">Visão consolidada das automações</h2>
         </div>
-        <p class="text-sm text-gray-400 max-w-2xl">Cada card mostra quantas automações existem no setor, quantas estão ativas e quantas execuções já foram registradas.</p>
+        <p class="text-sm text-gray-400 max-w-2xl">Cada card resume o que você tem disponível em cada área: quantidade de automações, quantas estão ativas e o volume de execuções já realizadas.</p>
     </div>
-
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {% for sector in sector_metrics %}
             <article class="rounded-[1.75rem] border border-gray-100 bg-[#F8F9FA] p-6 hover:shadow-xl transition-all">
                 <div class="flex items-start justify-between gap-4">
                     <div class="flex items-center gap-4">
                         <div class="w-12 h-12 rounded-2xl bg-ageis-black text-ageis-yellow flex items-center justify-center shadow-lg">
-                            <i data-lucide="{{ sector.icon }}" class="w-5 h-5"></i>
+                            {% app_icon sector.icon|default:'sparkles' 'w-5 h-5' %}
                         </div>
                         <div>
                             <h3 class="text-xl font-black text-gray-900">{{ sector.label }}</h3>
-                            <p class="text-sm text-gray-500">Módulo disponível para este usuário</p>
+                            <p class="text-sm text-gray-500">Módulo disponível para o seu acesso</p>
                         </div>
                     </div>
                 </div>
@@ -130,22 +129,21 @@
 <section class="bg-white rounded-[2rem] shadow-xl border border-gray-100 p-8 md:p-10">
     <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-8">
         <div>
-            <p class="text-[10px] uppercase tracking-widest text-gray-400 font-black">Modulos independentes</p>
-            <h2 class="text-2xl md:text-3xl font-black text-gray-900 mt-2">Escolha a area para comecar</h2>
+            <p class="text-[10px] uppercase tracking-widest text-gray-400 font-black">Módulos independentes</p>
+            <h2 class="text-2xl md:text-3xl font-black text-gray-900 mt-2">Escolha a área para começar</h2>
         </div>
-        <p class="text-sm text-gray-400 max-w-xl">Cada app Django pode crescer com suas proprias automacoes, dashboards, filas e integracoes sem misturar contexto.</p>
+        <p class="text-sm text-gray-400 max-w-xl">Cada área do sistema pode crescer com suas automações, relatórios e integrações sem misturar responsabilidades.</p>
     </div>
-
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         {% for module in modules %}
             <a href="{% url module.url_name %}" class="group rounded-[1.75rem] border border-gray-100 bg-[#F8F9FA] p-6 hover:shadow-xl hover:-translate-y-1 transition-all">
-                <div class="w-12 h-12 rounded-2xl bg-ageis-black text-ageis-yellow flex items-center justify-center text-sm font-black shadow-lg">
-                    {{ module.icon }}
+                <div class="w-12 h-12 rounded-2xl bg-ageis-black text-ageis-yellow flex items-center justify-center shadow-lg">
+                    {% app_icon module.icon|default:'sparkles' 'w-5 h-5' %}
                 </div>
                 <h3 class="text-xl font-black text-gray-900 mt-5">{{ module.name }}</h3>
                 <p class="text-sm text-gray-500 mt-3">{{ module.description }}</p>
                 <span class="inline-flex items-center gap-2 mt-5 text-xs font-black uppercase tracking-widest text-gray-700 group-hover:text-black">
-                    Abrir modulo
+                    Abrir módulo
                     <i data-lucide="arrow-right" class="w-4 h-4"></i>
                 </span>
             </a>
@@ -171,7 +169,7 @@
                 labels: labels,
                 datasets: [
                     {
-                        label: 'Execuções diárias',
+                        label: 'ExecuÃ§Ãµes diÃ¡rias',
                         data: values,
                         backgroundColor: 'rgba(255, 193, 7, 0.78)',
                         borderColor: '#f4b400',
