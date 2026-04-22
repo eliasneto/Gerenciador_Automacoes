@@ -249,12 +249,30 @@
             display: none;
         }
 
-        .brand-logos-login .logo-howbe {
-            font-size: 1.08rem;
+        .brand-logo-img {
+            display: block;
+            width: auto;
+            max-width: none;
         }
 
-        .brand-logos-login .logo-speed-text {
-            font-size: 1rem;
+        .brand-logos-login .brand-logo-howbe {
+            height: 2.05rem;
+        }
+
+        .brand-logos-login .brand-logo-speed {
+            height: 2.08rem;
+        }
+
+        .brand-logos-login .brand-logo-lk {
+            height: 2.06rem;
+        }
+
+        .brand-logos-login .brand-divider {
+            height: 2.05rem;
+        }
+
+        .brand-logos-login {
+            gap: 0.8rem;
         }
 
         .brand-title {
@@ -377,25 +395,20 @@
             background: #ffc107;
         }
 
-        .brand-logos-menu .logo-howbe {
-            font-size: 0.72rem;
+        .brand-logos-menu .brand-logo-howbe {
+            height: 1rem;
         }
 
-        .brand-logos-menu .logo-speed-text {
-            font-size: 0.66rem;
+        .brand-logos-menu .brand-logo-speed {
+            height: 1rem;
         }
 
-        .brand-logos-menu .logo-speed-mark {
-            width: 0.88rem;
-            height: 0.88rem;
+        .brand-logos-menu .brand-logo-lk {
+            height: 1rem;
         }
 
-        .brand-logos-menu .logo-lk {
-            min-width: 1.7rem;
-            height: 1.45rem;
-            padding: 0 0.35rem;
-            border-radius: 0.5rem;
-            font-size: 0.62rem;
+        .brand-logos-menu .brand-divider {
+            height: 1rem;
         }
     </style>
 </head>
@@ -419,14 +432,11 @@
         <div class="p-3 pb-2">
             <div class="brand-strip rounded-[1.2rem] px-3 py-3">
                 <div class="brand-logos brand-logos-menu">
-                    <span class="logo-howbe" aria-label="howBE">how<span>BE</span></span>
+                    <img class="brand-logo-img brand-logo-howbe" src="{% static 'img/logo-howbe.svg' %}" alt="howBE">
                     <span class="brand-divider" aria-hidden="true"></span>
-                    <span class="logo-speed" aria-label="speed">
-                        <span class="logo-speed-mark" aria-hidden="true"><i></i></span>
-                        <span class="logo-speed-text">speed</span>
-                    </span>
+                    <img class="brand-logo-img brand-logo-speed" src="{% static 'img/logo-speed.svg' %}" alt="speed">
                     <span class="brand-divider" aria-hidden="true"></span>
-                    <span class="logo-lk" aria-label="LK tecnologia">LK</span>
+                    <img class="brand-logo-img brand-logo-lk" src="{% static 'img/logo-lk.svg' %}" alt="LK tecnologia">
                 </div>
             </div>
 
