@@ -99,8 +99,10 @@
             <article class="rounded-[1.75rem] border border-gray-100 bg-[#F8F9FA] p-6 hover:shadow-xl transition-all">
                 <div class="flex items-start justify-between gap-4">
                     <div class="flex items-center gap-4">
-                        <div class="w-12 h-12 rounded-2xl bg-ageis-black text-ageis-yellow flex items-center justify-center shadow-lg">
-                            {% app_icon sector.icon|default:'sparkles' 'w-5 h-5' %}
+                        <div class="w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg" style="background:#111111;">
+                            <span class="inline-flex items-center justify-center" style="color:#ffc107;">
+                                {% app_icon sector.icon|default:'sparkles' 'w-5 h-5' %}
+                            </span>
                         </div>
                         <div>
                             <h3 class="text-xl font-black text-gray-900">{{ sector.label }}</h3>
@@ -137,8 +139,10 @@
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         {% for module in modules %}
             <a href="{% url module.url_name %}" class="group rounded-[1.75rem] border border-gray-100 bg-[#F8F9FA] p-6 hover:shadow-xl hover:-translate-y-1 transition-all">
-                <div class="w-12 h-12 rounded-2xl bg-ageis-black text-ageis-yellow flex items-center justify-center shadow-lg">
-                    {% app_icon module.icon|default:'sparkles' 'w-5 h-5' %}
+                <div class="w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg" style="background:#111111;">
+                    <span class="inline-flex items-center justify-center" style="color:#ffc107;">
+                        {% app_icon module.icon|default:'sparkles' 'w-5 h-5' %}
+                    </span>
                 </div>
                 <h3 class="text-xl font-black text-gray-900 mt-5">{{ module.name }}</h3>
                 <p class="text-sm text-gray-500 mt-3">{{ module.description }}</p>

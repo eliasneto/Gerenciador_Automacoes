@@ -45,7 +45,7 @@ class DashboardView(LoginRequiredMixin, TemplateView):
                     'name': registry['label'],
                     'description': descriptions.get(key, 'Módulo disponível para sua operação.'),
                     'url_name': f'{key}:home',
-                    'icon': registry['label'][:2].upper(),
+                    'icon': registry['icon'],
                 }
             )
             for automation in model.objects.all():
