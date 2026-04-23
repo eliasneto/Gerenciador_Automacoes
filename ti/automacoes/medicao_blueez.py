@@ -462,10 +462,7 @@ def processar_registro(
         f"{numero_topo_anterior or 'nenhum registro visivel'}"
     )
     logger("Tela de Medicao aberta. Iniciando novo fluxo.")
-    wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "#new_flow"))).click()
-    pause()
-    reentrar_iframe(driver, wait, pause)
-    wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, ".modal.fade.show, .modal.show")))
+    abrir_formulario_medicao(driver, wait, pause)
     logger("Formulario de medicao aberto com sucesso.")
 
     logger(f"Selecionando empresa: {str(registro['empresa']).strip()}")
@@ -556,23 +553,64 @@ def processar_registro(
 
 def entrar_medicao(driver, wait, pause):
     driver.switch_to.default_content()
-    dropdown = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'a.dropdownSidebar-toggle[aria-controls="pageSubmenu30"]')))
-    submenu_visivel = driver.execute_script("const el = document.querySelector('#pageSubmenu30'); return !!(el && el.offsetParent !== null);")
+    aguardar_shell_blueez(driver, wait)
+    remover_overlays_interativos(driver)
+    dropdown = localizar_dropdown_medicao(driver)
+    submenu_visivel = driver.execute_script(
+        "const el = document.querySelector('#pageSubmenu30'); return !!(el && el.offsetParent !== null);"
+    )
     if not submenu_visivel:
-        dropdown.click()
+        driver.execute_script("arguments[0].click();", dropdown)
         pause()
-    wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, "#pageSubmenu30")))
+    wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "#pageSubmenu30")))
     wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="pageSubmenu30"]//span[normalize-space()="Medição"]'))).click()
-    wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "iframe#iframeContent")))
-    driver.switch_to.frame(driver.find_element(By.CSS_SELECTOR, "iframe#iframeContent"))
+    reentrar_iframe(driver, wait, pause)
     pause()
 
 
 def reentrar_iframe(driver, wait, pause):
     driver.switch_to.default_content()
-    wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "iframe#iframeContent")))
-    driver.switch_to.frame(driver.find_element(By.CSS_SELECTOR, "iframe#iframeContent"))
+    aguardar_shell_blueez(driver, wait)
+    wait.until(EC.frame_to_be_available_and_switch_to_it((By.CSS_SELECTOR, "iframe#iframeContent")))
     pause()
+
+
+def aguardar_shell_blueez(driver, wait):
+    wait.until(lambda d: d.execute_script("return document.readyState") == "complete")
+    wait.until(
+        EC.presence_of_element_located(
+            (By.CSS_SELECTOR, "#sidebarMenu, nav#sidebarMenu, .wrapperSidebarMenu")
+        )
+    )
+
+
+def localizar_dropdown_medicao(driver):
+    for seletor in [
+        'a.dropdownSidebar-toggle[aria-controls="pageSubmenu30"]',
+        '[aria-controls="pageSubmenu30"]',
+        'a[href="#pageSubmenu30"]',
+    ]:
+        elementos = driver.find_elements(By.CSS_SELECTOR, seletor)
+        for elemento in elementos:
+            try:
+                if elemento.is_displayed():
+                    return elemento
+            except Exception:
+                continue
+    raise TimeoutException(
+        "Menu lateral do BlueEZ nao ficou disponivel para abrir Medicao. "
+        f"url_atual={safe_current_url(driver)} | titulo={safe_title(driver)!r}"
+    )
+
+
+def abrir_formulario_medicao(driver, wait, pause):
+    reentrar_iframe(driver, wait, pause)
+    botao_novo = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "#new_flow")))
+    driver.execute_script("arguments[0].click();", botao_novo)
+    pause()
+    reentrar_iframe(driver, wait, pause)
+    wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, ".modal.fade.show, .modal.show")))
+    wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, "#id_data_inicio")))
 
 
 def selecionar_modal(driver, wait, pause, seletor_botao, termo_busca, label, seletor_resultado=None):
@@ -1479,6 +1517,9 @@ def normalizar_extensao_minuscula(anexo, logger=None):
 
 def normalizar_nome_anexo(valor):
     texto = normalizar_texto(valor)
+    # Cola separadores monetarios/milhar entre digitos para compatibilizar
+    # nomes vindos da planilha com anexos sanitizados pelo upload.
+    texto = re.sub(r"(?<=\d)[\s.,_-]+(?=\d)", "", texto)
     texto = re.sub(r"\s+", " ", texto).strip()
     texto = re.sub(r"[^a-z0-9]+", " ", texto)
     return re.sub(r"\s+", " ", texto).strip()

@@ -3,6 +3,23 @@
 {% block title %}Criar Documentação | Speed AutoControllers{% endblock %}
 
 {% block content %}
+<style>
+    .documentation-manage-list article {
+        overflow: visible;
+    }
+
+    .documentation-manage-list article:has(details[open]) {
+        z-index: 80;
+    }
+
+    .documentation-manage-list details[open] {
+        z-index: 90;
+    }
+
+    .documentation-manage-list details[open] > div {
+        z-index: 100;
+    }
+</style>
 <section class="mb-8">
     <div class="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#111111] via-[#161616] to-[#222222] p-8 md:p-10 shadow-[0_30px_80px_rgba(15,15,15,0.28)]">
         <div class="absolute -right-16 -top-16 h-56 w-56 rounded-full bg-ageis-yellow/10 blur-3xl"></div>
@@ -58,9 +75,9 @@
         <div class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 text-center">Ações</div>
     </div>
 
-    <div class="divide-y divide-gray-100">
+    <div class="documentation-manage-list divide-y divide-gray-100">
         {% for page in pages %}
-            <article class="px-6 py-5 transition hover:bg-[#FAFBFC] relative z-10">
+            <article class="px-6 py-5 transition hover:bg-[#FAFBFC] relative z-10 overflow-visible">
                 <div class="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,2.8fr)_220px_170px_210px] xl:items-center xl:gap-6">
                     <div class="min-w-0 xl:min-h-[72px] flex items-center">
                         <span class="mb-1 block text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 xl:hidden">Documento</span>
