@@ -122,9 +122,14 @@
                 <i data-lucide="{{ sector.icon }}" class="h-3.5 w-3.5 text-ageis-yellow"></i>
                 {{ sector.label }}
             </span>
-            <h1 class="mt-5 text-3xl font-black text-gray-900 md:text-5xl">
-                {{ documentation_page.titulo }}
-            </h1>
+            <div class="mt-5 flex flex-wrap items-center gap-3">
+                <h1 class="text-3xl font-black text-gray-900 md:text-5xl">
+                    {{ documentation_page.titulo }}
+                </h1>
+                <span class="inline-flex items-center rounded-full border border-gray-200 bg-white px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-gray-600 shadow-sm">
+                    v{{ documentation_page.versao }}
+                </span>
+            </div>
             {% if document_is_published and automation %}
                 <p class="mt-3 text-sm text-gray-500">
                     Documento publicado para a automação <strong class="text-gray-800">{{ automation.nome }}</strong>.

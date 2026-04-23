@@ -14,9 +14,14 @@
                     <i data-lucide="square-pen" class="h-3.5 w-3.5"></i>
                     Editor de documentação
                 </span>
-                <h1 class="mt-5 text-3xl font-black italic uppercase leading-none text-white md:text-5xl">
-                    {{ documentation_page.titulo }}
-                </h1>
+                <div class="mt-5 flex flex-wrap items-center gap-3">
+                    <h1 class="text-3xl font-black italic uppercase leading-none text-white md:text-5xl">
+                        {{ documentation_page.titulo }}
+                    </h1>
+                    <span class="inline-flex items-center rounded-full border border-white/15 bg-white/5 px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-white/80">
+                        v{{ documentation_page.versao }}
+                    </span>
+                </div>
                 <p class="mt-4 max-w-2xl text-sm leading-7 text-gray-300 md:text-base">
                     Esta edição agora usa o mesmo espaço amplo da criação para facilitar escrita, revisão visual e publicação do conteúdo.
                 </p>

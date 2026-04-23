@@ -108,6 +108,7 @@ class DocumentationHomeView(LoginRequiredMixin, TemplateView):
 
         for key, registry in SECTOR_REGISTRY.items():
             automations = list(registry['model'].objects.all())
+            documented_automations = []
             standalone_sector_pages = standalone_by_section.get(key, [])
             for automation in automations:
                 documentation_page = get_documentation_page(automation)
@@ -116,6 +117,8 @@ class DocumentationHomeView(LoginRequiredMixin, TemplateView):
                 automation.documentation_status = documentation_page.status if documentation_page else None
                 automation.has_documentation = bool(published_page)
                 automation.can_open_documentation = bool(published_page or self.request.user.is_superuser)
+                if published_page is not None:
+                    documented_automations.append(automation)
 
             can_view_standalone_sector_pages = bool(
                 standalone_sector_pages and (
@@ -129,8 +132,8 @@ class DocumentationHomeView(LoginRequiredMixin, TemplateView):
                     'key': key,
                     'label': registry['label'],
                     'icon': registry['icon'],
-                    'count': len(automations) + (len(standalone_sector_pages) if can_view_standalone_sector_pages else 0),
-                    'automations': automations,
+                    'count': len(documented_automations) + (len(standalone_sector_pages) if can_view_standalone_sector_pages else 0),
+                    'automations': documented_automations,
                     'standalone_pages': standalone_sector_pages if can_view_standalone_sector_pages else [],
                     'is_system': False,
                 }

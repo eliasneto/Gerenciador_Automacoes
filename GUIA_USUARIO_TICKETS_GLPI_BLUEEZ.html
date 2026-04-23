@@ -1,0 +1,140 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>Guia do Usuario - Tickets GLPI a partir da Medicao BlueEZ</title>
+<style>
+body { font-family: Arial, sans-serif; margin: 32px; color: #1f2937; line-height: 1.65; }
+h1, h2, h3 { color: #111827; }
+h1 { border-bottom: 2px solid #e5e7eb; padding-bottom: 10px; }
+h2 { margin-top: 32px; }
+h3 { margin-top: 20px; }
+p, li, td, th { font-size: 14px; }
+pre { background: #f3f4f6; padding: 14px; border: 1px solid #e5e7eb; white-space: pre-wrap; border-radius: 8px; overflow-x: auto; }
+code { font-family: Consolas, monospace; }
+ul, ol { margin-top: 8px; }
+li { margin-bottom: 6px; }
+.note { background: #fffbeb; border: 1px solid #fde68a; padding: 14px; border-radius: 8px; }
+.ok { background: #ecfdf5; border: 1px solid #a7f3d0; padding: 14px; border-radius: 8px; }
+.warn { background: #fef2f2; border: 1px solid #fecaca; padding: 14px; border-radius: 8px; }
+.table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+.table th, .table td { border: 1px solid #e5e7eb; padding: 10px; text-align: left; vertical-align: top; }
+.table th { background: #f9fafb; }
+.small { color: #6b7280; font-size: 13px; }
+</style>
+</head>
+<body>
+<h1>Guia do Usuario - Enriquecimento de Tickets GLPI</h1>
+
+<p>Este documento explica como usar a automacao que consulta os tickets do GLPI a partir da planilha de saida da <strong>Medicao BlueEZ</strong>.</p>
+
+<div class="ok">
+<strong>O que esta automacao faz:</strong><br>
+Recebe a planilha gerada pela Medicao BlueEZ, localiza o <code>numero_solicitacao</code> de cada linha e preenche na mesma planilha os dados do ticket encontrado no GLPI.
+</div>
+
+<h2>1. Quando usar</h2>
+<p>Use esta automacao quando voce ja tiver executado a Medicao BlueEZ e quiser complementar a planilha com os dados do GLPI relacionados a cada solicitacao.</p>
+
+<h2>2. Arquivo que deve ser enviado</h2>
+<table class="table">
+<tr><th>Tipo</th><th>Obrigatorio</th><th>Descricao</th></tr>
+<tr><td>Planilha principal</td><td>Sim</td><td>Planilha de saida gerada pela automacao Medicao BlueEZ.</td></tr>
+</table>
+
+<div class="note">
+<strong>Importante:</strong> esta automacao nao depende de anexos auxiliares. Ela usa somente a planilha de saida da medicao.
+</div>
+
+<h2>3. O que a planilha precisa ter</h2>
+<p>A coluna obrigatoria para consulta e:</p>
+<pre>numero_solicitacao</pre>
+
+<div class="warn">
+<strong>Atencao:</strong> se a planilha nao tiver a coluna <code>numero_solicitacao</code>, a automacao sera interrompida. Por isso, a entrada correta deve ser a planilha de saida da Medicao BlueEZ.
+</div>
+
+<h2>4. Colunas preenchidas pela automacao</h2>
+<p>A automacao cria ou atualiza estas colunas na planilha:</p>
+<ul>
+<li><code>Chamados GLPI</code></li>
+<li><code>Solicitante GLPI</code></li>
+<li><code>Data Criacao GLPI</code></li>
+</ul>
+
+<p>Se a planilha ainda tiver a coluna antiga <code>Chamdos GLPI</code>, o sistema renomeia automaticamente para <code>Chamados GLPI</code>.</p>
+
+<h2>5. Regra de reaproveitamento da mesma planilha</h2>
+<p>Esta automacao foi preparada para ser usada mais de uma vez na mesma planilha.</p>
+
+<table class="table">
+<tr><th>Situacao</th><th>Comportamento</th></tr>
+<tr><td>A coluna <code>Chamados GLPI</code> esta vazia</td><td>A linha entra na consulta.</td></tr>
+<tr><td>A coluna <code>Chamados GLPI</code> ja tem valor</td><td>A linha e pulada e mantida como esta.</td></tr>
+</table>
+
+<div class="ok">
+<strong>Vantagem:</strong> voce pode executar a automacao novamente dias depois para buscar somente os tickets que ainda nao tinham sido encontrados.
+</div>
+
+<h2>6. Como a consulta funciona</h2>
+<p>O sistema consulta a base de monitoramento do GLPI usando o numero BlueEZ da linha. Quando encontra um registro correspondente, preenche:</p>
+<ul>
+<li>ID do ticket GLPI</li>
+<li>login do solicitante</li>
+<li>data e hora de criacao do ticket</li>
+</ul>
+
+<h2>7. Resultado entregue</h2>
+<p>A automacao gera uma nova planilha, normalmente com nome neste formato:</p>
+<pre>glpi_enriquecido_YYYYMMDD_HHMMSS.xlsx</pre>
+
+<p>Nessa nova planilha, os dados do GLPI aparecem na mesma linha do <code>numero_solicitacao</code> correspondente.</p>
+
+<h2>8. Como interpretar o retorno</h2>
+<table class="table">
+<tr><th>Situacao</th><th>Resultado esperado</th></tr>
+<tr><td>Numero encontrado no banco</td><td>As colunas do GLPI sao preenchidas.</td></tr>
+<tr><td>Numero ainda nao encontrado</td><td>As colunas permanecem em branco.</td></tr>
+<tr><td>Linha ja possuia ID GLPI</td><td>A linha e preservada, sem sobrescrever o valor existente.</td></tr>
+</table>
+
+<h2>9. Falha de conexao com a base GLPI</h2>
+<p>Se houver oscilacao de rede ou indisponibilidade do banco, a automacao nao derruba a planilha.</p>
+
+<p>Nesse caso:</p>
+<ul>
+<li>ela tenta conectar mais de uma vez</li>
+<li>gera a planilha mesmo assim</li>
+<li>deixa as colunas do GLPI em branco</li>
+<li>registra um aviso para nova tentativa posterior</li>
+</ul>
+
+<div class="note">
+<strong>Mensagem esperada nesse caso:</strong><br>
+Nao foi possivel consultar a base GLPI nesta execucao. A planilha foi gerada com as colunas GLPI em branco para nova tentativa posterior.
+</div>
+
+<h2>10. Fluxo recomendado de uso</h2>
+<ol>
+<li>Execute a automacao Medicao BlueEZ.</li>
+<li>Baixe a planilha processada com a coluna <code>numero_solicitacao</code>.</li>
+<li>Use essa planilha como entrada da automacao de tickets GLPI.</li>
+<li>Baixe a nova planilha enriquecida.</li>
+<li>Se alguma linha ainda ficar sem ticket, execute novamente mais tarde na mesma planilha.</li>
+</ol>
+
+<h2>11. Erros e duvidas mais comuns</h2>
+<table class="table">
+<tr><th>Situacao</th><th>Como resolver</th></tr>
+<tr><td>A planilha nao possui <code>numero_solicitacao</code></td><td>Use a planilha de saida da Medicao BlueEZ, nao a planilha original de entrada.</td></tr>
+<tr><td>Chamados GLPI continuam em branco</td><td>O ticket pode ainda nao existir no banco ou a consulta pode ter falhado por rede.</td></tr>
+<tr><td>Quero manter os IDs ja preenchidos</td><td>Sem problema. A automacao nao sobrescreve linhas que ja possuem <code>Chamados GLPI</code>.</td></tr>
+</table>
+
+<div class="ok">
+<strong>Resumo rapido:</strong><br>
+Esta automacao complementa a planilha da Medicao BlueEZ com os dados do GLPI. Ela foi pensada para uso recorrente, sem sobrescrever informacoes ja preenchidas e sem perder o trabalho quando a rede oscila.
+</div>
+
+</body>
+</html>

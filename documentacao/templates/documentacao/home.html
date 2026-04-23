@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load ui_icons %}
 
 {% block title %}Documentação | Speed AutoControllers{% endblock %}
 
@@ -54,8 +55,10 @@
             <details class="group overflow-hidden rounded-[1.75rem] border border-gray-100 bg-[#FAFBFC] open:bg-white open:shadow-md" {% if forloop.first %}open{% endif %}>
                 <summary class="flex cursor-pointer list-none items-center justify-between gap-4 px-6 py-5">
                     <div class="flex items-center gap-4">
-                        <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-ageis-black text-ageis-yellow shadow-lg">
-                            <i data-lucide="{{ sector.icon }}" class="h-5 w-5"></i>
+                        <div class="flex h-12 w-12 items-center justify-center rounded-2xl shadow-lg" style="background:#111111;">
+                            <span class="inline-flex items-center justify-center" style="color:#FFBF00;">
+                                {% app_icon sector.icon 'h-5 w-5' %}
+                            </span>
                         </div>
                         <div>
                             <h3 class="text-lg font-black text-gray-900">{{ sector.label }}</h3>

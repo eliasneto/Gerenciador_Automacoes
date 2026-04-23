@@ -1,0 +1,168 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>Guia do Usuario - Medicao BlueEZ</title>
+<style>
+html { background: #f3f4f6; }
+body { font-family: Arial, sans-serif; margin: 0; background: #f3f4f6; color: #1f2937; line-height: 1.65; }
+.page { max-width: 1100px; margin: 32px auto; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 18px; padding: 32px; box-shadow: 0 20px 50px rgba(15, 23, 42, 0.08); }
+h1, h2, h3 { color: #111827; }
+h1 { border-bottom: 2px solid #e5e7eb; padding-bottom: 10px; }
+h2 { margin-top: 32px; }
+h3 { margin-top: 20px; }
+p, li, td, th { font-size: 14px; }
+pre { background: #f3f4f6; padding: 14px; border: 1px solid #e5e7eb; white-space: pre-wrap; border-radius: 8px; overflow-x: auto; }
+code { font-family: Consolas, monospace; }
+ul, ol { margin-top: 8px; }
+li { margin-bottom: 6px; }
+.note { background: #fffbeb; border: 1px solid #fde68a; padding: 14px; border-radius: 8px; }
+.ok { background: #ecfdf5; border: 1px solid #a7f3d0; padding: 14px; border-radius: 8px; }
+.warn { background: #fef2f2; border: 1px solid #fecaca; padding: 14px; border-radius: 8px; }
+.table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+.table th, .table td { border: 1px solid #e5e7eb; padding: 10px; text-align: left; vertical-align: top; }
+.table th { background: #f9fafb; }
+.small { color: #6b7280; font-size: 13px; }
+</style>
+</head>
+<body>
+<div class="page">
+<h1>Guia do Usuario - Medicao BlueEZ</h1>
+
+<p>Este documento explica como preparar a planilha, enviar os arquivos corretos e interpretar o resultado da automacao <strong>Medicao BlueEZ</strong>.</p>
+
+<div class="ok">
+<strong>O que esta automacao faz:</strong><br>
+Recebe uma planilha com os dados da medicao, acessa o portal BlueEZ, registra cada linha valida, envia os anexos relacionados ao registro e devolve uma planilha processada com status, mensagem e numero da solicitacao gerada no BlueEZ.
+</div>
+
+<h2>1. Quando usar</h2>
+<p>Use esta automacao quando voce precisar registrar medicoes no BlueEZ a partir de uma planilha padronizada, com ou sem anexos auxiliares.</p>
+
+<h2>2. Arquivos que devem ser enviados</h2>
+<table class="table">
+<tr><th>Tipo</th><th>Obrigatorio</th><th>Descricao</th></tr>
+<tr><td>Planilha principal</td><td>Sim</td><td>Arquivo Excel com os dados da medicao.</td></tr>
+<tr><td>Arquivos auxiliares</td><td>Depende da linha</td><td>Arquivos informados nas colunas <code>arquivo_1</code> e <code>arquivo_2</code>.</td></tr>
+</table>
+
+<div class="note">
+<strong>Importante:</strong> se uma linha da planilha informar um anexo em <code>arquivo_1</code> ou <code>arquivo_2</code>, esse arquivo tambem precisa ser enviado na execucao.
+</div>
+
+<h2>3. Estrutura da planilha principal</h2>
+<p>A planilha precisa conter estas colunas obrigatorias:</p>
+
+<pre>empresa
+estabelecimento
+fornecedor
+cnpj_fornecedor
+contrato
+data_inicio
+data_fim
+competencia
+emissao_nf
+vencimento_nf
+id_nf
+item_medido
+valor_item
+observacao
+arquivo_1
+arquivo_2</pre>
+
+<div class="warn">
+<strong>Atencao:</strong> se uma ou mais colunas obrigatorias estiverem ausentes, a automacao nao sera executada.
+</div>
+
+<h2>4. Credenciais do BlueEZ</h2>
+<p>O jeito mais recomendado e colocar usuario e senha em uma aba separada da mesma planilha.</p>
+
+<p>Nomes de aba aceitos automaticamente:</p>
+<ul>
+<li><code>Credenciais</code></li>
+<li><code>Login</code></li>
+<li><code>Acesso</code></li>
+<li><code>Usuario</code></li>
+</ul>
+
+<p>Na aba de credenciais, use um cabecalho simples como este:</p>
+<pre>usuario | senha
+seu.login@empresa.com.br | sua_senha</pre>
+
+<div class="note">
+<strong>Observacao:</strong> a automacao usa essas credenciais apenas para logar no BlueEZ. A planilha de entrada e os anexos sao removidos do sistema ao fim da execucao.
+</div>
+
+<h2>5. Como preencher os dados mais importantes</h2>
+<table class="table">
+<tr><th>Campo</th><th>Como preencher</th></tr>
+<tr><td><code>empresa</code></td><td>Nome exatamente como aparece no BlueEZ.</td></tr>
+<tr><td><code>estabelecimento</code></td><td>Nome do estabelecimento conforme cadastro do BlueEZ.</td></tr>
+<tr><td><code>fornecedor</code> e <code>cnpj_fornecedor</code></td><td>Dados do fornecedor vinculado ao registro.</td></tr>
+<tr><td><code>contrato</code></td><td>Numero do contrato que sera usado na medicao.</td></tr>
+<tr><td><code>id_nf</code></td><td>Numero da nota fiscal.</td></tr>
+<tr><td><code>item_medido</code></td><td>Numero do item da grade que deve receber o valor principal.</td></tr>
+<tr><td><code>valor_item</code></td><td>Valor da medicao. A automacao valida o valor aplicado antes de seguir.</td></tr>
+<tr><td><code>observacao</code></td><td>Texto que sera registrado no campo de observacao da medicao.</td></tr>
+<tr><td><code>arquivo_1</code> e <code>arquivo_2</code></td><td>Nome do arquivo auxiliar relacionado a aquela linha.</td></tr>
+</table>
+
+<h2>6. Regras importantes durante o processamento</h2>
+<ul>
+<li>Se a linha ja estiver com status <code>OK</code>, ela e pulada automaticamente.</li>
+<li>Se o BlueEZ nao gerar uma nova solicitacao, a automacao trata isso como erro e nao grava um numero duplicado.</li>
+<li>Se o anexo nao for localizado, a linha fica com erro claro, sem derrubar o restante do lote.</li>
+<li>Se o usuario interromper a execucao, o sistema para no proximo ponto seguro.</li>
+</ul>
+
+<h2>7. Resultado entregue pela automacao</h2>
+<p>Ao final, o sistema gera uma nova planilha, normalmente com nome neste formato:</p>
+<pre>entrada_processada_YYYYMMDD_HHMMSS.xlsx</pre>
+
+<p>A planilha de saida inclui:</p>
+<ul>
+<li>status por linha</li>
+<li>mensagem de retorno por linha</li>
+<li>coluna <code>numero_solicitacao</code> quando o registro for criado com sucesso</li>
+<li>aba <code>Resumo_Execucao</code> com indicadores consolidados da rotina</li>
+</ul>
+
+<h2>8. Como interpretar os status</h2>
+<table class="table">
+<tr><th>Status</th><th>Significado</th></tr>
+<tr><td><code>OK</code></td><td>Linha processada com sucesso e solicitacao criada no BlueEZ.</td></tr>
+<tr><td><code>ERRO</code></td><td>A linha nao foi concluida. Verifique a mensagem registrada na planilha.</td></tr>
+<tr><td><code>TESTE</code></td><td>Fluxo executado sem envio final, quando a execucao estiver em modo de teste.</td></tr>
+<tr><td><code>PULADO</code></td><td>Linha ignorada por ja estar finalizada ou nao precisar de novo processamento.</td></tr>
+</table>
+
+<h2>9. Erros mais comuns</h2>
+<table class="table">
+<tr><th>Situacao</th><th>Como resolver</th></tr>
+<tr><td>Coluna obrigatoria ausente</td><td>Corrija o cabecalho da planilha e execute novamente.</td></tr>
+<tr><td>Credenciais ausentes</td><td>Adicione a aba de credenciais com usuario e senha do BlueEZ.</td></tr>
+<tr><td>Anexo nao encontrado</td><td>Confirme se o nome do arquivo bate com o informado na planilha e envie o arquivo na execucao.</td></tr>
+<tr><td>Numero da solicitacao nao foi gerado</td><td>Verifique a mensagem da linha. A automacao impede gravar o numero anterior por seguranca.</td></tr>
+<tr><td>Fornecedor, contrato ou empresa nao encontrados</td><td>Padronize os nomes exatamente como estao no BlueEZ.</td></tr>
+</table>
+
+<h2>10. Recomendacoes de uso</h2>
+<ul>
+<li>Comece com poucas linhas quando houver duvida sobre o layout da planilha.</li>
+<li>Mantenha os nomes dos anexos sem ambiguidade.</li>
+<li>Nao altere manualmente a coluna <code>numero_solicitacao</code> sem necessidade.</li>
+<li>Use a planilha de saida como base para consultas posteriores, inclusive na automacao do GLPI.</li>
+</ul>
+
+<div class="ok">
+<strong>Fluxo recomendado:</strong><br>
+1. Prepare a planilha de medicao.<br>
+2. Inclua a aba de credenciais.<br>
+3. Envie os anexos auxiliares quando houver.<br>
+4. Execute a automacao.<br>
+5. Baixe a planilha processada e valide os status.<br>
+6. Use essa mesma planilha de saida na automacao de enriquecimento do GLPI, se necessario.
+</div>
+
+</div>
+</body>
+</html>
