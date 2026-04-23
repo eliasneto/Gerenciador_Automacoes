@@ -50,7 +50,7 @@
     </article>
 </section>
 
-<section class="overflow-hidden rounded-[2rem] border border-gray-100 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.08)]">
+<section class="rounded-[2rem] border border-gray-100 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.08)] overflow-visible">
     <div class="hidden border-b border-gray-100 bg-[#FCFCFD] px-6 py-4 xl:grid xl:grid-cols-[minmax(0,2.8fr)_220px_170px_210px] xl:gap-6">
         <div class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Documento</div>
         <div class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Datas</div>
@@ -60,7 +60,7 @@
 
     <div class="divide-y divide-gray-100">
         {% for page in pages %}
-            <article class="px-6 py-5 transition hover:bg-[#FAFBFC]">
+            <article class="px-6 py-5 transition hover:bg-[#FAFBFC] relative z-10">
                 <div class="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,2.8fr)_220px_170px_210px] xl:items-center xl:gap-6">
                     <div class="min-w-0 xl:min-h-[72px] flex items-center">
                         <span class="mb-1 block text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 xl:hidden">Documento</span>
@@ -89,7 +89,7 @@
                     </div>
                     <div class="xl:min-h-[72px] flex items-center xl:justify-center">
                         <span class="mb-1 block text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 xl:hidden">Status</span>
-                        <details class="group relative inline-block">
+                        <details class="group relative inline-block z-30">
                             <summary class="flex cursor-pointer list-none items-center gap-2 rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em]
                                 {% if page.status == 'published' %}border border-green-100 bg-green-50 text-green-700
                                 {% elif page.status == 'archived' %}border border-gray-200 bg-gray-100 text-gray-700

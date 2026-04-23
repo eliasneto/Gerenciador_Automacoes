@@ -66,6 +66,12 @@
         </div>
     </div>
 
+    {% if form.non_field_errors %}
+        <div class="mb-6 rounded-[1.5rem] border border-red-100 bg-red-50 px-5 py-4 text-sm text-red-700">
+            {{ form.non_field_errors }}
+        </div>
+    {% endif %}
+
     <form method="post" class="space-y-6">
         {% csrf_token %}
 

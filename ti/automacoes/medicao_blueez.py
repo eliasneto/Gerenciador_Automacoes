@@ -52,6 +52,12 @@ class ErroRegistroEsperado(Exception):
     pass
 
 
+class ErroRegistroComSolicitacao(ErroRegistroEsperado):
+    def __init__(self, mensagem, numero_solicitacao=""):
+        super().__init__(mensagem)
+        self.numero_solicitacao = numero_solicitacao
+
+
 def executar(
     input_path=None,
     input_paths=None,
@@ -158,6 +164,21 @@ def executar(
                     updates_solicitacao.append((linha_excel, ""))
                     resumo_execucao["teste"] += 1
                     logger(f"Linha {linha_excel}: TESTE | envio final bloqueado propositalmente.")
+            except ErroRegistroComSolicitacao as exc:
+                mensagem = str(exc) or "Falha sem mensagem"
+                updates_excel.append((linha_excel, "ERRO", mensagem))
+                if exc.numero_solicitacao:
+                    updates_solicitacao.append((linha_excel, exc.numero_solicitacao))
+                    numeros_solicitacao_conhecidos.add(exc.numero_solicitacao)
+                resumo_execucao["erro"] += 1
+                logger(
+                    f"Linha {linha_excel}: ERRO | {mensagem}"
+                    + (
+                        f" | solicitacao={exc.numero_solicitacao}"
+                        if exc.numero_solicitacao
+                        else ""
+                    )
+                )
             except ErroRegistroEsperado as exc:
                 mensagem = str(exc) or "Falha sem mensagem"
                 updates_excel.append((linha_excel, "ERRO", mensagem))
@@ -429,6 +450,7 @@ def processar_registro(
     logger,
     numeros_solicitacao_conhecidos,
 ):
+    validar_campos_essenciais_registro(registro)
     logger("Abrindo tela inicial do BlueEZ para o registro atual.")
     driver.get(BASE_URL)
     pause()
@@ -822,6 +844,51 @@ def capturar_numero_solicitacao(driver, wait, pause):
     return ""
 
 
+def capturar_primeira_linha_grid(driver):
+    try:
+        linhas = driver.find_elements(By.CSS_SELECTOR, "#DataTables_Table_0 tbody tr")
+        for linha in linhas:
+            if not linha.is_displayed():
+                continue
+            colunas = linha.find_elements(By.TAG_NAME, "td")
+            if not colunas:
+                continue
+            return [(coluna.text or "").strip() for coluna in colunas]
+    except Exception:
+        return []
+    return []
+
+
+def capturar_detalhes_primeiro_registro_grid(driver, wait, pause):
+    try:
+        driver.switch_to.default_content()
+    except Exception:
+        return {}
+
+    pause(0.2)
+    iframes = driver.find_elements(By.CSS_SELECTOR, "iframe#iframeContent")
+    if not iframes:
+        return {}
+
+    try:
+        driver.switch_to.frame(iframes[0])
+    except Exception:
+        return {}
+
+    remover_overlays_interativos(driver)
+    colunas = capturar_primeira_linha_grid(driver)
+    if not colunas:
+        return {}
+
+    return {
+        "numero": colunas[0] if len(colunas) > 0 else "",
+        "solicitante": colunas[1] if len(colunas) > 1 else "",
+        "etapa": colunas[2] if len(colunas) > 2 else "",
+        "responsavel": colunas[3] if len(colunas) > 3 else "",
+        "data_criacao": colunas[4] if len(colunas) > 4 else "",
+    }
+
+
 def capturar_numero_topo_grid_atual(driver):
     try:
         linhas = driver.find_elements(By.CSS_SELECTOR, "#DataTables_Table_0 tbody tr")
@@ -876,6 +943,17 @@ def validar_e_capturar_nova_solicitacao(
             raise ValueError(
                 "O BlueEZ retornou um numero de solicitacao que ja existe na planilha/execucao: "
                 f"{numero_atual}. Isso indica que o novo registro provavelmente nao foi criado."
+            )
+
+        detalhes_registro = capturar_detalhes_primeiro_registro_grid(driver, wait, pause)
+        etapa = normalizar_texto(detalhes_registro.get("etapa"))
+        if detalhes_registro.get("numero") == numero_atual and "inconsist" in etapa:
+            responsavel = detalhes_registro.get("responsavel") or "Responsavel nao identificado no BlueEZ"
+            raise ErroRegistroComSolicitacao(
+                "A medicao foi criada no BlueEZ, mas ficou com etapa 'Inconsistencia'. "
+                "Verifique o contrato informado e entre em contato com o responsavel pelos contratos e medicoes no BlueEZ. "
+                f"Solicitacao gerada: {numero_atual}. Responsavel atual no BlueEZ: {responsavel}.",
+                numero_solicitacao=numero_atual,
             )
 
         logger(f"Novo numero de solicitacao capturado com sucesso: {numero_atual}")
@@ -1433,6 +1511,36 @@ def pontuar_correspondencia_anexo(nome_buscado, nome_candidato):
     if tokens_buscados[-1] in conjunto_candidato:
         score += 25
     return score if len(intersecao) >= max(2, len(tokens_buscados) - 1) else 0
+
+
+def valor_planilha_preenchido(valor):
+    if valor is None or pd.isna(valor):
+        return False
+    texto = str(valor).strip()
+    return bool(texto and texto.lower() != "nan")
+
+
+def validar_campos_essenciais_registro(registro):
+    campos_essenciais = {
+        "empresa": "Empresa",
+        "estabelecimento": "Estabelecimento",
+        "cnpj_fornecedor": "CNPJ do fornecedor",
+        "contrato": "Contrato",
+        "id_nf": "Numero da NF",
+        "item_medido": "Item medido",
+        "valor_item": "Valor do item",
+    }
+    faltantes = [
+        label
+        for chave, label in campos_essenciais.items()
+        if not valor_planilha_preenchido(registro.get(chave))
+    ]
+    if faltantes:
+        raise ErroRegistroEsperado(
+            "A linha possui campo(s) obrigatorio(s) vazio(s) ou invalido(s): "
+            + ", ".join(faltantes)
+            + ". Corrija a planilha e execute novamente."
+        )
 
 
 def ler_status(df, idx):
