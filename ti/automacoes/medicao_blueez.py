@@ -462,7 +462,7 @@ def processar_registro(
         f"{numero_topo_anterior or 'nenhum registro visivel'}"
     )
     logger("Tela de Medicao aberta. Iniciando novo fluxo.")
-    abrir_formulario_medicao(driver, wait, pause)
+    abrir_formulario_medicao(driver, wait, pause, logger)
     logger("Formulario de medicao aberto com sucesso.")
 
     logger(f"Selecionando empresa: {str(registro['empresa']).strip()}")
@@ -613,11 +613,60 @@ def entrar_medicao(driver, wait, pause):
 
 
 def aguardar_shell_blueez(driver, wait):
-    wait.until(lambda d: d.execute_script("return document.readyState") == "complete")
-    wait.until(
-        EC.presence_of_element_located(
-            (By.CSS_SELECTOR, "#sidebarMenu, nav#sidebarMenu, .wrapperSidebarMenu")
+    ultimo_erro = None
+    for tentativa in range(1, 3):
+        try:
+            wait.until(lambda d: d.execute_script("return document.readyState") == "complete")
+            wait.until(
+                EC.presence_of_element_located(
+                    (By.CSS_SELECTOR, "#sidebarMenu, nav#sidebarMenu, .wrapperSidebarMenu")
+                )
+            )
+            return
+        except TimeoutException as exc:
+            ultimo_erro = exc
+            if tentativa == 1:
+                try:
+                    driver.switch_to.default_content()
+                    driver.get(BASE_URL + "/")
+                except Exception:
+                    pass
+
+    raise TimeoutException(
+        "Shell do BlueEZ nao ficou disponivel. " + diagnosticar_shell_blueez(driver)
+    ) from ultimo_erro
+
+
+def diagnosticar_shell_blueez(driver):
+    try:
+        driver.switch_to.default_content()
+    except Exception:
+        return "Diagnostico shell: contexto do navegador indisponivel."
+
+    try:
+        ready_state = driver.execute_script("return document.readyState")
+    except Exception:
+        ready_state = "indisponivel"
+
+    try:
+        sidebar_count = len(
+            driver.find_elements(By.CSS_SELECTOR, "#sidebarMenu, nav#sidebarMenu, .wrapperSidebarMenu")
         )
+    except Exception:
+        sidebar_count = 0
+
+    try:
+        login_count = len(driver.find_elements(By.CSS_SELECTOR, 'input[name="j_username"], input[name="j_password"]'))
+    except Exception:
+        login_count = 0
+
+    return (
+        "Diagnostico shell: "
+        f"url_atual={safe_current_url(driver)}, "
+        f"titulo={safe_title(driver)!r}, "
+        f"ready_state={ready_state}, "
+        f"menus_laterais={sidebar_count}, "
+        f"campos_login={login_count}."
     )
 
 
@@ -640,14 +689,102 @@ def localizar_dropdown_medicao(driver):
     )
 
 
-def abrir_formulario_medicao(driver, wait, pause):
+def abrir_formulario_medicao(driver, wait, pause, logger=None):
     reentrar_iframe(driver, wait, pause)
     botao_novo = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "#new_flow")))
     driver.execute_script("arguments[0].click();", botao_novo)
     pause()
-    reentrar_iframe(driver, wait, pause)
-    wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, ".modal.fade.show, .modal.show")))
-    wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, "#id_data_inicio")))
+    aguardar_formulario_medicao(driver, wait, pause, logger)
+
+
+def aguardar_formulario_medicao(driver, wait, pause, logger=None):
+    fim = time.time() + 45
+    ultimo_diagnostico = ""
+    while time.time() < fim:
+        if alternar_para_contexto_com_elemento_visivel(driver, "#id_data_inicio"):
+            return
+        ultimo_diagnostico = diagnosticar_formulario_medicao(driver)
+        pause(1)
+
+    raise TimeoutException(
+        "Formulario de medicao nao ficou pronto apos clicar em novo fluxo. "
+        + ultimo_diagnostico
+    )
+
+
+def alternar_para_contexto_com_elemento_visivel(driver, seletor):
+    try:
+        driver.switch_to.default_content()
+    except Exception:
+        return False
+
+    if elemento_visivel_no_contexto(driver, seletor):
+        return True
+
+    iframes = driver.find_elements(By.CSS_SELECTOR, "iframe")
+    for iframe in iframes:
+        try:
+            driver.switch_to.default_content()
+            driver.switch_to.frame(iframe)
+            if elemento_visivel_no_contexto(driver, seletor):
+                return True
+        except Exception:
+            continue
+
+    driver.switch_to.default_content()
+    return False
+
+
+def elemento_visivel_no_contexto(driver, seletor):
+    try:
+        return any(elemento.is_displayed() for elemento in driver.find_elements(By.CSS_SELECTOR, seletor))
+    except Exception:
+        return False
+
+
+def diagnosticar_formulario_medicao(driver):
+    try:
+        driver.switch_to.default_content()
+    except Exception:
+        return "Diagnostico: contexto do navegador indisponivel."
+
+    partes = [
+        f"url_atual={safe_current_url(driver)}",
+        f"titulo={safe_title(driver)!r}",
+    ]
+    contextos = [("principal", None)]
+    try:
+        contextos.extend((f"iframe_{idx}", iframe) for idx, iframe in enumerate(driver.find_elements(By.CSS_SELECTOR, "iframe"), start=1))
+    except Exception:
+        pass
+
+    for nome, iframe in contextos:
+        try:
+            driver.switch_to.default_content()
+            if iframe is not None:
+                driver.switch_to.frame(iframe)
+            modais = sum(
+                1
+                for modal in driver.find_elements(By.CSS_SELECTOR, ".modal.fade.show, .modal.show")
+                if modal.is_displayed()
+            )
+            campos_data = sum(
+                1
+                for campo in driver.find_elements(By.CSS_SELECTOR, "#id_data_inicio")
+                if campo.is_displayed()
+            )
+            botoes_novo = sum(
+                1
+                for botao in driver.find_elements(By.CSS_SELECTOR, "#new_flow")
+                if botao.is_displayed()
+            )
+            partes.append(
+                f"{nome}: modais_visiveis={modais}, campos_data_visiveis={campos_data}, botoes_novo_visiveis={botoes_novo}"
+            )
+        except Exception:
+            partes.append(f"{nome}: indisponivel")
+
+    return "Diagnostico formulario: " + ", ".join(partes) + "."
 
 
 def selecionar_modal(driver, wait, pause, seletor_botao, termo_busca, label, seletor_resultado=None):
