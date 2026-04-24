@@ -12,7 +12,7 @@ class MedicaoBlueezAnexosTests(SimpleTestCase):
 
         self.assertEqual(
             normalizar_nome_anexo(valor_planilha),
-            normalizar_nome_anexo(valor_arquivo),
+            normalizar_nome_anexo(Path(valor_arquivo).stem),
         )
 
     def test_localizar_anexo_aceita_nome_planilha_sem_extensao_e_valor_com_virgula(self):

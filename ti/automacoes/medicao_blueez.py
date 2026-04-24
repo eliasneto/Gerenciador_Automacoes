@@ -551,7 +551,7 @@ def processar_registro(
     return {"enviado": True, "numero_solicitacao": numero_solicitacao}
 
 
-def entrar_medicao(driver, wait, pause):
+def entrar_medicao_legacy(driver, wait, pause):
     driver.switch_to.default_content()
     aguardar_shell_blueez(driver, wait)
     remover_overlays_interativos(driver)
@@ -572,6 +572,43 @@ def reentrar_iframe(driver, wait, pause):
     driver.switch_to.default_content()
     aguardar_shell_blueez(driver, wait)
     wait.until(EC.frame_to_be_available_and_switch_to_it((By.CSS_SELECTOR, "iframe#iframeContent")))
+    pause()
+
+
+def entrar_medicao(driver, wait, pause):
+    driver.switch_to.default_content()
+    aguardar_shell_blueez(driver, wait)
+    remover_overlays_interativos(driver)
+
+    dropdown = localizar_dropdown_medicao(driver)
+    submenu_visivel = driver.execute_script(
+        "const el = document.querySelector('#pageSubmenu30'); return !!(el && el.offsetParent !== null);"
+    )
+    if not submenu_visivel:
+        driver.execute_script("arguments[0].click();", dropdown)
+        pause()
+
+    wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, "#pageSubmenu30")))
+    item_medicao = None
+    for xpath in [
+        '//*[@id="pageSubmenu30"]//span[normalize-space()="Medição"]',
+        '//*[@id="pageSubmenu30"]//span[normalize-space()="Medicao"]',
+        '//*[@id="pageSubmenu30"]//*[contains(normalize-space(), "Med")]',
+    ]:
+        elementos = driver.find_elements(By.XPATH, xpath)
+        elementos_visiveis = [elemento for elemento in elementos if elemento.is_displayed()]
+        if elementos_visiveis:
+            item_medicao = elementos_visiveis[0]
+            break
+
+    if item_medicao is None:
+        raise TimeoutException(
+            "Item de menu Medicao nao ficou disponivel. "
+            f"url_atual={safe_current_url(driver)} | titulo={safe_title(driver)!r}"
+        )
+
+    driver.execute_script("arguments[0].click();", item_medicao)
+    reentrar_iframe(driver, wait, pause)
     pause()
 
 
