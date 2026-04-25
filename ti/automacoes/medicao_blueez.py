@@ -13,7 +13,7 @@ import pandas as pd
 from openpyxl import load_workbook
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from selenium import webdriver
-from selenium.common.exceptions import ElementClickInterceptedException, TimeoutException
+from selenium.common.exceptions import ElementClickInterceptedException, ElementNotInteractableException, NoSuchElementException, SessionNotCreatedException, StaleElementReferenceException, TimeoutException
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
@@ -122,7 +122,7 @@ def executar(
             "Inicializando navegador Chrome para o BlueEZ "
             f"(headless={bool(parametros_execucao.get('headless', True))}, timeout={browser_timeout}s)."
         )
-        driver = iniciar_driver(parametros_execucao)
+        driver = iniciar_driver_com_retry(parametros_execucao, logger)
         wait = WebDriverWait(driver, browser_timeout)
         logger(
             "Sessao Selenium criada com sucesso "
@@ -383,11 +383,13 @@ def normalizar_chave_excel(valor):
 def iniciar_driver(parametros_execucao):
     options = Options()
     if bool(parametros_execucao.get("headless", True)):
-        options.add_argument("--headless")
+        options.add_argument("--headless=new")
         options.add_argument("--disable-gpu")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--disable-blink-features=AutomationControlled")
+    options.add_argument("--remote-debugging-port=0")
+    options.add_argument(f"--user-data-dir=/tmp/blueez-chrome-{os.getpid()}-{int(time.time() * 1000)}")
     options.add_argument("--lang=pt-BR")
     options.add_argument("--accept-lang=pt-BR,pt")
     options.add_argument(f'--window-size={parametros_execucao.get("window_size", "1280,900")}')
@@ -407,6 +409,22 @@ def iniciar_driver(parametros_execucao):
 
     service = Service(executable_path=driver_path) if driver_path else Service()
     return webdriver.Chrome(service=service, options=options)
+
+
+def iniciar_driver_com_retry(parametros_execucao, logger=None, tentativas=3):
+    ultimo_erro = None
+    for tentativa in range(1, tentativas + 1):
+        try:
+            return iniciar_driver(parametros_execucao)
+        except SessionNotCreatedException as exc:
+            ultimo_erro = exc
+            if logger:
+                logger(
+                    "Falha ao iniciar sessao Chrome. "
+                    f"Tentativa {tentativa}/{tentativas}. Erro: {exc}"
+                )
+            time.sleep(min(2 * tentativa, 5))
+    raise ultimo_erro
 
 
 def login_blueez(driver, wait, pause, credenciais, logger, parametros_execucao):
@@ -700,9 +718,14 @@ def abrir_formulario_medicao(driver, wait, pause, logger=None):
 def aguardar_formulario_medicao(driver, wait, pause, logger=None):
     fim = time.time() + 45
     ultimo_diagnostico = ""
+    tentou_modal_intermediario = False
     while time.time() < fim:
-        if alternar_para_contexto_com_elemento_visivel(driver, "#id_data_inicio"):
+        if alternar_para_contexto_com_formulario_medicao(driver):
             return
+        if not tentou_modal_intermediario and resolver_modal_intermediario_novo_fluxo(driver, pause, logger):
+            tentou_modal_intermediario = True
+            pause(2)
+            continue
         ultimo_diagnostico = diagnosticar_formulario_medicao(driver)
         pause(1)
 
@@ -710,6 +733,56 @@ def aguardar_formulario_medicao(driver, wait, pause, logger=None):
         "Formulario de medicao nao ficou pronto apos clicar em novo fluxo. "
         + ultimo_diagnostico
     )
+
+
+def alternar_para_contexto_com_formulario_medicao(driver):
+    try:
+        driver.switch_to.default_content()
+    except Exception:
+        return False
+
+    if contexto_formulario_medicao_pronto(driver):
+        return True
+
+    iframes = driver.find_elements(By.CSS_SELECTOR, "iframe")
+    for iframe in iframes:
+        try:
+            driver.switch_to.default_content()
+            driver.switch_to.frame(iframe)
+            if contexto_formulario_medicao_pronto(driver):
+                return True
+        except Exception:
+            continue
+
+    driver.switch_to.default_content()
+    return False
+
+
+def contexto_formulario_medicao_pronto(driver):
+    if elemento_visivel_no_contexto(driver, "#id_data_inicio"):
+        return True
+    return contar_campos_formulario_medicao_visiveis(driver) >= 4
+
+
+def contar_campos_formulario_medicao_visiveis(driver):
+    seletor = (
+        "#id_descricao_empresa, "
+        "#id_descricao_estabelecimento, "
+        "#id_descricao_fornecedor, "
+        "#id_descricao_contrato, "
+        'button[data-target="#modal_zoom_empresa_medicao_1"], '
+        'button[data-target="#modal_zoom_estabelecimento_medicao_1"], '
+        'button[data-target="#modal_zoom_fornecedor_medicao_1"], '
+        'button[data-target="#modal_zoom_contrato_medicao_1"]'
+    )
+    try:
+        return sum(
+            1
+            for elemento in driver.find_elements(By.CSS_SELECTOR, seletor)
+            if elemento.is_displayed()
+        )
+    except Exception:
+        return 0
 
 
 def alternar_para_contexto_com_elemento_visivel(driver, seletor):
@@ -740,6 +813,105 @@ def elemento_visivel_no_contexto(driver, seletor):
         return any(elemento.is_displayed() for elemento in driver.find_elements(By.CSS_SELECTOR, seletor))
     except Exception:
         return False
+
+
+def resolver_modal_intermediario_novo_fluxo(driver, pause, logger=None):
+    try:
+        driver.switch_to.default_content()
+    except Exception:
+        return False
+
+    contextos = [None]
+    try:
+        contextos.extend(driver.find_elements(By.CSS_SELECTOR, "iframe"))
+    except Exception:
+        pass
+
+    for iframe in contextos:
+        try:
+            driver.switch_to.default_content()
+            if iframe is not None:
+                driver.switch_to.frame(iframe)
+            modal = primeiro_modal_visivel(driver)
+            if modal is None or elemento_visivel_no_contexto(driver, "#id_data_inicio"):
+                continue
+
+            texto_modal = normalizar_texto(modal.text)
+            candidatos = botoes_modal_intermediario(modal)
+            if logger:
+                logger(
+                    "Modal intermediario detectado antes do formulario de medicao: "
+                    + resumir_texto_log(modal.text)
+                )
+
+            for candidato in candidatos:
+                rotulo = normalizar_texto(candidato.text or candidato.get_attribute("value") or "")
+                classe = normalizar_texto(candidato.get_attribute("class") or "")
+                if deve_clicar_candidato_modal_intermediario(rotulo, classe, texto_modal):
+                    if logger:
+                        logger(
+                            "Clicando opcao do modal intermediario para abrir o formulario: "
+                            + (rotulo or classe or "elemento sem texto")
+                        )
+                    driver.execute_script("arguments[0].click();", candidato)
+                    pause()
+                    return True
+        except Exception:
+            continue
+
+    return False
+
+
+def primeiro_modal_visivel(driver):
+    for modal in driver.find_elements(By.CSS_SELECTOR, ".modal.fade.show, .modal.show"):
+        try:
+            if modal.is_displayed():
+                return modal
+        except Exception:
+            continue
+    return None
+
+
+def botoes_modal_intermediario(modal):
+    elementos = modal.find_elements(By.CSS_SELECTOR, "button, a, input[type='button'], input[type='submit']")
+    return [elemento for elemento in elementos if elemento.is_displayed() and elemento.is_enabled()]
+
+
+def deve_clicar_candidato_modal_intermediario(rotulo, classe, texto_modal):
+    termos_positivos = {
+        "medicao",
+        "medição",
+        "iniciar",
+        "continuar",
+        "confirmar",
+        "avancar",
+        "avançar",
+        "novo fluxo",
+        "criar",
+        "prosseguir",
+    }
+    termos_negativos = {
+        "cancelar",
+        "fechar",
+        "voltar",
+        "nao",
+        "não",
+    }
+    texto_candidato = f"{rotulo} {classe}".strip()
+    if any(termo in texto_candidato for termo in termos_negativos):
+        return False
+    if any(termo in texto_candidato for termo in termos_positivos):
+        return True
+    if "selecione" in texto_modal and texto_candidato:
+        return True
+    return False
+
+
+def resumir_texto_log(valor, limite=500):
+    texto = re.sub(r"\s+", " ", str(valor or "")).strip()
+    if len(texto) <= limite:
+        return texto or "sem texto"
+    return texto[:limite].rstrip() + "..."
 
 
 def diagnosticar_formulario_medicao(driver):
@@ -773,13 +945,35 @@ def diagnosticar_formulario_medicao(driver):
                 for campo in driver.find_elements(By.CSS_SELECTOR, "#id_data_inicio")
                 if campo.is_displayed()
             )
+            campos_contrato = sum(
+                1
+                for campo in driver.find_elements(
+                    By.CSS_SELECTOR,
+                    "#id_descricao_empresa, "
+                    "#id_descricao_estabelecimento, "
+                    "#id_descricao_fornecedor, "
+                    "#id_descricao_contrato, "
+                    'button[data-target="#modal_zoom_empresa_medicao_1"], '
+                    'button[data-target="#modal_zoom_estabelecimento_medicao_1"], '
+                    'button[data-target="#modal_zoom_fornecedor_medicao_1"], '
+                    'button[data-target="#modal_zoom_contrato_medicao_1"]',
+                )
+                if campo.is_displayed()
+            )
             botoes_novo = sum(
                 1
                 for botao in driver.find_elements(By.CSS_SELECTOR, "#new_flow")
                 if botao.is_displayed()
             )
+            textos_modais = [
+                resumir_texto_log(modal.text, 220)
+                for modal in driver.find_elements(By.CSS_SELECTOR, ".modal.fade.show, .modal.show")
+                if modal.is_displayed()
+            ]
             partes.append(
-                f"{nome}: modais_visiveis={modais}, campos_data_visiveis={campos_data}, botoes_novo_visiveis={botoes_novo}"
+                f"{nome}: modais_visiveis={modais}, campos_data_visiveis={campos_data}, "
+                f"campos_contrato_visiveis={campos_contrato}, "
+                f"botoes_novo_visiveis={botoes_novo}, textos_modais={textos_modais or 'nenhum'}"
             )
         except Exception:
             partes.append(f"{nome}: indisponivel")
@@ -788,29 +982,37 @@ def diagnosticar_formulario_medicao(driver):
 
 
 def selecionar_modal(driver, wait, pause, seletor_botao, termo_busca, label, seletor_resultado=None):
-    botao = obter_elemento_clicavel(
-        driver,
-        wait,
-        seletor_botao,
-        f"botao de selecao de {label}",
-    )
-    driver.execute_script("arguments[0].click();", botao)
-    pause()
-    modal_id = botao.get_attribute("data-target") or ""
-    modal_selector = f"{modal_id} input.form-control[placeholder=\"Procurar\"]" if modal_id else 'input.form-control[placeholder="Procurar"]'
-    campo = wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, modal_selector)))
-    campo.clear()
-    campo.send_keys(termo_busca)
-    campo.send_keys(Keys.ENTER)
-    pause()
+    modal_id = ""
+    for tentativa in range(1, 6):
+        try:
+            alternar_para_contexto_com_formulario_medicao(driver)
+            botao = obter_elemento_clicavel(
+                driver,
+                wait,
+                seletor_botao,
+                f"botao de selecao de {label}",
+            )
+            modal_id = botao.get_attribute("data-target") or modal_id
+            driver.execute_script("arguments[0].click();", botao)
+            pause()
+            preencher_campo_busca_modal_com_retry(driver, wait, pause, modal_id, termo_busca)
+            pause()
+            break
+        except (StaleElementReferenceException, TimeoutException):
+            if tentativa == 5:
+                raise
+            try:
+                alternar_para_contexto_com_formulario_medicao(driver)
+            except Exception:
+                pass
+            pause(0.5)
 
     linhas = []
-    if modal_id:
-        linhas = [
-            linha
-            for linha in driver.find_elements(By.CSS_SELECTOR, f"{modal_id} table tbody tr")
-            if linha.is_displayed() and termo_busca.lower() in normalizar_texto(linha.text)
-        ]
+    for _ in range(8):
+        linhas = localizar_linhas_modal(driver, modal_id, termo_busca)
+        if linhas:
+            break
+        pause(0.5)
     if not linhas:
         sugestoes = coletar_amostra_modal(driver, modal_id)
         raise ValueError(montar_erro_busca(label, termo_busca, sugestoes))
@@ -825,24 +1027,94 @@ def selecionar_modal(driver, wait, pause, seletor_botao, termo_busca, label, sel
         )
 
 
+def localizar_linhas_modal(driver, modal_id, termo_busca):
+    seletores = []
+    tabela_id = tabela_zoom_id_por_modal(modal_id)
+    if tabela_id:
+        seletores.append(f"#{tabela_id} tbody tr")
+    if modal_id:
+        seletores.append(f"{modal_id} table tbody tr")
+    linhas = []
+    for seletor in seletores:
+        try:
+            for linha in driver.find_elements(By.CSS_SELECTOR, seletor):
+                try:
+                    if linha.is_displayed() and termo_busca.lower() in normalizar_texto(linha.text):
+                        linhas.append(linha)
+                except StaleElementReferenceException:
+                    return []
+        except StaleElementReferenceException:
+            return []
+        if linhas:
+            return linhas
+    return linhas
+
+
+def aguardar_campo_busca_modal(driver, wait, modal_id):
+    def encontrar(_driver):
+        for seletor in seletores_busca_modal(modal_id):
+            campo = primeiro_elemento_visivel_habilitado(_driver, By.CSS_SELECTOR, seletor)
+            if campo is not None:
+                return campo
+        return False
+
+    return wait.until(encontrar)
+
+
+def seletores_busca_modal(modal_id):
+    seletores = []
+    tabela_id = tabela_zoom_id_por_modal(modal_id)
+    if tabela_id:
+        seletores.append(f"#{tabela_id}_wrapper input.form-control[placeholder=\"Procurar\"]")
+    if modal_id:
+        seletores.append(f"{modal_id} input.form-control[placeholder=\"Procurar\"]")
+    seletores.append('input.form-control[placeholder="Procurar"]')
+    return seletores
+
+
+def tabela_zoom_id_por_modal(modal_id):
+    if not modal_id:
+        return ""
+    return modal_id.lstrip("#").replace("modal_zoom_", "tabela_zoom_", 1)
+
+
 def selecionar_fornecedor(driver, wait, pause, cnpj):
-    botao = obter_elemento_clicavel(
-        driver,
-        wait,
-        'button[data-target="#modal_zoom_fornecedor_medicao_1"]',
-        "botao de selecao de Fornecedor",
-    )
-    driver.execute_script("arguments[0].click();", botao)
-    pause()
     cnpj_formatado = formatar_cnpj(cnpj)
-    campo = wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#tabela_zoom_fornecedor_medicao_1_wrapper input.form-control[placeholder="Procurar"]')))
-    campo.clear()
-    campo.send_keys(cnpj_formatado)
-    campo.send_keys(Keys.ENTER)
-    pause(2)
-    linhas = driver.find_elements(
-        By.XPATH,
-        f'//*[@id="tabela_zoom_fornecedor_medicao_1"]//tbody/tr[td[1][normalize-space()="{cnpj_formatado}"]]'
+    for tentativa in range(1, 6):
+        try:
+            alternar_para_contexto_com_formulario_medicao(driver)
+            botao = obter_elemento_clicavel(
+                driver,
+                wait,
+                'button[data-target="#modal_zoom_fornecedor_medicao_1"]',
+                "botao de selecao de Fornecedor",
+            )
+            driver.execute_script("arguments[0].click();", botao)
+            pause()
+            campo = wait.until(
+                lambda d: primeiro_elemento_visivel_habilitado(
+                    d,
+                    By.CSS_SELECTOR,
+                    '#tabela_zoom_fornecedor_medicao_1_wrapper input.form-control[placeholder="Procurar"]',
+                )
+            )
+            preencher_campo_busca_com_retry(
+                driver,
+                wait,
+                pause,
+                '#tabela_zoom_fornecedor_medicao_1_wrapper input.form-control[placeholder="Procurar"]',
+                cnpj_formatado,
+            )
+            pause(2)
+            break
+        except (StaleElementReferenceException, TimeoutException):
+            if tentativa == 5:
+                raise
+            pause(0.5)
+    linhas = aguardar_linhas_por_xpath(
+        driver,
+        pause,
+        f'//*[@id="tabela_zoom_fornecedor_medicao_1"]//tbody/tr[td[1][normalize-space()="{cnpj_formatado}"]]',
     )
     if not linhas:
         sugestoes = coletar_amostra_tabela(driver, "#tabela_zoom_fornecedor_medicao_1 tbody tr")
@@ -860,41 +1132,32 @@ def selecionar_fornecedor(driver, wait, pause, cnpj):
 
 
 def selecionar_contrato(driver, wait, pause, contrato):
-    botao = obter_elemento_clicavel(
-        driver,
-        wait,
-        'button[data-target="#modal_zoom_contrato_medicao_1"]',
-        "botao de selecao de Contrato",
-    )
-    driver.execute_script("arguments[0].click();", botao)
-    pause()
     numero_contrato = limpar_codigo_excel(contrato)
-    seletores_busca = [
-        '#tabela_zoom_contrato_medicao_1_wrapper input.form-control[placeholder="Procurar"]',
-        '#modal_zoom_contrato_medicao_1 input.form-control[placeholder="Procurar"]',
-        '#modal_zoom_contrato_medicao_1 input[type="text"]',
-    ]
-    campo = None
-    for seletor in seletores_busca:
-        elementos = driver.find_elements(By.CSS_SELECTOR, seletor)
-        elementos_visiveis = [elemento for elemento in elementos if elemento.is_displayed() and elemento.is_enabled()]
-        if elementos_visiveis:
-            campo = elementos_visiveis[0]
+    for tentativa in range(1, 6):
+        try:
+            alternar_para_contexto_com_formulario_medicao(driver)
+            botao = obter_elemento_clicavel(
+                driver,
+                wait,
+                'button[data-target="#modal_zoom_contrato_medicao_1"]',
+                "botao de selecao de Contrato",
+            )
+            driver.execute_script("arguments[0].click();", botao)
+            pause()
+            preencher_campo_busca_modal_com_retry(
+                driver,
+                wait,
+                pause,
+                "#modal_zoom_contrato_medicao_1",
+                numero_contrato,
+            )
+            pause()
             break
-    if campo is None:
-        raise ValueError(
-            "Campo de busca do Contrato nao apareceu no BlueEZ apos abrir o modal. "
-            f"url_atual={safe_current_url(driver)} | titulo={safe_title(driver)!r}"
-        )
-    campo.clear()
-    campo.send_keys(numero_contrato)
-    campo.send_keys(Keys.ENTER)
-    pause()
-    linhas = [
-        linha
-        for linha in driver.find_elements(By.CSS_SELECTOR, "#tabela_zoom_contrato_medicao_1 tbody tr")
-        if linha.is_displayed()
-    ]
+        except (ElementNotInteractableException, StaleElementReferenceException, TimeoutException):
+            if tentativa == 5:
+                raise
+            pause(0.5)
+    linhas = aguardar_linhas_visiveis(driver, pause, "#tabela_zoom_contrato_medicao_1 tbody tr")
     if not linhas:
         sugestoes = coletar_amostra_tabela(driver, "#tabela_zoom_contrato_medicao_1 tbody tr")
         raise ValueError(
@@ -909,6 +1172,111 @@ def selecionar_contrato(driver, wait, pause, contrato):
     pause()
 
 
+def primeiro_elemento_visivel_habilitado(driver, by, seletor):
+    try:
+        for elemento in driver.find_elements(by, seletor):
+            try:
+                if elemento.is_displayed() and elemento.is_enabled():
+                    return elemento
+            except StaleElementReferenceException:
+                continue
+    except StaleElementReferenceException:
+        return None
+    return None
+
+
+def aguardar_linhas_visiveis(driver, pause, seletor, tentativas=8):
+    for _ in range(tentativas):
+        linhas = []
+        try:
+            for linha in driver.find_elements(By.CSS_SELECTOR, seletor):
+                try:
+                    if linha.is_displayed():
+                        linhas.append(linha)
+                except StaleElementReferenceException:
+                    linhas = []
+                    break
+        except StaleElementReferenceException:
+            linhas = []
+        if linhas:
+            return linhas
+        pause(0.5)
+    return []
+
+
+def aguardar_linhas_por_xpath(driver, pause, xpath, tentativas=8):
+    for _ in range(tentativas):
+        linhas = []
+        try:
+            for linha in driver.find_elements(By.XPATH, xpath):
+                try:
+                    if linha.is_displayed():
+                        linhas.append(linha)
+                except StaleElementReferenceException:
+                    linhas = []
+                    break
+        except StaleElementReferenceException:
+            linhas = []
+        if linhas:
+            return linhas
+        pause(0.5)
+    return []
+
+
+def preencher_campo_busca_com_retry(driver, wait, pause, seletor, valor, tentativas=5):
+    ultimo_erro = None
+    for _ in range(tentativas):
+        try:
+            preencher_busca_em_elemento_recapturado(driver, wait, pause, seletor, valor)
+            return
+        except (StaleElementReferenceException, TimeoutException) as exc:
+            ultimo_erro = exc
+            pause(0.5)
+    raise ultimo_erro
+
+
+def preencher_campo_busca_modal_com_retry(driver, wait, pause, modal_id, valor, tentativas=5):
+    ultimo_erro = None
+    for _ in range(tentativas):
+        try:
+            seletores = seletores_busca_modal(modal_id)
+            preencher_busca_em_elemento_recapturado(driver, wait, pause, ", ".join(seletores), valor)
+            return
+        except (StaleElementReferenceException, TimeoutException) as exc:
+            ultimo_erro = exc
+            pause(0.5)
+    raise ultimo_erro
+
+
+def preencher_busca_em_elemento_recapturado(driver, wait, pause, seletor, valor):
+    campo = wait.until(
+        lambda d: primeiro_elemento_visivel_habilitado(d, By.CSS_SELECTOR, seletor)
+    )
+    try:
+        set_value_native(driver, campo, "")
+    except StaleElementReferenceException:
+        campo = wait.until(
+            lambda d: primeiro_elemento_visivel_habilitado(d, By.CSS_SELECTOR, seletor)
+        )
+        set_value_native(driver, campo, "")
+    pause(0.2)
+
+    campo = wait.until(
+        lambda d: primeiro_elemento_visivel_habilitado(d, By.CSS_SELECTOR, seletor)
+    )
+    try:
+        set_value_native(driver, campo, valor)
+        pause(0.2)
+        campo.send_keys(Keys.ENTER)
+    except StaleElementReferenceException:
+        campo = wait.until(
+            lambda d: primeiro_elemento_visivel_habilitado(d, By.CSS_SELECTOR, seletor)
+        )
+        set_value_native(driver, campo, valor)
+        pause(0.2)
+        campo.send_keys(Keys.ENTER)
+
+
 def preencher_datas(driver, wait, pause, registro):
     for seletor, valor in {
         "#id_data_inicio": formatar_data(registro["data_inicio"]),
@@ -921,20 +1289,14 @@ def preencher_datas(driver, wait, pause, registro):
 
 
 def preencher_item_medido(driver, wait, pause, item_medido, valor_item, logger=None):
-    campos = driver.find_elements(By.CSS_SELECTOR, 'div[class^="linha_valor_"] input.form-control.input-blueez')
+    campos = obter_campos_item_medido_visiveis(driver)
     indice = int(float(item_medido)) - 1
     if indice < 0 or indice >= len(campos):
         raise ValueError(f"item_medido invalido: {item_medido}")
     valor = f"{float(valor_item):.2f}".replace(".", ",")
-    for posicao, campo in enumerate(campos):
+    for posicao in range(len(campos)):
         valor_esperado = valor if posicao == indice else "0,00"
-        valor_lido = preencher_campo_monetario(
-            driver,
-            campo,
-            valor_esperado,
-            pause,
-            logger,
-        )
+        valor_lido = preencher_campo_monetario_por_indice(driver, posicao, valor_esperado, pause, logger)
         if logger:
             logger(
                 f"Auditoria item {posicao + 1}: esperado={valor_esperado} | exibido={valor_lido or 'vazio'}"
@@ -955,8 +1317,27 @@ def capturar_valor_observacao(wait):
 
 
 def capturar_valores_itens(driver):
-    campos = driver.find_elements(By.CSS_SELECTOR, 'div[class^="linha_valor_"] input.form-control.input-blueez')
+    campos = obter_campos_item_medido_visiveis(driver)
     return [(campo.get_attribute("value") or "").strip() for campo in campos]
+
+
+def obter_campos_item_medido_visiveis(driver):
+    campos = driver.find_elements(By.CSS_SELECTOR, 'div[class^="linha_valor_"] input.form-control.input-blueez')
+    visiveis = []
+    for campo in campos:
+        try:
+            if campo.is_displayed():
+                visiveis.append(campo)
+        except Exception:
+            continue
+    return visiveis
+
+
+def obter_campo_item_medido(driver, indice):
+    campos = obter_campos_item_medido_visiveis(driver)
+    if indice < 0 or indice >= len(campos):
+        raise NoSuchElementException(f"Campo do item medido nao encontrado para o indice {indice}.")
+    return campos[indice]
 
 
 def fazer_upload(driver, wait, pause, arquivos, logger=None):
@@ -1040,32 +1421,18 @@ def capturar_numero_solicitacao(driver, wait, pause):
         return ""
 
     remover_overlays_interativos(driver)
-    linhas = driver.find_elements(By.CSS_SELECTOR, "#DataTables_Table_0 tbody tr")
-    for linha in linhas:
-        try:
-            if not linha.is_displayed():
-                continue
-            colunas = linha.find_elements(By.TAG_NAME, "td")
-            if not colunas:
-                continue
-            numero = (colunas[0].text or "").strip()
-            if numero and numero.isdigit():
-                return numero
-        except Exception:
-            continue
+    for colunas in ler_linhas_grid_visiveis(driver):
+        numero = colunas[0] if colunas else ""
+        if numero and numero.isdigit():
+            return numero
     return ""
 
 
 def capturar_primeira_linha_grid(driver):
     try:
-        linhas = driver.find_elements(By.CSS_SELECTOR, "#DataTables_Table_0 tbody tr")
-        for linha in linhas:
-            if not linha.is_displayed():
-                continue
-            colunas = linha.find_elements(By.TAG_NAME, "td")
-            if not colunas:
-                continue
-            return [(coluna.text or "").strip() for coluna in colunas]
+        linhas = ler_linhas_grid_visiveis(driver)
+        if linhas:
+            return linhas[0]
     except Exception:
         return []
     return []
@@ -1103,19 +1470,30 @@ def capturar_detalhes_primeiro_registro_grid(driver, wait, pause):
 
 def capturar_numero_topo_grid_atual(driver):
     try:
-        linhas = driver.find_elements(By.CSS_SELECTOR, "#DataTables_Table_0 tbody tr")
-        for linha in linhas:
-            if not linha.is_displayed():
-                continue
-            colunas = linha.find_elements(By.TAG_NAME, "td")
-            if not colunas:
-                continue
-            numero = (colunas[0].text or "").strip()
+        for colunas in ler_linhas_grid_visiveis(driver):
+            numero = colunas[0] if colunas else ""
             if numero:
                 return numero
     except Exception:
         return ""
     return ""
+
+
+def ler_linhas_grid_visiveis(driver):
+    try:
+        return driver.execute_script(
+            """
+            const linhas = Array.from(document.querySelectorAll('#DataTables_Table_0 tbody tr'));
+            return linhas
+              .filter((linha) => !!(linha && linha.offsetParent !== null))
+              .map((linha) =>
+                Array.from(linha.querySelectorAll('td')).map((coluna) => (coluna.innerText || '').trim())
+              )
+              .filter((colunas) => colunas.length > 0);
+            """
+        ) or []
+    except Exception:
+        return []
 
 
 def validar_e_capturar_nova_solicitacao(
@@ -1218,19 +1596,9 @@ def diagnostico_pos_envio(driver):
         return "O iframe de conteudo existe, mas nao foi possivel acessa-lo apos o envio."
 
     remover_overlays_interativos(driver)
-    linhas = driver.find_elements(By.CSS_SELECTOR, "#DataTables_Table_0 tbody tr")
-    grid_count = sum(1 for linha in linhas if linha.is_displayed())
-    primeiro_numero = ""
-    for linha in linhas:
-        try:
-            if not linha.is_displayed():
-                continue
-            colunas = linha.find_elements(By.TAG_NAME, "td")
-            if colunas:
-                primeiro_numero = (colunas[0].text or "").strip()
-                break
-        except Exception:
-            continue
+    linhas_grid = ler_linhas_grid_visiveis(driver)
+    grid_count = len(linhas_grid)
+    primeiro_numero = linhas_grid[0][0] if linhas_grid and linhas_grid[0] else ""
 
     modais_visiveis = 0
     for modal in driver.find_elements(By.CSS_SELECTOR, ".modal.fade.show, .modal.show"):
@@ -1320,6 +1688,20 @@ def preencher_campo_monetario(driver, campo, valor, pause, logger=None):
         "O campo monetario do item nao refletiu o valor esperado no BlueEZ. "
         f"Esperado: {valor}. Exibido na tela: {valor_tela or 'vazio'}."
     )
+
+
+def preencher_campo_monetario_por_indice(driver, indice, valor, pause, logger=None, tentativas=5):
+    ultimo_erro = None
+    for _ in range(tentativas):
+        try:
+            campo = obter_campo_item_medido(driver, indice)
+            return preencher_campo_monetario(driver, campo, valor, pause, logger)
+        except (StaleElementReferenceException, NoSuchElementException) as exc:
+            ultimo_erro = exc
+            pause(0.3)
+    if ultimo_erro is not None:
+        raise ultimo_erro
+    raise NoSuchElementException(f"Campo monetario do item {indice + 1} nao ficou disponivel.")
 
 
 def preencher_elemento_tab(driver, campo, valor, pause):
